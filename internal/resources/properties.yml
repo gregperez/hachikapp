@@ -1,0 +1,19 @@
+database:
+  postgres:
+    host: 127.0.0.1
+    user: postgres
+    password: postgres
+    db: postgres
+    port: 5432
+    timeout: 1
+datasource:
+  host: 127.0.0.1 #'${DB_URL}'
+  port: 5432 #'${DB_PORT}'
+  database: postgres #'${DB_NAME}'
+  user: postgres #'${DB_USER}'
+  password: postgres #'${DB_PASS}'
+  dbMaxConns: 10 #${DB_MAX_CONNS}
+datasourcemongo:
+  url: mongodb://localhost:27017/ #'${DB_URL}'
+log:
+  level: info

@@ -34,6 +34,6 @@ func (cDao *UserDao) Save(c interface{}) error {
 	return nil
 }
 
-func (cDao *UserDao) FindOne(id string) (interface{}, error) {
+func (cDao *UserDao) FindById(id string) (interface{}, error) {
 	return nil, nil
 }

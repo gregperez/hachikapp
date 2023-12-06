@@ -5,6 +5,7 @@ import (
 	"jwt/base/internal/core/domain"
 	"jwt/base/internal/infra/primary/config/database"
 	"jwt/base/internal/infra/secondary/repositories"
+	"jwt/base/internal/infra/secondary/repositories/dto"
 	"sync"
 )
 
@@ -40,6 +41,22 @@ func (c *UserDao) Save(user interface{}) error {
 	return nil
 }
 
-func (c *UserDao) FindOne(id string) (interface{}, error) {
-	return nil, nil
+func (c *UserDao) FindById(id string) (interface{}, error) {
+	var email string
+	var is_admin bool
+
+	query := "SELECT email, is_admin FROM public.users WHERE id = $1;"
+	err := (*c.DbPgx4).QueryRow(query, id).Scan(&email, &is_admin)
+	if err != nil {
+		log.Errorf("error in Save User, error: %s", err.Error())
+		return nil, err
+	}
+
+	user := dto.UserDTO{
+		Id:      id,
+		Email:   email,
+		IsAdmin: is_admin,
+	}
+
+	return user, nil
 }

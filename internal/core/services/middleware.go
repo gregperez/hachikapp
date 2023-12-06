@@ -1,11 +1,14 @@
-package config
+package services
 
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"jwt/base/internal/core"
 	"jwt/base/internal/core/domain"
+	"jwt/base/internal/core/ports"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -17,7 +20,27 @@ type MyCustomClaims struct {
 	jwt.RegisteredClaims
 }
 
-func AuthorizeJWT() gin.HandlerFunc {
+var (
+	serviceSingleton *core.MiddlewareUseCase
+	serviceOnce      sync.Once
+)
+
+type Middleware struct {
+	userPersistencePort *ports.RepositoryPort
+}
+
+func GetMiddlewareInstance(repository *ports.RepositoryPort) *core.MiddlewareUseCase {
+	serviceOnce.Do(func() {
+		service := &Middleware{
+			userPersistencePort: repository,
+		}
+		var IService core.MiddlewareUseCase = service
+		serviceSingleton = &IService
+	})
+	return serviceSingleton
+}
+
+func (m *Middleware) AuthorizeJWT() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		const Bearer_schema = "Bearer "
 		authHeader := c.GetHeader("Authorization")
@@ -35,21 +58,13 @@ func AuthorizeJWT() gin.HandlerFunc {
 		})
 
 		if token != nil && token.Valid {
-			user := domain.User{
-				Id:      "1",
-				Email:   "test",
-				IsAdmin: false,
-				Permissions: []domain.Permission{
-					{
-						Entity: domain.USERS,
-						Create: false,
-						Read:   true,
-						Update: true,
-						Delete: true,
-					},
-				},
+			userId := token.Claims.(jwt.MapClaims)["user"].(string)
+			user, err := (*m.userPersistencePort).FindById(userId)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+				return
 			}
-			c.Set("user", &user)
+			c.Set("user", user)
 			c.Next()
 		} else {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -85,7 +100,7 @@ func GetToken(userId string) (string, error) {
 func PoliciesGuard(fn gin.HandlerFunc, entity domain.EntityEnum, operation domain.OperationEnum) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user := GetUserToken(c)
-		if user == nil || (!user.IsAdmin && !user.HasPermission(entity, operation)) {
+		if user.Id == "" || (!user.IsAdmin && !user.HasPermission(entity, operation)) {
 			c.Status(http.StatusUnauthorized)
 			return
 		}
@@ -93,10 +108,10 @@ func PoliciesGuard(fn gin.HandlerFunc, entity domain.EntityEnum, operation domai
 	}
 }
 
-func GetUserToken(c *gin.Context) *domain.User {
+func GetUserToken(c *gin.Context) domain.User {
 	user, exist := c.Get("user")
 	if !exist {
-		return nil
+		return domain.User{}
 	}
-	return user.(*domain.User)
+	return user.(domain.User)
 }

@@ -2,8 +2,9 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
+	"jwt/base/internal/core"
 	"jwt/base/internal/core/domain"
-	"jwt/base/internal/infra/primary/config"
+	"jwt/base/internal/core/services"
 	"sync"
 )
 
@@ -13,28 +14,37 @@ var (
 )
 
 type TestController struct {
+	middleware *core.MiddlewareUseCase
+	r          *gin.Engine
 }
 
-func GetTestControllerInstance() *TestController {
+func GetTestControllerInstance(middleware *core.MiddlewareUseCase, r *gin.Engine) *TestController {
 	testOnce.Do(func() {
-		testInstance = &TestController{}
+		testInstance = &TestController{
+			middleware: middleware,
+			r:          r,
+		}
 	})
 	return testInstance
 }
 
-func (o *TestController) RunController(r *gin.Engine, authorizeMiddleware gin.HandlerFunc) {
-	r.GET("/v1/test", func(c *gin.Context) {
-		response, _ := config.GetToken("12345")
+func (db *TestController) Start() {
+	db.RunController()
+}
+
+func (o *TestController) RunController() {
+	(*o.r).GET("/v1/test", func(c *gin.Context) {
+		response, _ := services.GetToken("1")
 
 		c.JSON(200, response)
 		//c.JSON(http.StatusNotFound, response)
 	})
 
 	// Grupo de rutas protegidas
-	protected := r.Group("/v2")
-	protected.Use(authorizeMiddleware)
+	protected := (*o.r).Group("/v2")
+	protected.Use((*o.middleware).AuthorizeJWT())
 	{
-		protected.GET("/test", config.PoliciesGuard(funcName(), domain.USERS, domain.READ))
+		protected.GET("/test", services.PoliciesGuard(funcName(), domain.USERS, domain.READ))
 	}
 }
 

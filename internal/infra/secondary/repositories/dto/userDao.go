@@ -1,12 +1,11 @@
 package dto
 
 import (
-	"github.com/google/uuid"
 	"jwt/base/internal/core/domain"
 )
 
 type UserDTO struct {
-	Id          uuid.UUID       `bson:"id,omitempty"`
+	Id          string          `bson:"id,omitempty"`
 	Email       string          `bson:"email,omitempty"`
 	Password    string          `bson:"password,omitempty"`
 	Permissions []PermissionDTO `bson:"permissions,omitempty"`

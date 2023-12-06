@@ -1,7 +1,6 @@
 package repositories
 
 import (
-	"github.com/google/uuid"
 	"jwt/base/internal/core/domain"
 	"jwt/base/internal/core/ports"
 	"jwt/base/internal/infra/secondary/repositories/dto"
@@ -29,7 +28,6 @@ func NewUserInstance(userDao *IGenericDAO) *ports.RepositoryPort {
 
 func (repository *UserRepository) Save(v interface{}) error {
 	var userDTO = dto.UserDTO{
-		Id:          uuid.New(),
 		Email:       v.(domain.User).Email,
 		Password:    v.(domain.User).Password,
 		Permissions: ToPermissionDTO(v.(domain.User).Permissions),
@@ -40,6 +38,24 @@ func (repository *UserRepository) Save(v interface{}) error {
 		return err
 	}
 	return nil
+}
+
+func (repository *UserRepository) FindById(id string) (interface{}, error) {
+	user, err := (*repository.userDao).FindById(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return toUserDomain(user.(dto.UserDTO)), nil
+}
+
+func toUserDomain(user dto.UserDTO) domain.User {
+	return domain.User{
+		Id:       user.Id,
+		Email:    user.Email,
+		Password: user.Password,
+		IsAdmin:  user.IsAdmin,
+	}
 }
 
 func ToPermissionDTO(permissions []domain.Permission) []dto.PermissionDTO {

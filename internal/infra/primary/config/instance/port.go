@@ -10,7 +10,8 @@ import (
 
 func GetUserInstance() *ports.RepositoryPort {
 	// ToDo: Postgresql return repositories.NewUserInstance(GetUserDaoInstance())
-	return repositories.NewUserInstance(GetUserMongoDaoInstance())
+	//return repositories.NewUserInstance(GetUserMongoDaoInstance())
+	return repositories.NewUserInstance(GetUserDaoInstance())
 }
 
 func GetUserDaoInstance() *repositories.IGenericDAO {

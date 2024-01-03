@@ -17,6 +17,11 @@ type UserDao struct {
 	MongoDb *database.IMongo
 }
 
+func (cDao *UserDao) FindByUserId(userId string) ([]interface{}, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewUserMongoDaoInstance(db *database.IMongo) *repositories.IGenericDAO {
 	userInstanceOnce.Do(func() {
 		var valueDao repositories.IGenericDAO = &UserDao{db}

@@ -5,6 +5,7 @@ import (
 	"jwt/base/internal/core"
 	"jwt/base/internal/core/domain"
 	"jwt/base/internal/core/services"
+	"net/http"
 	"sync"
 )
 
@@ -35,16 +36,17 @@ func (db *TestController) Start() {
 func (o *TestController) RunController() {
 	(*o.r).GET("/v1/test", func(c *gin.Context) {
 		response, _ := services.GetToken("1")
-
+		
 		c.JSON(200, response)
 		//c.JSON(http.StatusNotFound, response)
 	})
-
+	
 	// Grupo de rutas protegidas
 	protected := (*o.r).Group("/v2")
 	protected.Use((*o.middleware).AuthorizeJWT())
 	{
 		protected.GET("/test", services.PoliciesGuard(funcName(), domain.USERS, domain.READ))
+		protected.POST("/test-post", services.PoliciesGuard(funcPost(), domain.USERS, domain.READ))
 	}
 }
 
@@ -52,5 +54,24 @@ func funcName() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		response := "test2"
 		c.JSON(200, response)
+	}
+}
+
+type RequestDTO struct {
+	Name string `json:"name" binding:"required"`
+	Age  int    `json:"age" binding:"required"`
+}
+
+func funcPost() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		requestDTO := RequestDTO{}
+		err := c.ShouldBind(&requestDTO)
+		
+		if err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		
+		c.JSON(http.StatusAccepted, &requestDTO)
 	}
 }

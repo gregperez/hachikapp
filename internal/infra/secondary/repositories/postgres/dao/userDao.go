@@ -18,6 +18,11 @@ type UserDao struct {
 	DbPgx4 *database.Database
 }
 
+func (c *UserDao) FindByUserId(userId string) ([]interface{}, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewUserDaoInstance(db *database.Database) *repositories.IGenericDAO {
 	serviceInstanceOnce.Do(func() {
 		var valueDao repositories.IGenericDAO = &UserDao{db}
@@ -44,19 +49,19 @@ func (c *UserDao) Save(user interface{}) error {
 func (c *UserDao) FindById(id string) (interface{}, error) {
 	var email string
 	var is_admin bool
-
+	
 	query := "SELECT email, is_admin FROM public.users WHERE id = $1;"
 	err := (*c.DbPgx4).QueryRow(query, id).Scan(&email, &is_admin)
 	if err != nil {
 		log.Errorf("error in Save User, error: %s", err.Error())
 		return nil, err
 	}
-
+	
 	user := dto.UserDTO{
 		Id:      id,
 		Email:   email,
 		IsAdmin: is_admin,
 	}
-
+	
 	return user, nil
 }

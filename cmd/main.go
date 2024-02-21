@@ -28,6 +28,7 @@ func main() {
 	initComponent.RegisterPrimaryProcess(instance.GetDatabasePersistencePgxInstance())
 	initComponent.RegisterPrimaryProcess(instance.GetDatabasePersistenceMongoInstance())
 	initComponent.RegisterPrimaryProcess(instance.TestControllerInstance(r))
+	initComponent.RegisterPrimaryProcess(instance.TestSubscription())
 	initComponent.Init()
 
 	//controller.GetTestControllerInstance().RunController(r, config.AuthorizeJWT())

@@ -5,6 +5,7 @@ import (
 	"jwt/base/internal/infra/primary/config/database"
 	"jwt/base/internal/infra/primary/config/prop"
 	"jwt/base/internal/infra/primary/controller"
+	subscription "jwt/base/internal/infra/primary/subscription/rabbitmq"
 	"jwt/base/internal/initComponent"
 )
 
@@ -18,4 +19,8 @@ func GetDatabasePersistenceMongoInstance() initComponent.IPrimaryProcess {
 
 func TestControllerInstance(r *gin.Engine) initComponent.IPrimaryProcess {
 	return controller.GetTestControllerInstance(MiddlewareUseCaseInstance(), r)
+}
+
+func TestSubscription() initComponent.IPrimaryProcess {
+	return subscription.NewTestSubscription()
 }

@@ -17,3 +17,14 @@ datasourcemongo:
   url: mongodb://localhost:27017/ #'${DB_URL}'
 log:
   level: info
+
+
+queues:
+  rabbitmq:
+    name-queue: test
+    protocol: amqp
+    user: admin
+    pass: admin
+    host: localhost
+    port: 5672
+    prefetch-count: 10

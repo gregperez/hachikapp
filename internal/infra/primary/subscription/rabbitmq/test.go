@@ -2,9 +2,9 @@ package subscription
 
 import (
 	"fmt"
+	"github.com/WilsonSayago/messaging/rabbitmq"
+	"github.com/rabbitmq/amqp091-go"
 	log "github.com/sirupsen/logrus"
-	"github.com/streadway/amqp"
-	"jwt/base/internal/messaging/rabbitmq"
 	rand2 "math/rand"
 	"sync"
 	"time"
@@ -26,10 +26,10 @@ func NewTestSubscription() *TestSubscription {
 }
 
 func (t *TestSubscription) Start() {
-	rabbitmq.InitSubscriber("hola", "amqp", "admin", "admin", "localhost", "5672", 10, t)
+	rabbitmq.InitSubscriber("test", "amqp", "admin", "admin", "localhost", "5672", 10, t)
 }
 
-func (t *TestSubscription) Handle(msg *amqp.Delivery) {
+func (t *TestSubscription) Handle(msg *amqp091.Delivery) {
 	fmt.Printf("Received message: %s", msg.Body)
 	// Simular algún tipo de procesamiento
 	time.Sleep(2 * time.Second)

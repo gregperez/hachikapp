@@ -1,10 +1,10 @@
 package main
 
 import (
+	"github.com/WilsonSayago/initModules"
 	"github.com/gin-gonic/gin"
 	"jwt/base/internal/infra/primary/config/instance"
 	"jwt/base/internal/infra/primary/config/prop"
-	"jwt/base/internal/initComponent"
 )
 
 var (
@@ -16,22 +16,22 @@ const (
 )
 
 func main() {
-
-	initComponent.SetFilePath(initComponent.YML, propertiesFile)
-	initComponent.AddProp(prop.GetPostgresProp())
-	initComponent.AddProp(prop.GetDatabaseMongoProperty())
-	initComponent.AddProp(prop.GetDatabaseProperty())
-	initComponent.RunLoadProperties()
-
+	
+	initModules.SetFilePath(initModules.YML, propertiesFile)
+	initModules.AddProp(prop.GetQueueProp())
+	initModules.AddProp(prop.GetDatabaseMongoProperty())
+	initModules.AddProp(prop.GetDatabaseProperty())
+	initModules.RunLoadProperties()
+	
 	r := gin.Default()
-
-	initComponent.RegisterPrimaryProcess(instance.GetDatabasePersistencePgxInstance())
-	initComponent.RegisterPrimaryProcess(instance.GetDatabasePersistenceMongoInstance())
-	initComponent.RegisterPrimaryProcess(instance.TestControllerInstance(r))
-	initComponent.RegisterPrimaryProcess(instance.TestSubscription())
-	initComponent.Init()
-
+	
+	initModules.RegisterProcess(instance.GetDatabasePersistencePgxInstance())
+	initModules.RegisterProcess(instance.GetDatabasePersistenceMongoInstance())
+	initModules.RegisterProcess(instance.TestControllerInstance(r))
+	initModules.RegisterProcess(instance.TestSubscription())
+	initModules.Init(true, true)
+	
 	//controller.GetTestControllerInstance().RunController(r, config.AuthorizeJWT())
-
+	
 	r.Run()
 }

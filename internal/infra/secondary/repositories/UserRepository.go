@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	middlewareDomain "github.com/WilsonSayago/middleware/core/domains"
 	"jwt/base/internal/core/domain"
 	"jwt/base/internal/core/ports"
 	"jwt/base/internal/infra/secondary/repositories/dto"
@@ -8,7 +9,7 @@ import (
 )
 
 var (
-	serviceSingleton    *ports.RepositoryPort
+	serviceSingleton    ports.RepositoryPort
 	serviceInstanceOnce sync.Once
 )
 
@@ -16,12 +17,12 @@ type UserRepository struct {
 	userDao *IGenericDAO
 }
 
-func NewUserInstance(userDao *IGenericDAO) *ports.RepositoryPort {
+func NewUserInstance(userDao *IGenericDAO) ports.RepositoryPort {
 	serviceInstanceOnce.Do(func() {
 		var service ports.RepositoryPort = &UserRepository{
 			userDao: userDao,
 		}
-		serviceSingleton = &service
+		serviceSingleton = service
 	})
 	return serviceSingleton
 }
@@ -40,25 +41,27 @@ func (repository *UserRepository) Save(v interface{}) error {
 	return nil
 }
 
-func (repository *UserRepository) FindById(id string) (interface{}, error) {
+func (repository *UserRepository) FindById(id string) (domain.User, error) {
 	user, err := (*repository.userDao).FindById(id)
 	if err != nil {
-		return nil, err
+		return domain.User{}, err
 	}
-
+	
 	return toUserDomain(user.(dto.UserDTO)), nil
 }
 
 func toUserDomain(user dto.UserDTO) domain.User {
 	return domain.User{
-		Id:       user.Id,
-		Email:    user.Email,
-		Password: user.Password,
-		IsAdmin:  user.IsAdmin,
+		UserGeneric: middlewareDomain.UserGeneric{
+			Id:       user.Id,
+			Email:    user.Email,
+			Password: user.Password,
+			IsAdmin:  user.IsAdmin,
+		},
 	}
 }
 
-func ToPermissionDTO(permissions []domain.Permission) []dto.PermissionDTO {
+func ToPermissionDTO(permissions []middlewareDomain.Permission) []dto.PermissionDTO {
 	var permissionDTO []dto.PermissionDTO
 	for _, permission := range permissions {
 		permissionDTO = append(permissionDTO, dto.PermissionDTO{

@@ -8,7 +8,7 @@ import (
 	pg "jwt/base/internal/infra/secondary/repositories/postgres/dao"
 )
 
-func GetUserInstance() *ports.RepositoryPort {
+func GetUserInstance() ports.RepositoryPort {
 	// ToDo: Postgresql return repositories.NewUserInstance(GetUserDaoInstance())
 	//return repositories.NewUserInstance(GetUserMongoDaoInstance())
 	return repositories.NewUserInstance(GetUserDaoInstance())

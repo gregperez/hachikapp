@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/WilsonSayago/initModules"
+	"github.com/WilsonSayago/middleware/infra/config/properties"
 	"github.com/gin-gonic/gin"
 	"jwt/base/internal/infra/primary/config/instance"
 	"jwt/base/internal/infra/primary/config/prop"
@@ -21,6 +22,7 @@ func main() {
 	initModules.AddProp(prop.GetQueueProp())
 	initModules.AddProp(prop.GetDatabaseMongoProperty())
 	initModules.AddProp(prop.GetDatabaseProperty())
+	initModules.AddProp(properties.GetMiddlewareProp())
 	initModules.RunLoadProperties()
 	
 	r := gin.Default()

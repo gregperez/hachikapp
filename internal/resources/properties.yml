@@ -28,3 +28,7 @@ queues:
     host: localhost
     port: 5672
     prefetch-count: 10
+
+middleware:
+  jwt:
+    secret-key: tuSecretKey

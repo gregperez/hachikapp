@@ -1,10 +1,12 @@
 package instance
 
 import (
-	"jwt/base/internal/core"
-	"jwt/base/internal/core/services"
+	middlewareCore "github.com/WilsonSayago/middleware/core"
+	middlewareService "github.com/WilsonSayago/middleware/core/services"
+	"github.com/WilsonSayago/middleware/infra/config/properties"
+	"jwt/base/internal/core/domain"
 )
 
-func MiddlewareUseCaseInstance() *core.MiddlewareUseCase {
-	return services.GetMiddlewareInstance(GetUserInstance())
+func MiddlewareUseCaseInstance() middlewareCore.MiddlewareUseCase {
+	return middlewareService.GetMiddlewareInstance[domain.User](GetUserInstance(), properties.GetMiddlewareProp())
 }

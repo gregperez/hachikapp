@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	middlewareDomain "github.com/WilsonSayago/middleware/core/domains"
 	"jwt/base/internal/core/domain"
 	"jwt/base/internal/core/ports"
 	"jwt/base/internal/infra/secondary/repositories/dto"
@@ -30,8 +31,8 @@ func (repository *PermissionRepository) Save(v interface{}) error {
 	return nil
 }
 
-func (repository *PermissionRepository) FindById(id string) (interface{}, error) {
-	return nil, nil
+func (repository *PermissionRepository) FindById(id string) (domain.User, error) {
+	return domain.User{}, nil
 }
 
 func (r *PermissionRepository) FindAllByUser(userId string) ([]interface{}, error) {
@@ -39,14 +40,14 @@ func (r *PermissionRepository) FindAllByUser(userId string) ([]interface{}, erro
 	if err != nil {
 		return nil, err
 	}
-
+	
 	list := make([]interface{}, 0)
-
+	
 	for _, permission := range permissions {
-		list = append(list, domain.Permission{
+		list = append(list, middlewareDomain.Permission{
 			Entity: (permission).(dto.PermissionDTO).Entity,
 		})
 	}
-
+	
 	return list, nil
 }

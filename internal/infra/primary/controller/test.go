@@ -1,10 +1,11 @@
 package controller
 
 import (
+	middlewareCore "github.com/WilsonSayago/middleware/core"
+	middlewareDomain "github.com/WilsonSayago/middleware/core/domains"
+	middlewareService "github.com/WilsonSayago/middleware/core/services"
 	"github.com/gin-gonic/gin"
-	"jwt/base/internal/core"
 	"jwt/base/internal/core/domain"
-	"jwt/base/internal/core/services"
 	"net/http"
 	"sync"
 )
@@ -15,11 +16,11 @@ var (
 )
 
 type TestController struct {
-	middleware *core.MiddlewareUseCase
+	middleware middlewareCore.MiddlewareUseCase
 	r          *gin.Engine
 }
 
-func GetTestControllerInstance(middleware *core.MiddlewareUseCase, r *gin.Engine) *TestController {
+func GetTestControllerInstance(middleware middlewareCore.MiddlewareUseCase, r *gin.Engine) *TestController {
 	testOnce.Do(func() {
 		testInstance = &TestController{
 			middleware: middleware,
@@ -29,13 +30,14 @@ func GetTestControllerInstance(middleware *core.MiddlewareUseCase, r *gin.Engine
 	return testInstance
 }
 
-func (db *TestController) Start() {
-	db.RunController()
+func (o *TestController) Start() {
+	o.RunController()
 }
 
 func (o *TestController) RunController() {
 	(*o.r).GET("/v1/test", func(c *gin.Context) {
-		response, _ := services.GetToken("1")
+		response, _ := o.middleware.GetToken("1")
+		//response, _ := middlewareService.GetToken("1")
 		
 		c.JSON(200, response)
 		//c.JSON(http.StatusNotFound, response)
@@ -43,16 +45,18 @@ func (o *TestController) RunController() {
 	
 	// Grupo de rutas protegidas
 	protected := (*o.r).Group("/v2")
-	protected.Use((*o.middleware).AuthorizeJWT())
+	protected.Use(o.middleware.AuthorizeJWT())
 	{
-		protected.GET("/test", services.PoliciesGuard(funcName(), domain.USERS, domain.READ))
-		protected.POST("/test-post", services.PoliciesGuard(funcPost(), domain.USERS, domain.READ))
+		protected.GET("/test", middlewareService.PoliciesGuard(o.funcName(),
+			middlewareDomain.USERS, middlewareDomain.READ))
+		protected.POST("/test-post", middlewareService.PoliciesGuard(funcPost(),
+			middlewareDomain.USERS, middlewareDomain.READ))
 	}
 }
 
-func funcName() func(c *gin.Context) {
+func (o *TestController) funcName() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		response := "test2"
+		response := middlewareService.GetUserToken[domain.User](c)
 		c.JSON(200, response)
 	}
 }

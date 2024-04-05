@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"jwt/base/internal/core/domain"
+	middlewareDomain "github.com/WilsonSayago/middleware/core/domains"
 )
 
 type UserDTO struct {
@@ -13,9 +13,9 @@ type UserDTO struct {
 }
 
 type PermissionDTO struct {
-	Entity domain.EntityEnum `bson:"entity,omitempty"`
-	Create bool              `bson:"create,omitempty"`
-	Read   bool              `bson:"read,omitempty"`
-	Update bool              `bson:"update,omitempty"`
-	Delete bool              `bson:"delete,omitempty"`
+	Entity middlewareDomain.EntityEnum `bson:"entity,omitempty"`
+	Create bool                        `bson:"create,omitempty"`
+	Read   bool                        `bson:"read,omitempty"`
+	Update bool                        `bson:"update,omitempty"`
+	Delete bool                        `bson:"delete,omitempty"`
 }

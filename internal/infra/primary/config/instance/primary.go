@@ -15,7 +15,6 @@ func GetDatabasePersistencePgxInstance() initModules.IProcess {
 
 func UserControllerInstance(r *gin.Engine) initModules.IProcess {
 	return controller.GetUserControllerInstance(
-		MiddlewareUseCaseInstance(),
 		AuthenticationUseCaseInstance(),
 		AuthorizationUseCaseInstance(),
 		UserUseCaseInstance(),

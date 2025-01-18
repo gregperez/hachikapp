@@ -1,8 +1,8 @@
 package repositories
 
 import (
+	authBaseDomain "github.com/WilsonSayago/authBase/core/domains"
 	"github.com/WilsonSayago/initModules"
-	middlewareDomain "github.com/WilsonSayago/middleware/core/domains"
 	"jwt/base/internal/core/ports"
 	"jwt/base/internal/infra/secondary/repositories/postgres/dao"
 	//"sync"
@@ -21,16 +21,16 @@ func NewPermissionInstance(permissionDao dao.IPermissionDao) ports.PermissionPor
 	return instance.(*PermissionRepository)
 }
 
-func (r *PermissionRepository) FindAllByUser(userId string) ([]middlewareDomain.Permission, error) {
+func (r *PermissionRepository) FindAllByUser(userId string) ([]authBaseDomain.Permission, error) {
 	permissions, err := (r.permissionDao).FindAllByUserId(userId)
 	if err != nil {
 		return nil, err
 	}
 
-	list := make([]middlewareDomain.Permission, 0)
+	list := make([]authBaseDomain.Permission, 0)
 
 	for _, permission := range permissions {
-		list = append(list, middlewareDomain.Permission{
+		list = append(list, authBaseDomain.Permission{
 			Entity: permission.Entity,
 			Create: permission.Create,
 			Read:   permission.Read,

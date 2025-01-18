@@ -1,7 +1,7 @@
 package core
 
 import (
-	"github.com/WilsonSayago/middleware/core"
+	"github.com/WilsonSayago/authBase/core"
 	"jwt/base/internal/core/domain"
 )
 

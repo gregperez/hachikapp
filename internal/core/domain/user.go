@@ -1,7 +1,7 @@
 package domain
 
-import middlewareDomain "github.com/WilsonSayago/middleware/core/domains"
+import authBaseDomain "github.com/WilsonSayago/authBase/core/domains"
 
 type User struct {
-	middlewareDomain.UserGeneric
+	authBaseDomain.UserGeneric
 }

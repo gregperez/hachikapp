@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/WilsonSayago/authBase/infra/config/properties"
 	"github.com/WilsonSayago/initModules"
-	"github.com/WilsonSayago/middleware/infra/config/properties"
 	"github.com/gin-gonic/gin"
 	"jwt/base/internal/infra/primary/config/instance"
 	"jwt/base/internal/infra/primary/config/prop"

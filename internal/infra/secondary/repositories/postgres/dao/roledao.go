@@ -2,8 +2,8 @@ package dao
 
 import (
 	"fmt"
+	domain "github.com/WilsonSayago/authBase/core/domains"
 	"github.com/WilsonSayago/initModules"
-	domain "github.com/WilsonSayago/middleware/core/domains"
 	log "github.com/sirupsen/logrus"
 	"jwt/base/internal/infra/primary/config/database"
 	"jwt/base/internal/infra/secondary/repositories/dto"

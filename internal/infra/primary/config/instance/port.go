@@ -1,8 +1,8 @@
 package instance
 
 import (
-	portsAuthBase "github.com/WilsonSayago/middleware/core/ports"
-	"github.com/WilsonSayago/middleware/infra/secundary"
+	portsAuthBase "github.com/WilsonSayago/authBase/core/ports"
+	"github.com/WilsonSayago/authBase/infra/secundary"
 	"jwt/base/internal/core/ports"
 	"jwt/base/internal/infra/primary/config/database"
 	"jwt/base/internal/infra/secondary/repositories"

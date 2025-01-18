@@ -1,8 +1,8 @@
 package repositories
 
 import (
+	authBaseDomain "github.com/WilsonSayago/authBase/core/domains"
 	"github.com/WilsonSayago/initModules"
-	middlewareDomain "github.com/WilsonSayago/middleware/core/domains"
 	"jwt/base/internal/core/domain"
 	"jwt/base/internal/core/ports"
 	"jwt/base/internal/infra/secondary/repositories/dto"
@@ -20,7 +20,7 @@ func (repository *UserRepository) FindByEmail(email string) (domain.User, error)
 	if err != nil {
 		return domain.User{}, err
 	}
-
+	
 	user := toUserDomain(userDTO)
 	return user, nil
 }
@@ -40,13 +40,13 @@ func (repository *UserRepository) FindFullById(id string) (domain.User, error) {
 	if err != nil {
 		return domain.User{}, err
 	}
-
+	
 	user.Roles, err = repository.roleDao.FindAllByUserId(user.Id)
-
+	
 	if err != nil {
 		return domain.User{}, err
 	}
-
+	
 	return toUserDomain(user), nil
 }
 
@@ -69,7 +69,7 @@ func (repository *UserRepository) FindById(id string) (domain.User, error) {
 	if err != nil {
 		return domain.User{}, err
 	}
-
+	
 	return toUserDomain(user), nil
 }
 
@@ -78,7 +78,7 @@ func (repository *UserRepository) FindAll() ([]domain.User, error) {
 	if err != nil {
 		return []domain.User{}, err
 	}
-
+	
 	list := make([]domain.User, 0)
 	for _, user := range users {
 		list = append(list, toUserDomain(user))
@@ -88,7 +88,7 @@ func (repository *UserRepository) FindAll() ([]domain.User, error) {
 
 func toUserDomain(user dto.UserDTO) domain.User {
 	return domain.User{
-		UserGeneric: middlewareDomain.NewUserGeneric(
+		UserGeneric: authBaseDomain.NewUserGeneric(
 			user.Id,
 			user.Email,
 			user.Password,
@@ -97,11 +97,11 @@ func toUserDomain(user dto.UserDTO) domain.User {
 	}
 }
 
-func ToRole(roles []dto.RoleDTO) []middlewareDomain.Role {
-	var role []middlewareDomain.Role
+func ToRole(roles []dto.RoleDTO) []authBaseDomain.Role {
+	var role []authBaseDomain.Role
 	for _, roleDto := range roles {
-		role = append(role, middlewareDomain.Role{
-			Base: middlewareDomain.Base{
+		role = append(role, authBaseDomain.Role{
+			Base: authBaseDomain.Base{
 				Id: roleDto.Id,
 			},
 			Name:        roleDto.Name,
@@ -111,7 +111,7 @@ func ToRole(roles []dto.RoleDTO) []middlewareDomain.Role {
 	return role
 }
 
-func ToPermissionDTO(permissions []middlewareDomain.Permission) []dto.PermissionDTO {
+func ToPermissionDTO(permissions []authBaseDomain.Permission) []dto.PermissionDTO {
 	var permissionDTO []dto.PermissionDTO
 	for _, permission := range permissions {
 		permissionDTO = append(permissionDTO, dto.PermissionDTO{
@@ -125,10 +125,10 @@ func ToPermissionDTO(permissions []middlewareDomain.Permission) []dto.Permission
 	return permissionDTO
 }
 
-func ToPermission(permissionsDto []dto.PermissionDTO) []middlewareDomain.Permission {
-	var permission []middlewareDomain.Permission
+func ToPermission(permissionsDto []dto.PermissionDTO) []authBaseDomain.Permission {
+	var permission []authBaseDomain.Permission
 	for _, permissionDto := range permissionsDto {
-		permission = append(permission, middlewareDomain.Permission{
+		permission = append(permission, authBaseDomain.Permission{
 			Entity: permissionDto.Entity,
 			Create: permissionDto.Create,
 			Read:   permissionDto.Read,

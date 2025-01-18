@@ -1,7 +1,7 @@
 package ports
 
 import (
-	middlewarePorts "github.com/WilsonSayago/middleware/core/ports"
+	middlewarePorts "github.com/WilsonSayago/authBase/core/ports"
 	"jwt/base/internal/core/domain"
 )
 

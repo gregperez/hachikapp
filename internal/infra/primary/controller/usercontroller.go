@@ -1,9 +1,9 @@
 package controller
 
 import (
+	authBaseCore "github.com/WilsonSayago/authBase/core"
+	authBaseDomain "github.com/WilsonSayago/authBase/core/domains"
 	"github.com/WilsonSayago/initModules"
-	middlewareCore "github.com/WilsonSayago/middleware/core"
-	middlewareDomain "github.com/WilsonSayago/middleware/core/domains"
 	"github.com/gin-gonic/gin"
 	"jwt/base/internal/core"
 	"jwt/base/internal/core/domain"
@@ -12,22 +12,19 @@ import (
 )
 
 type UserController struct {
-	middleware            middlewareCore.MiddlewareUseCase
-	authenticationService middlewareCore.AuthenticationUseCase
-	authorizationService  middlewareCore.AuthorizationUseCase[domain.User, *gin.Context]
+	authenticationService authBaseCore.AuthenticationUseCase
+	authorizationService  authBaseCore.AuthorizationUseCase[domain.User, *gin.Context]
 	userService           core.IUserUseCase
 	r                     *gin.Engine
 }
 
 func GetUserControllerInstance(
-	middleware middlewareCore.MiddlewareUseCase,
-	authenticationService middlewareCore.AuthenticationUseCase,
-	authorizationService middlewareCore.AuthorizationUseCase[domain.User, *gin.Context],
+	authenticationService authBaseCore.AuthenticationUseCase,
+	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *gin.Context],
 	userService core.IUserUseCase,
 	r *gin.Engine) *UserController {
 	instance := initModules.GetInstance("UserController", func() interface{} {
 		return &UserController{
-			middleware:            middleware,
 			authenticationService: authenticationService,
 			authorizationService:  authorizationService,
 			userService:           userService,
@@ -65,7 +62,7 @@ func (userC *UserController) RunController() {
 	{
 		protected.GET("/",
 			userC.authorizationService.PoliciesGuard(userC.GetAll(), nil,
-				"USERS", middlewareDomain.READ))
+				"USERS", authBaseDomain.READ))
 	}
 }
 

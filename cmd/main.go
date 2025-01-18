@@ -17,23 +17,20 @@ const (
 )
 
 func main() {
-	
+
 	initModules.SetFilePath(initModules.YML, propertiesFile)
-	initModules.AddProp(prop.GetQueueProp())
-	initModules.AddProp(prop.GetDatabaseMongoProperty())
-	initModules.AddProp(prop.GetDatabaseProperty())
-	initModules.AddProp(properties.GetMiddlewareProp())
+
+	initModules.AddProp(initModules.NewInstance[prop.DatabaseProperty]().GetInstance(prop.NewDatabaseProperty))
+	//initModules.AddProp(initModules.NewInstance[properties.MiddlewareProp]().GetInstance(properties.NewMiddlewareProp))
+	initModules.AddProp(initModules.NewInstance[properties.JwtProp]().GetInstance(properties.NewJwtProp))
+
 	initModules.RunLoadProperties()
-	
+
 	r := gin.Default()
-	
+
 	initModules.RegisterProcess(instance.GetDatabasePersistencePgxInstance())
-	initModules.RegisterProcess(instance.GetDatabasePersistenceMongoInstance())
-	initModules.RegisterProcess(instance.TestControllerInstance(r))
-	initModules.RegisterProcess(instance.TestSubscription())
+	initModules.RegisterProcess(instance.UserControllerInstance(r))
 	initModules.Init(true, true)
-	
-	//controller.GetTestControllerInstance().RunController(r, config.AuthorizeJWT())
-	
+
 	r.Run()
 }

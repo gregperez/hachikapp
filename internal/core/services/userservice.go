@@ -1,0 +1,37 @@
+package services
+
+import (
+	"github.com/WilsonSayago/initModules"
+	"jwt/base/internal/core"
+	"jwt/base/internal/core/domain"
+	"jwt/base/internal/core/ports"
+)
+
+type UserService struct {
+	userRepository ports.UserPort
+}
+
+func GetUserServiceInstance(userRepository ports.UserPort) core.IUserUseCase {
+	instance := initModules.GetInstance("UserService", func() interface{} {
+		return &UserService{
+			userRepository: userRepository,
+		}
+	})
+	return instance.(*UserService)
+}
+
+func (s *UserService) FindAll() ([]domain.User, error) {
+	return s.userRepository.FindAll()
+}
+
+func (s *UserService) FindByEmail(email string) (domain.User, error) {
+	return s.userRepository.FindByEmail(email)
+}
+
+func (s *UserService) FindFullById(id string) (domain.User, error) {
+	user, err := s.userRepository.FindFullById(id)
+	if err != nil {
+		return domain.User{}, err
+	}
+	return user, nil
+}

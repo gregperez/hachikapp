@@ -13,22 +13,11 @@ datasource:
   user: postgres #'${DB_USER}'
   password: postgres #'${DB_PASS}'
   dbMaxConns: 10 #${DB_MAX_CONNS}
-datasourcemongo:
-  url: mongodb://localhost:27017/ #'${DB_URL}'
 log:
   level: info
-
-
-queues:
-  rabbitmq:
-    name-queue: test
-    protocol: amqp
-    user: admin
-    pass: admin
-    host: localhost
-    port: 5672
-    prefetch-count: 10
 
 middleware:
   jwt:
     secret-key: tuSecretKey
+jwt:
+  secret-key: tuSecretKey

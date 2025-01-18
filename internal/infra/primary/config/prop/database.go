@@ -1,20 +1,5 @@
 package prop
 
-import "sync"
-
-var (
-	databasePropertyInstanceOnce sync.Once
-	databasePropertyInstance     *DatabaseProperty
-)
-
-func GetDatabaseProperty() *DatabaseProperty {
-	databasePropertyInstanceOnce.Do(func() {
-		databasePropertyInstance = &DatabaseProperty{}
-	})
-	
-	return databasePropertyInstance
-}
-
 type DatabaseProperty struct {
 	DataSource `yaml:"datasource"`
 }
@@ -26,4 +11,8 @@ type DataSource struct {
 	User       string `yaml:"user"`
 	Password   string `yaml:"password"`
 	DbMaxConns int32  `yaml:"dbMaxConns"`
+}
+
+func NewDatabaseProperty() DatabaseProperty {
+	return DatabaseProperty{}
 }

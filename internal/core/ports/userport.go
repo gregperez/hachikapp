@@ -5,7 +5,8 @@ import (
 	"jwt/base/internal/core/domain"
 )
 
-type RepositoryPort interface {
+type UserPort interface {
 	middlewarePorts.GenericPort[domain.User]
 	Save(v interface{}) error
+	FindAll() ([]domain.User, error)
 }

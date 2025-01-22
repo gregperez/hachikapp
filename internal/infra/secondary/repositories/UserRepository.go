@@ -20,7 +20,7 @@ func (repository *UserRepository) FindByEmail(email string) (domain.User, error)
 	if err != nil {
 		return domain.User{}, err
 	}
-	
+
 	user := toUserDomain(userDTO)
 	return user, nil
 }
@@ -40,13 +40,13 @@ func (repository *UserRepository) FindFullById(id string) (domain.User, error) {
 	if err != nil {
 		return domain.User{}, err
 	}
-	
+
 	user.Roles, err = repository.roleDao.FindAllByUserId(user.Id)
-	
+
 	if err != nil {
 		return domain.User{}, err
 	}
-	
+
 	return toUserDomain(user), nil
 }
 
@@ -69,7 +69,7 @@ func (repository *UserRepository) FindById(id string) (domain.User, error) {
 	if err != nil {
 		return domain.User{}, err
 	}
-	
+
 	return toUserDomain(user), nil
 }
 
@@ -78,7 +78,7 @@ func (repository *UserRepository) FindAll() ([]domain.User, error) {
 	if err != nil {
 		return []domain.User{}, err
 	}
-	
+
 	list := make([]domain.User, 0)
 	for _, user := range users {
 		list = append(list, toUserDomain(user))

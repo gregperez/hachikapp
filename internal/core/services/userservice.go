@@ -35,3 +35,7 @@ func (s *UserService) FindFullById(id string) (domain.User, error) {
 	}
 	return user, nil
 }
+
+func (s *UserService) Create(user domain.User) error {
+	return s.userRepository.Save(user)
+}

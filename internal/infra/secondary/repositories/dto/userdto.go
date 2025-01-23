@@ -2,6 +2,7 @@ package dto
 
 type UserDTO struct {
 	BaseDTO
+	Name        string          `bson:"name,omitempty"`
 	Email       string          `bson:"email,omitempty"`
 	Password    string          `bson:"password,omitempty"`
 	Permissions []PermissionDTO `bson:"permissions,omitempty"`

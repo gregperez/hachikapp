@@ -1,7 +1,9 @@
 package repositories
 
 import (
+	"fmt"
 	authBaseDomain "github.com/WilsonSayago/authBase/core/domains"
+	authBasePorts "github.com/WilsonSayago/authBase/core/ports"
 	"github.com/WilsonSayago/initModules"
 	"jwt/base/internal/core/domain"
 	"jwt/base/internal/core/ports"
@@ -10,9 +12,9 @@ import (
 )
 
 type UserRepository struct {
-	userDao       dao.IUserDao
-	roleDao       dao.IRoleDao
-	permissionDao dao.IPermissionDao
+	userDao           dao.IUserDao
+	roleDao           dao.IRoleDao
+	validationService authBasePorts.ValidationPort
 }
 
 func (repository *UserRepository) FindByEmail(email string) (domain.User, error) {
@@ -25,11 +27,12 @@ func (repository *UserRepository) FindByEmail(email string) (domain.User, error)
 	return user, nil
 }
 
-func NewUserInstance(userDao dao.IUserDao, roleDao dao.IRoleDao) ports.UserPort {
+func NewUserInstance(userDao dao.IUserDao, roleDao dao.IRoleDao, validationService authBasePorts.ValidationPort) ports.UserPort {
 	instance := initModules.GetInstance("UserRepository", func() interface{} {
 		return &UserRepository{
-			userDao: userDao,
-			roleDao: roleDao,
+			userDao:           userDao,
+			roleDao:           roleDao,
+			validationService: validationService,
 		}
 	})
 	return instance.(*UserRepository)
@@ -50,14 +53,27 @@ func (repository *UserRepository) FindFullById(id string) (domain.User, error) {
 	return toUserDomain(user), nil
 }
 
-func (repository *UserRepository) Save(v interface{}) error {
-	var userDTO = dto.UserDTO{
-		Email:       (v.(*domain.User)).GetEmail(),
-		Password:    v.(*domain.User).GetPassword(),
-		Permissions: ToPermissionDTO(v.(*domain.User).GetPermissions()),
-		IsAdmin:     v.(*domain.User).GetIsAdmin(),
+func (repository *UserRepository) Save(v domain.User) error {
+	// find user by email
+	userFound, err := (repository.userDao).FindByEmail(v.GetEmail())
+	if err != nil {
+		return err
 	}
-	err := (repository.userDao).Save(userDTO)
+	if userFound.Id != "" {
+		return fmt.Errorf("user already exists")
+	}
+
+	hashedPassword, err := (repository.validationService).HashPassword(v.GetPassword())
+	if err != nil {
+		return err
+	}
+	var userDTO = dto.UserDTO{
+		Name:     v.GetName(),
+		Email:    v.GetEmail(),
+		Password: hashedPassword,
+		IsAdmin:  v.GetIsAdmin(),
+	}
+	err = (repository.userDao).Save(userDTO)
 	if err != nil {
 		return err
 	}
@@ -90,6 +106,7 @@ func toUserDomain(user dto.UserDTO) domain.User {
 	return domain.User{
 		UserGeneric: authBaseDomain.NewUserGeneric(
 			user.Id,
+			user.Name,
 			user.Email,
 			user.Password,
 			ToRole(user.Roles),

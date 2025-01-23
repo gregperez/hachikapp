@@ -7,6 +7,6 @@ import (
 
 type UserPort interface {
 	middlewarePorts.GenericPort[domain.User]
-	Save(v interface{}) error
+	Save(u domain.User) error
 	FindAll() ([]domain.User, error)
 }

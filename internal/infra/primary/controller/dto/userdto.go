@@ -1,6 +1,8 @@
 package dto
 
 type UserDto struct {
-	Email   string `bson:"email,omitempty"`
-	IsAdmin bool   `bson:"isAdmin,omitempty"`
+	Name     string `bson:"name,omitempty"`
+	Email    string `bson:"email,omitempty"`
+	Password string `bson:"password,omitempty"`
+	IsAdmin  bool   `bson:"isAdmin,omitempty"`
 }

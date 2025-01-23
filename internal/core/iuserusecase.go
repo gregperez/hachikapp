@@ -9,4 +9,5 @@ type IUserUseCase interface {
 	core.GenericUseCase[domain.User]
 	FindAll() ([]domain.User, error)
 	FindByEmail(email string) (domain.User, error)
+	Create(user domain.User) error
 }

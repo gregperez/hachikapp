@@ -63,6 +63,9 @@ func (userC *UserController) RunController() {
 		protected.GET("/",
 			userC.authorizationService.PoliciesGuard(userC.GetAll(), nil,
 				"USERS", authBaseDomain.READ))
+		protected.POST("/",
+			userC.authorizationService.PoliciesGuard(userC.Create(), nil,
+				"USERS", authBaseDomain.CREATE))
 	}
 }
 
@@ -78,5 +81,31 @@ func (userC *UserController) GetAll() func(c *gin.Context) {
 			list = append(list, dto.UserDto{Email: user.GetEmail(), IsAdmin: user.GetIsAdmin()})
 		}
 		c.JSON(http.StatusOK, list)
+	}
+}
+
+func (userC *UserController) Create() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		var userDto dto.UserDto
+		if err := c.ShouldBindJSON(&userDto); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		user := domain.User{
+			UserGeneric: authBaseDomain.NewUserGeneric(
+				"",
+				userDto.Name,
+				userDto.Email,
+				userDto.Password,
+				nil,
+				userDto.IsAdmin,
+			),
+		}
+		err := userC.userService.Create(user)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+		} else {
+			c.JSON(http.StatusOK, nil)
+		}
 	}
 }

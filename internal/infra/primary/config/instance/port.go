@@ -12,7 +12,7 @@ import (
 func GetUserRepositoryInstance() ports.UserPort {
 	// ToDo: Postgresql return repositories.NewUserInstance(GetUserDaoInstance())
 	//return repositories.NewUserInstance(GetUserMongoDaoInstance())
-	return repositories.NewUserInstance(GetUserDaoInstance(), GetRoleDaoInstance())
+	return repositories.NewUserInstance(GetUserDaoInstance(), GetRoleDaoInstance(), GetValidationService())
 }
 
 func GetUserDaoInstance() pg.IUserDao {

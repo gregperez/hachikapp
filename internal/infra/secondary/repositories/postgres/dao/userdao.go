@@ -3,7 +3,6 @@ package dao
 import (
 	"github.com/WilsonSayago/initModules"
 	log "github.com/sirupsen/logrus"
-	"jwt/base/internal/core/domain"
 	"jwt/base/internal/infra/primary/config/database"
 	"jwt/base/internal/infra/secondary/repositories/dto"
 )
@@ -26,13 +25,13 @@ func NewUserDaoInstance(db *database.Database) IUserDao {
 	return instance.(*UserDao)
 }
 
-func (c *UserDao) Save(user interface{}) error {
-	query := "INSERT INTO public.countries (email, password, permissions, is_admin) VALUES($1, $2, $3, $4)"
+func (c *UserDao) Save(user dto.UserDTO) error {
+	query := "INSERT INTO public.users (name, email, password, is_admin) VALUES($1, $2, $3, $4)"
 	err := (*c.DbPgx4).Exec(query,
-		user.(*domain.User).GetEmail(),
-		user.(*domain.User).GetPassword(),
-		user.(*domain.User).GetPermissions(),
-		user.(*domain.User).GetIsAdmin(),
+		user.Name,
+		user.Email,
+		user.Password,
+		user.IsAdmin,
 	)
 	if err != nil {
 		log.Errorf("error in Save User, error: %s", err.Error())

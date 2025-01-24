@@ -1,7 +1,7 @@
 package ports
 
 import (
-	domain "github.com/WilsonSayago/authBase/core/domains"
+	domain "github.com/WilsonSayago/authBase/core/domain"
 )
 
 type PermissionPort interface {

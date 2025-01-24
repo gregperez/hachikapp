@@ -3,8 +3,8 @@ package instance
 import (
 	"github.com/WilsonSayago/initModules"
 	"github.com/gin-gonic/gin"
-	"jwt/base/internal/infra/primary/config/database"
-	"jwt/base/internal/infra/primary/config/prop"
+	"jwt/base/internal/infra/config/database"
+	"jwt/base/internal/infra/config/prop"
 	"jwt/base/internal/infra/primary/controller"
 )
 
@@ -18,5 +18,12 @@ func UserControllerInstance(r *gin.Engine) initModules.IProcess {
 		AuthenticationUseCaseInstance(),
 		AuthorizationUseCaseInstance(),
 		UserUseCaseInstance(),
+		r)
+}
+
+func RoleControllerInstance(r *gin.Engine) initModules.IProcess {
+	return controller.GetRoleControllerInstance(
+		AuthorizationUseCaseInstance(),
+		RoleUseCaseInstance(),
 		r)
 }

@@ -2,8 +2,8 @@ package repositories
 
 import (
 	"fmt"
-	authBaseDomain "github.com/WilsonSayago/authBase/core/domains"
-	authBasePorts "github.com/WilsonSayago/authBase/core/ports"
+	authBaseDomain "github.com/WilsonSayago/authBase/core/domain"
+	authBasePorts "github.com/WilsonSayago/authBase/core/port"
 	"github.com/WilsonSayago/initModules"
 	"jwt/base/internal/core/domain"
 	"jwt/base/internal/core/ports"
@@ -103,29 +103,19 @@ func (repository *UserRepository) FindAll() ([]domain.User, error) {
 }
 
 func toUserDomain(user dto.UserDTO) domain.User {
+	var roles []authBaseDomain.Role
+	for _, role := range user.Roles {
+		roles = append(roles, ToRoleDomain(role))
+	}
 	return domain.User{
 		UserGeneric: authBaseDomain.NewUserGeneric(
 			user.Id,
 			user.Name,
 			user.Email,
 			user.Password,
-			ToRole(user.Roles),
+			roles,
 			user.IsAdmin),
 	}
-}
-
-func ToRole(roles []dto.RoleDTO) []authBaseDomain.Role {
-	var role []authBaseDomain.Role
-	for _, roleDto := range roles {
-		role = append(role, authBaseDomain.Role{
-			Base: authBaseDomain.Base{
-				Id: roleDto.Id,
-			},
-			Name:        roleDto.Name,
-			Permissions: ToPermission(roleDto.Permissions),
-		})
-	}
-	return role
 }
 
 func ToPermissionDTO(permissions []authBaseDomain.Permission) []dto.PermissionDTO {

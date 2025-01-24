@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/WilsonSayago/initModules"
 	log "github.com/sirupsen/logrus"
-	"jwt/base/internal/infra/primary/config/database"
+	"jwt/base/internal/infra/config/database"
 	"jwt/base/internal/infra/secondary/repositories/dto"
 )
 

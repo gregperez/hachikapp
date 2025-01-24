@@ -27,3 +27,7 @@ func AuthorizationUseCaseInstance() authBaseCore.AuthorizationUseCase[domain.Use
 func UserUseCaseInstance() core.IUserUseCase {
 	return services.GetUserServiceInstance(GetUserRepositoryInstance())
 }
+
+func RoleUseCaseInstance() authBaseCore.RoleUseCase {
+	return middlewareService.GetRoleServiceInstance(GetRoleRepositoryInstance())
+}

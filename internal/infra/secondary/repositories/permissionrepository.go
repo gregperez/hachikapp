@@ -1,7 +1,7 @@
 package repositories
 
 import (
-	authBaseDomain "github.com/WilsonSayago/authBase/core/domains"
+	authBaseDomain "github.com/WilsonSayago/authBase/core/domain"
 	"github.com/WilsonSayago/initModules"
 	"jwt/base/internal/core/ports"
 	"jwt/base/internal/infra/secondary/repositories/postgres/dao"

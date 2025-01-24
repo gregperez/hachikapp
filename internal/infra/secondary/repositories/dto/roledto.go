@@ -1,6 +1,6 @@
 package dto
 
-import domain "github.com/WilsonSayago/authBase/core/domains"
+import domain "github.com/WilsonSayago/authBase/core/domain"
 
 type RoleDTO struct {
 	BaseDTO

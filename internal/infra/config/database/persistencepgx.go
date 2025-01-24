@@ -6,7 +6,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
-	"jwt/base/internal/infra/primary/config/prop"
+	"jwt/base/internal/infra/config/prop"
 	"sync"
 )
 
@@ -37,7 +37,7 @@ func NewConnectionPostgresPgx(prop *prop.DatabaseProperty) *PostgresPgx {
 	databasePostgresSQLDBOnce.Do(func() {
 		/*psqlInfo := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
 		prop.User, prop.Password, prop.Host, prop.Port, prop.Name)*/
-		
+
 		psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable", prop.Host, prop.Port, prop.User, prop.Password, prop.Name)
 		cnxCfg, err := pgxpool.ParseConfig(psqlInfo)
 		cnxCfg.MaxConns = prop.DbMaxConns
@@ -45,9 +45,9 @@ func NewConnectionPostgresPgx(prop *prop.DatabaseProperty) *PostgresPgx {
 		if err != nil {
 			log.Fatalf("could not create database connection: %v", err)
 		}
-		
+
 		log.Info("Connection successfully to database")
-		
+
 		databasePostgresPgxSingleton = &PostgresPgx{pool, context.Background()}
 	})
 	return databasePostgresPgxSingleton
@@ -59,7 +59,7 @@ func GetDatabasePostgresPgx() *PostgresPgx {
 
 func (db *PostgresPgx) Start() {
 	log.Info("Started database connection/ping")
-	
+
 	err := db.pool.Ping(context.Background())
 	if err != nil {
 		log.Fatalf("database is unreachable: %v", err)

@@ -2,7 +2,7 @@ package controller
 
 import (
 	authBaseCore "github.com/WilsonSayago/authBase/core"
-	authBaseDomain "github.com/WilsonSayago/authBase/core/domains"
+	authBaseDomain "github.com/WilsonSayago/authBase/core/domain"
 	"github.com/WilsonSayago/initModules"
 	"github.com/gin-gonic/gin"
 	"jwt/base/internal/core"

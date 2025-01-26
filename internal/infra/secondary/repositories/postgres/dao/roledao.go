@@ -170,3 +170,24 @@ func (r *RoleDao) FindByName(name string) (dto.RoleDTO, error) {
 		Permissions: permissions,
 	}, nil
 }
+
+func (r *RoleDao) Update(role dto.RoleDTO) (dto.RoleDTO, error) {
+	query := "update public.roles set name = $1, routes = $2, permissions = $3 where id = $4 returning id;"
+	row := (*r.DbPgx4).QueryRow(query, role.Name, role.Routes, role.Permissions, role.Id)
+
+	var id string
+	err := row.Scan(&id)
+	if err != nil {
+		log.Errorf("error in Update Role, error: %s", err.Error())
+		return dto.RoleDTO{}, err
+	}
+
+	return dto.RoleDTO{
+		BaseDTO: dto.BaseDTO{
+			Id: id,
+		},
+		Name:        role.Name,
+		Routes:      role.Routes,
+		Permissions: role.Permissions,
+	}, nil
+}

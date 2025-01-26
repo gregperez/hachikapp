@@ -45,9 +45,10 @@ func (roleC *RoleController) RunController() {
 		protected.GET("/:id",
 			roleC.authorizationService.PoliciesGuard(roleC.GetById(), nil,
 				"USERS", authBaseDomain.READ))
-		// endpoint save
 		protected.POST("/", roleC.authorizationService.PoliciesGuard(roleC.Save(), nil,
 			"USERS", authBaseDomain.CREATE))
+		protected.PUT("/:id", roleC.authorizationService.PoliciesGuard(roleC.Update(), nil,
+			"USERS", authBaseDomain.UPDATE))
 	}
 }
 
@@ -139,6 +140,46 @@ func (roleC *RoleController) Save() func(c *gin.Context) {
 		c.JSON(http.StatusCreated, dto.ResponseDto{
 			Status:  http.StatusCreated,
 			Message: "Role created",
+			Data:    nil,
+		})
+	}
+}
+
+// Agrega el método Update en RoleController
+func (roleC *RoleController) Update() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		id := c.Param("id")
+		roleDto := dto.RoleDto{}
+		err := c.ShouldBindJSON(&roleDto)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				Status:  http.StatusBadRequest,
+				Message: "Error binding role",
+				Data:    nil,
+			})
+			return
+		}
+
+		role := authBaseDomain.Role{
+			Base:        authBaseDomain.Base{Id: id},
+			Name:        roleDto.Name,
+			Routes:      roleDto.Routes,
+			Permissions: convertDtoToPermissions(roleDto.Permissions),
+		}
+
+		_, err = roleC.roleService.UpdateRole(role)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				Status:  http.StatusBadRequest,
+				Message: "Error updating role",
+				Data:    nil,
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, dto.ResponseDto{
+			Status:  http.StatusOK,
+			Message: "Role updated",
 			Data:    nil,
 		})
 	}

@@ -60,6 +60,7 @@ func (roleC *RoleController) GetAll() func(c *gin.Context) {
 				Message: "Error getting roles",
 				Data:    nil,
 			})
+			return
 		}
 
 		list := make([]dto.RoleDto, 0)

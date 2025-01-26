@@ -106,6 +106,7 @@ func (r *RoleDao) FindAll() ([]dto.RoleDTO, error) {
 		if err != nil {
 			return nil, fmt.Errorf("could not get roles: %v", err)
 		}
+
 		list = append(list, dto.RoleDTO{
 			BaseDTO: dto.BaseDTO{
 				Id: id,

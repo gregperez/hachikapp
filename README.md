@@ -10,6 +10,13 @@ This project is a Go-based application that uses PostgreSQL for data storage and
 - **github.com/sirupsen/logrus**: A structured logger for Go.
 - **github.com/WilsonSayago/initModules**: A library for initializing modules in a Go application.
 
+## Running PostgreSQL with Docker
+To run a PostgreSQL instance using Docker, use the following command:
+
+```sh
+docker run --name base_golang -e POSTGRES_PASSWORD=postgres -d -p 5432:5432 postgres
+```
+
 ### Internal Packages
 - **jwt/base/internal/core/ports**: Contains the core ports/interfaces for the application.
 - **jwt/base/internal/infra/config/database**: Handles database configuration and connections.

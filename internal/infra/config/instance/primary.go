@@ -1,12 +1,13 @@
 package instance
 
 import (
-	"github.com/WilsonSayago/initModules"
-	"github.com/gin-gonic/gin"
 	"jwt/base/internal/infra/config/database"
 	"jwt/base/internal/infra/config/prop"
 	"jwt/base/internal/infra/config/sql"
 	"jwt/base/internal/infra/primary/controller"
+
+	"github.com/WilsonSayago/initModules"
+	"github.com/gin-gonic/gin"
 )
 
 func GetDatabasePersistencePgxInstance() initModules.IProcess {

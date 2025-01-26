@@ -1,11 +1,12 @@
 package main
 
 import (
+	"jwt/base/internal/infra/config/instance"
+	"jwt/base/internal/infra/config/prop"
+
 	"github.com/WilsonSayago/authBase/infra/config/properties"
 	"github.com/WilsonSayago/initModules"
 	"github.com/gin-gonic/gin"
-	"jwt/base/internal/infra/config/instance"
-	"jwt/base/internal/infra/config/prop"
 )
 
 var (
@@ -25,6 +26,8 @@ func main() {
 	initModules.AddProp(initModules.NewInstance[properties.JwtProp]().GetInstance(properties.NewJwtProp))
 
 	initModules.RunLoadProperties()
+
+	instance.ExecuteMigration()
 
 	r := gin.Default()
 

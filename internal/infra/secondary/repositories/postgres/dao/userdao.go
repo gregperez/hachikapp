@@ -11,11 +11,6 @@ type UserDao struct {
 	DbPgx4 *database.Database
 }
 
-func (c *UserDao) FindByUserId(userId string) ([]interface{}, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func NewUserDaoInstance(db *database.Database) IUserDao {
 	instance := initModules.GetInstance("UserDao", func() interface{} {
 		return &UserDao{
@@ -23,6 +18,11 @@ func NewUserDaoInstance(db *database.Database) IUserDao {
 		}
 	})
 	return instance.(*UserDao)
+}
+
+func (c *UserDao) FindByUserId(userId string) ([]interface{}, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (c *UserDao) Save(user dto.UserDTO) error {

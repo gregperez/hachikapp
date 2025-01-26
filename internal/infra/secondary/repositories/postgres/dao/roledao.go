@@ -1,7 +1,9 @@
 package dao
 
 import (
+	"database/sql"
 	"fmt"
+	"github.com/pkg/errors"
 	"jwt/base/internal/infra/config/database"
 	"jwt/base/internal/infra/secondary/repositories/dto"
 
@@ -150,8 +152,12 @@ func (r *RoleDao) FindByName(name string) (dto.RoleDTO, error) {
 
 	err := row.Scan(&id, &name, &routes, &permissions)
 	if err != nil {
-		log.Errorf("error in FindByName Role, error: %s", err.Error())
-		return dto.RoleDTO{}, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return dto.RoleDTO{}, nil
+		} else {
+			log.Errorf("error in FindByName Role, error: %s", err.Error())
+			return dto.RoleDTO{}, err
+		}
 	}
 
 	return dto.RoleDTO{

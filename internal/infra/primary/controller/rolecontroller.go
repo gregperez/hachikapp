@@ -55,7 +55,11 @@ func (roleC *RoleController) GetAll() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		roles, err := roleC.roleService.GetRoles()
 		if err != nil {
-			c.JSON(http.StatusBadRequest, nil)
+			c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				Status:  http.StatusBadRequest,
+				Message: "Error getting roles",
+				Data:    nil,
+			})
 		}
 
 		list := make([]dto.RoleDto, 0)
@@ -68,7 +72,11 @@ func (roleC *RoleController) GetAll() func(c *gin.Context) {
 			}
 			list = append(list, r)
 		}
-		c.JSON(http.StatusOK, list)
+		c.JSON(http.StatusOK, dto.ResponseDto{
+			Status:  http.StatusOK,
+			Message: "Get roles",
+			Data:    list,
+		})
 	}
 }
 
@@ -77,7 +85,11 @@ func (roleC *RoleController) GetById() func(c *gin.Context) {
 		id := c.Param("id")
 		role, err := roleC.roleService.GetRoleById(id)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, nil)
+			c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				Status:  http.StatusBadRequest,
+				Message: "Error getting role",
+				Data:    nil,
+			})
 		}
 
 		roleDto := dto.RoleDto{
@@ -86,7 +98,11 @@ func (roleC *RoleController) GetById() func(c *gin.Context) {
 			Routes:      role.GetRoutes(),
 			Permissions: convertPermissionsToDto(role.GetPermissions()),
 		}
-		c.JSON(http.StatusOK, roleDto)
+		c.JSON(http.StatusOK, dto.ResponseDto{
+			Status:  http.StatusOK,
+			Message: "Get role",
+			Data:    roleDto,
+		})
 	}
 }
 
@@ -95,7 +111,12 @@ func (roleC *RoleController) Save() func(c *gin.Context) {
 		roleDto := dto.RoleDto{}
 		err := c.ShouldBindJSON(&roleDto)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, nil)
+			c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				Status:  http.StatusBadRequest,
+				Message: "Error binding role",
+				Data:    nil,
+			})
+			return
 		}
 
 		role := authBaseDomain.Role{
@@ -106,10 +127,19 @@ func (roleC *RoleController) Save() func(c *gin.Context) {
 
 		_, err = roleC.roleService.CreateRole(role)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, nil)
+			c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				Status:  http.StatusBadRequest,
+				Message: "Error creating role",
+				Data:    nil,
+			})
+			return
 		}
 
-		c.JSON(http.StatusCreated, nil)
+		c.JSON(http.StatusCreated, dto.ResponseDto{
+			Status:  http.StatusCreated,
+			Message: "Role created",
+			Data:    nil,
+		})
 	}
 }
 

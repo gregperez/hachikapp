@@ -73,14 +73,23 @@ func (userC *UserController) GetAll() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		users, err := userC.userService.FindAll()
 		if err != nil {
-			c.JSON(http.StatusBadRequest, nil)
+			c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				Status:  http.StatusBadRequest,
+				Message: "Error getting all users",
+				Data:    nil,
+			})
+			return
 		}
 
 		list := make([]dto.UserDto, 0)
 		for _, user := range users {
 			list = append(list, dto.UserDto{Email: user.GetEmail(), IsAdmin: user.GetIsAdmin()})
 		}
-		c.JSON(http.StatusOK, list)
+		c.JSON(http.StatusOK, dto.ResponseDto{
+			Status:  http.StatusOK,
+			Message: "Get all users",
+			Data:    list,
+		})
 	}
 }
 
@@ -88,7 +97,11 @@ func (userC *UserController) Create() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		var userDto dto.UserDto
 		if err := c.ShouldBindJSON(&userDto); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				Status:  http.StatusBadRequest,
+				Message: "Error creating user",
+				Data:    nil,
+			})
 			return
 		}
 		user := domain.User{
@@ -103,9 +116,17 @@ func (userC *UserController) Create() func(c *gin.Context) {
 		}
 		err := userC.userService.Create(user)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, err.Error())
+			c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				Status:  http.StatusBadRequest,
+				Message: "Error creating user",
+				Data:    nil,
+			})
 		} else {
-			c.JSON(http.StatusOK, nil)
+			c.JSON(http.StatusOK, dto.ResponseDto{
+				Status:  http.StatusOK,
+				Message: "User created",
+				Data:    nil,
+			})
 		}
 	}
 }

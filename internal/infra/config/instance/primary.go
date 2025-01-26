@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"jwt/base/internal/infra/config/database"
 	"jwt/base/internal/infra/config/prop"
+	"jwt/base/internal/infra/config/sql"
 	"jwt/base/internal/infra/primary/controller"
 )
 
@@ -26,4 +27,8 @@ func RoleControllerInstance(r *gin.Engine) initModules.IProcess {
 		AuthorizationUseCaseInstance(),
 		RoleUseCaseInstance(),
 		r)
+}
+
+func ExecuteMigration() {
+	sql.Migrate("internal/resources/sql/migrations")
 }

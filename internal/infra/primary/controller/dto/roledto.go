@@ -3,8 +3,8 @@ package dto
 import "github.com/WilsonSayago/authBase/core/domain"
 
 type RoleDto struct {
-	Id          string                 `bson:"id,omitempty"`
-	Name        string                 `bson:"name,omitempty"`
-	Routes      []domain.RoutePathEnum `bson:"routes,omitempty"`
-	Permissions []PermissionDto        `bson:"permissions,omitempty"`
+	BaseDto
+	Name        string                 `json:"name,omitempty"`
+	Routes      []domain.RoutePathEnum `json:"routes,omitempty"`
+	Permissions []PermissionDto        `json:"permissions,omitempty"`
 }

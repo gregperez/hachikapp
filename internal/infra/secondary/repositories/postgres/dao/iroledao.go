@@ -8,4 +8,5 @@ type IRoleDao interface {
 	FindAll() ([]dto.RoleDTO, error)
 	Save(role dto.RoleDTO) (dto.RoleDTO, error)
 	FindByName(name string) (dto.RoleDTO, error)
+	ChangeStatus(id string) error
 }

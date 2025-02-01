@@ -47,6 +47,8 @@ func (roleC *RoleController) RunController() {
 				"USERS", authBaseDomain.READ))
 		protected.POST("/", roleC.authorizationService.PoliciesGuard(roleC.Save(), nil,
 			"USERS", authBaseDomain.CREATE))
+		protected.PUT("/change-status/:id", roleC.authorizationService.PoliciesGuard(roleC.ChangeStatus(), nil,
+			"USERS", authBaseDomain.UPDATE))
 		protected.PUT("/:id", roleC.authorizationService.PoliciesGuard(roleC.Update(), nil,
 			"USERS", authBaseDomain.UPDATE))
 	}
@@ -67,7 +69,10 @@ func (roleC *RoleController) GetAll() func(c *gin.Context) {
 		list := make([]dto.RoleDto, 0)
 		for _, role := range roles {
 			var r dto.RoleDto = dto.RoleDto{
-				Id:          role.GetId(),
+				BaseDto: dto.BaseDto{
+					Id:     role.GetId(),
+					Active: role.GetActive(),
+				},
 				Name:        role.GetName(),
 				Routes:      role.GetRoutes(),
 				Permissions: convertPermissionsToDto(role.GetPermissions()),
@@ -95,7 +100,10 @@ func (roleC *RoleController) GetById() func(c *gin.Context) {
 		}
 
 		roleDto := dto.RoleDto{
-			Id:          role.GetId(),
+			BaseDto: dto.BaseDto{
+				Id:     role.GetId(),
+				Active: role.GetActive(),
+			},
 			Name:        role.GetName(),
 			Routes:      role.GetRoutes(),
 			Permissions: convertPermissionsToDto(role.GetPermissions()),
@@ -145,7 +153,6 @@ func (roleC *RoleController) Save() func(c *gin.Context) {
 	}
 }
 
-// Agrega el método Update en RoleController
 func (roleC *RoleController) Update() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id := c.Param("id")
@@ -180,6 +187,27 @@ func (roleC *RoleController) Update() func(c *gin.Context) {
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
 			Message: "Role updated",
+			Data:    nil,
+		})
+	}
+}
+
+func (roleC *RoleController) ChangeStatus() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		id := c.Param("id")
+		err := roleC.roleService.ChangeStatus(id)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				Status:  http.StatusBadRequest,
+				Message: "Error disabling role",
+				Data:    nil,
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, dto.ResponseDto{
+			Status:  http.StatusOK,
+			Message: "Role disabled",
 			Data:    nil,
 		})
 	}

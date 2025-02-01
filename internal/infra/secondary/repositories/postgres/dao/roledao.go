@@ -25,7 +25,7 @@ func NewRoleDaoInstance(db *database.Database) IRoleDao {
 	return instance.(*RoleDao)
 }
 
-func (c *RoleDao) FindAllByUserId(userId string) ([]dto.RoleDTO, error) {
+func (r *RoleDao) FindAllByUserId(userId string) ([]dto.RoleDTO, error) {
 	var id, name string
 	var routes []domain.RoutePathEnum
 	var permissions []dto.PermissionDTO
@@ -34,7 +34,7 @@ func (c *RoleDao) FindAllByUserId(userId string) ([]dto.RoleDTO, error) {
 		" from public.roles r " +
 		" inner join users_roles ur on ur.role_id = r.id " +
 		" where ur.user_id = $1;"
-	rows, err := (*c.DbPgx4).QueryRows(query, userId)
+	rows, err := (*r.DbPgx4).QueryRows(query, userId)
 
 	if err != nil {
 		log.Errorf("error in FindAll Roles by userId, error: %s", err.Error())
@@ -64,13 +64,14 @@ func (r *RoleDao) FindById(roleId string) (dto.RoleDTO, error) {
 	var id, name string
 	var routes []domain.RoutePathEnum
 	var permissions []dto.PermissionDTO
+	var active bool
 
-	query := "select r.id, r.name, r.routes, r.permissions " +
+	query := "select r.id, r.name, r.routes, r.permissions, active " +
 		" from public.roles r " +
 		" where r.id = $1;"
 	row := (*r.DbPgx4).QueryRow(query, roleId)
 
-	err := row.Scan(&id, &name, &routes, &permissions)
+	err := row.Scan(&id, &name, &routes, &permissions, &active)
 	if err != nil {
 		log.Errorf("error in FindById Role, error: %s", err.Error())
 		return dto.RoleDTO{}, err
@@ -78,7 +79,8 @@ func (r *RoleDao) FindById(roleId string) (dto.RoleDTO, error) {
 
 	return dto.RoleDTO{
 		BaseDTO: dto.BaseDTO{
-			Id: id,
+			Id:     id,
+			Active: active,
 		},
 		Name:        name,
 		Routes:      routes,
@@ -90,8 +92,9 @@ func (r *RoleDao) FindAll() ([]dto.RoleDTO, error) {
 	var id, name string
 	var routes []domain.RoutePathEnum
 	var permissions []dto.PermissionDTO
+	var active bool
 
-	query := "select r.id, r.name, r.routes, r.permissions " +
+	query := "select r.id, r.name, r.routes, r.permissions, active " +
 		" from public.roles r;"
 	rows, err := (*r.DbPgx4).QueryRows(query)
 
@@ -102,14 +105,15 @@ func (r *RoleDao) FindAll() ([]dto.RoleDTO, error) {
 
 	list := make([]dto.RoleDTO, 0)
 	for rows.Next() {
-		err = rows.Scan(&id, &name, &routes, &permissions)
+		err = rows.Scan(&id, &name, &routes, &permissions, &active)
 		if err != nil {
 			return nil, fmt.Errorf("could not get roles: %v", err)
 		}
 
 		list = append(list, dto.RoleDTO{
 			BaseDTO: dto.BaseDTO{
-				Id: id,
+				Id:     id,
+				Active: active,
 			},
 			Name:        name,
 			Routes:      routes,
@@ -145,13 +149,14 @@ func (r *RoleDao) FindByName(name string) (dto.RoleDTO, error) {
 	var id string
 	var routes []domain.RoutePathEnum
 	var permissions []dto.PermissionDTO
+	var active bool
 
-	query := "select r.id, r.name, r.routes, r.permissions " +
+	query := "select r.id, r.name, r.routes, r.permissions, active " +
 		" from public.roles r " +
 		" where r.name = $1;"
 	row := (*r.DbPgx4).QueryRow(query, name)
 
-	err := row.Scan(&id, &name, &routes, &permissions)
+	err := row.Scan(&id, &name, &routes, &permissions, &active)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return dto.RoleDTO{}, nil
@@ -163,7 +168,8 @@ func (r *RoleDao) FindByName(name string) (dto.RoleDTO, error) {
 
 	return dto.RoleDTO{
 		BaseDTO: dto.BaseDTO{
-			Id: id,
+			Id:     id,
+			Active: active,
 		},
 		Name:        name,
 		Routes:      routes,
@@ -190,4 +196,14 @@ func (r *RoleDao) Update(role dto.RoleDTO) (dto.RoleDTO, error) {
 		Routes:      role.Routes,
 		Permissions: role.Permissions,
 	}, nil
+}
+
+func (r *RoleDao) ChangeStatus(id string) error {
+	query := "UPDATE public.roles SET active = NOT active WHERE id = $1;"
+	err := (*r.DbPgx4).Exec(query, id)
+	if err != nil {
+		log.Errorf("error in Disable Role, error: %s", err.Error())
+		return err
+	}
+	return nil
 }

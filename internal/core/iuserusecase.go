@@ -10,4 +10,7 @@ type IUserUseCase interface {
 	FindAll() ([]domain.User, error)
 	FindByEmail(email string) (domain.User, error)
 	Create(user domain.User) error
+	FindById(id string) (domain.User, error)
+	Update(user domain.User) error
+	ChangeStatus(id string) error
 }

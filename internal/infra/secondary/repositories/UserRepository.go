@@ -17,16 +17,6 @@ type UserRepository struct {
 	validationService authBasePorts.ValidationPort
 }
 
-func (repository *UserRepository) FindByEmail(email string) (domain.User, error) {
-	userDTO, err := repository.userDao.FindByEmail(email)
-	if err != nil {
-		return domain.User{}, err
-	}
-
-	user := toUserDomain(userDTO)
-	return user, nil
-}
-
 func NewUserInstance(userDao dao.IUserDao, roleDao dao.IRoleDao, validationService authBasePorts.ValidationPort) ports.UserPort {
 	instance := initModules.GetInstance("UserRepository", func() interface{} {
 		return &UserRepository{
@@ -36,6 +26,16 @@ func NewUserInstance(userDao dao.IUserDao, roleDao dao.IRoleDao, validationServi
 		}
 	})
 	return instance.(*UserRepository)
+}
+
+func (repository *UserRepository) FindByEmail(email string) (domain.User, error) {
+	userDTO, err := repository.userDao.FindByEmail(email)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	user := toUserDomain(userDTO)
+	return user, nil
 }
 
 func (repository *UserRepository) FindFullById(id string) (domain.User, error) {
@@ -102,6 +102,28 @@ func (repository *UserRepository) FindAll() ([]domain.User, error) {
 	return list, nil
 }
 
+func (repository *UserRepository) Update(v domain.User) error {
+	userDTO := dto.UserDTO{
+		BaseDTO: dto.BaseDTO{Id: v.GetId()},
+		Name:    v.GetName(),
+		Email:   v.GetEmail(),
+		IsAdmin: v.GetIsAdmin(),
+	}
+	err := (repository.userDao).Update(userDTO)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repository *UserRepository) ChangeStatus(id string) error {
+	err := (repository.userDao).ChangeStatus(id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func toUserDomain(user dto.UserDTO) domain.User {
 	var roles []authBaseDomain.Role
 	for _, role := range user.Roles {
@@ -114,7 +136,9 @@ func toUserDomain(user dto.UserDTO) domain.User {
 			user.Email,
 			user.Password,
 			roles,
-			user.IsAdmin),
+			user.IsAdmin,
+			user.Active,
+		),
 	}
 }
 

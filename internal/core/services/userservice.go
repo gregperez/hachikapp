@@ -39,3 +39,15 @@ func (s *UserService) FindFullById(id string) (domain.User, error) {
 func (s *UserService) Create(user domain.User) error {
 	return s.userRepository.Save(user)
 }
+
+func (s *UserService) FindById(id string) (domain.User, error) {
+	return s.userRepository.FindById(id)
+}
+
+func (s *UserService) Update(user domain.User) error {
+	return s.userRepository.Update(user)
+}
+
+func (s *UserService) ChangeStatus(id string) error {
+	return s.userRepository.ChangeStatus(id)
+}

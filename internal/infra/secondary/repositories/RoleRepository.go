@@ -77,10 +77,25 @@ func (r RoleRepository) Update(role domain.Role) (domain.Role, error) {
 	return ToRoleDomain(roleSave), nil
 }
 
+func (r RoleRepository) ChangeStatus(id string) error {
+	roleFound, err := (r.roleDao).FindById(id)
+	if err != nil || roleFound.Id == "" {
+		return fmt.Errorf("role not found")
+	}
+
+	err = (r.roleDao).ChangeStatus(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func ToRoleDomain(role dto.RoleDTO) domain.Role {
 	return domain.Role{
 		Base: domain.Base{
-			Id: role.Id,
+			Id:     role.Id,
+			Active: role.Active,
 		},
 		Name:        role.Name,
 		Routes:      role.Routes,

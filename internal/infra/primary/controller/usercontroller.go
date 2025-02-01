@@ -66,6 +66,15 @@ func (userC *UserController) RunController() {
 		protected.POST("/",
 			userC.authorizationService.PoliciesGuard(userC.Create(), nil,
 				"USERS", authBaseDomain.CREATE))
+		protected.GET("/:id",
+			userC.authorizationService.PoliciesGuard(userC.GetById(), nil,
+				"USERS", authBaseDomain.READ))
+		protected.PUT("/change-status/:id",
+			userC.authorizationService.PoliciesGuard(userC.ChangeStatus(), nil,
+				"USERS", authBaseDomain.UPDATE))
+		protected.PUT("/:id",
+			userC.authorizationService.PoliciesGuard(userC.Update(), nil,
+				"USERS", authBaseDomain.UPDATE))
 	}
 }
 
@@ -83,7 +92,13 @@ func (userC *UserController) GetAll() func(c *gin.Context) {
 
 		list := make([]dto.UserDto, 0)
 		for _, user := range users {
-			list = append(list, dto.UserDto{Email: user.GetEmail(), IsAdmin: user.GetIsAdmin()})
+			list = append(list, dto.UserDto{
+				BaseDto: dto.BaseDto{
+					Id:     user.GetId(),
+					Active: user.Active,
+				},
+				Email:   user.GetEmail(),
+				IsAdmin: user.GetIsAdmin()})
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
@@ -112,6 +127,7 @@ func (userC *UserController) Create() func(c *gin.Context) {
 				userDto.Password,
 				nil,
 				userDto.IsAdmin,
+				false,
 			),
 		}
 		err := userC.userService.Create(user)
@@ -125,6 +141,96 @@ func (userC *UserController) Create() func(c *gin.Context) {
 			c.JSON(http.StatusOK, dto.ResponseDto{
 				Status:  http.StatusOK,
 				Message: "User created",
+				Data:    nil,
+			})
+		}
+	}
+}
+
+func (userC *UserController) GetById() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		id := c.Param("id")
+		user, err := userC.userService.FindById(id)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				Status:  http.StatusBadRequest,
+				Message: "Error getting user by id",
+				Data:    nil,
+			})
+			return
+		}
+
+		userDto := dto.UserDto{
+			BaseDto: dto.BaseDto{
+				Id:     user.GetId(),
+				Active: user.Active,
+			},
+			Name:    user.GetName(),
+			Email:   user.GetEmail(),
+			IsAdmin: user.GetIsAdmin(),
+		}
+		c.JSON(http.StatusOK, dto.ResponseDto{
+			Status:  http.StatusOK,
+			Message: "Get user by id",
+			Data:    userDto,
+		})
+	}
+}
+
+func (userC *UserController) Update() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		var userDto dto.UserDto
+		id := c.Param("id")
+		if err := c.ShouldBindJSON(&userDto); err != nil {
+			c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				Status:  http.StatusBadRequest,
+				Message: "Error updating user",
+				Data:    nil,
+			})
+			return
+		}
+		user := domain.User{
+			UserGeneric: authBaseDomain.NewUserGeneric(
+				id,
+				userDto.Name,
+				userDto.Email,
+				"",
+				nil,
+				userDto.IsAdmin,
+				false,
+			),
+		}
+		err := userC.userService.Update(user)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				Status:  http.StatusBadRequest,
+				Message: "Error updating user",
+				Data:    nil,
+			})
+		} else {
+			c.JSON(http.StatusOK, dto.ResponseDto{
+				Status:  http.StatusOK,
+				Message: "User updated",
+				Data:    nil,
+			})
+		}
+	}
+}
+
+func (userC *UserController) ChangeStatus() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		id := c.Param("id")
+		err := userC.userService.ChangeStatus(id)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				Status:  http.StatusBadRequest,
+				Message: "Error disabling user",
+				Data:    nil,
+			})
+		} else {
+			c.JSON(http.StatusOK, dto.ResponseDto{
+				Status:  http.StatusOK,
+				Message: "User status changed",
 				Data:    nil,
 			})
 		}

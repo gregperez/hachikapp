@@ -1,7 +1,9 @@
 package dao
 
 import (
+	"database/sql"
 	"github.com/WilsonSayago/initModules"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"jwt/base/internal/infra/config/database"
 	"jwt/base/internal/infra/secondary/repositories/dto"
@@ -41,20 +43,24 @@ func (c *UserDao) Save(user dto.UserDTO) error {
 }
 
 func (c *UserDao) FindById(id string) (dto.UserDTO, error) {
-	var email string
-	var is_admin bool
+	var name, email string
+	var isAdmin, active bool
 
-	query := "SELECT email, is_admin FROM public.users WHERE id = $1;"
-	err := (*c.DbPgx4).QueryRow(query, id).Scan(&email, &is_admin)
+	query := "SELECT name, email, is_admin, active FROM public.users WHERE id = $1;"
+	err := (*c.DbPgx4).QueryRow(query, id).Scan(&name, &email, &isAdmin, &active)
 	if err != nil {
 		log.Errorf("error in Save User, error: %s", err.Error())
 		return dto.UserDTO{}, err
 	}
 
 	user := dto.UserDTO{
-		BaseDTO: dto.BaseDTO{Id: id},
+		BaseDTO: dto.BaseDTO{
+			Id:     id,
+			Active: active,
+		},
+		Name:    name,
 		Email:   email,
-		IsAdmin: is_admin,
+		IsAdmin: isAdmin,
 	}
 
 	return user, nil
@@ -63,10 +69,10 @@ func (c *UserDao) FindById(id string) (dto.UserDTO, error) {
 func (c *UserDao) FindAll() ([]dto.UserDTO, error) {
 
 	var (
-		email    string
-		is_admin bool
+		id, email       string
+		isAdmin, active bool
 	)
-	query := "SELECT email, is_admin FROM public.users;"
+	query := "SELECT id, email, is_admin, active FROM public.users;"
 	rows, err := (*c.DbPgx4).QueryRows(query)
 	if err != nil {
 		log.Errorf("error in FindAll users, error: %s", err.Error())
@@ -75,7 +81,7 @@ func (c *UserDao) FindAll() ([]dto.UserDTO, error) {
 
 	list := make([]dto.UserDTO, 0)
 	for rows.Next() {
-		err = rows.Scan(&email, &is_admin)
+		err = rows.Scan(&id, &email, &isAdmin, &active)
 
 		if err != nil {
 			log.Errorf("error in Scan FindAll users, error: %s", err.Error())
@@ -83,8 +89,12 @@ func (c *UserDao) FindAll() ([]dto.UserDTO, error) {
 		}
 
 		list = append(list, dto.UserDTO{
+			BaseDTO: dto.BaseDTO{
+				Id:     id,
+				Active: active,
+			},
 			Email:   email,
-			IsAdmin: is_admin,
+			IsAdmin: isAdmin,
 		})
 	}
 
@@ -97,8 +107,12 @@ func (c *UserDao) FindByEmail(email string) (dto.UserDTO, error) {
 	query := "SELECT id, password FROM public.users WHERE email = $1;"
 	err := (*c.DbPgx4).QueryRow(query, email).Scan(&id, &password)
 	if err != nil {
-		log.Errorf("error in FindByEmail User, error: %s", err.Error())
-		return dto.UserDTO{}, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return dto.UserDTO{}, nil
+		} else {
+			log.Errorf("error in FindByEmail User, error: %s", err.Error())
+			return dto.UserDTO{}, err
+		}
 	}
 
 	user := dto.UserDTO{
@@ -107,4 +121,29 @@ func (c *UserDao) FindByEmail(email string) (dto.UserDTO, error) {
 	}
 
 	return user, nil
+}
+
+func (c *UserDao) Update(user dto.UserDTO) error {
+	query := "UPDATE public.users SET name = $1, email = $2, is_admin = $3 WHERE id = $4;"
+	err := (*c.DbPgx4).Exec(query,
+		user.Name,
+		user.Email,
+		user.IsAdmin,
+		user.Id,
+	)
+	if err != nil {
+		log.Errorf("error in Update User, error: %s", err.Error())
+		return err
+	}
+	return nil
+}
+
+func (c *UserDao) ChangeStatus(id string) error {
+	query := "UPDATE public.users SET active = NOT active WHERE id = $1;"
+	err := (*c.DbPgx4).Exec(query, id)
+	if err != nil {
+		log.Errorf("error in Disable User, error: %s", err.Error())
+		return err
+	}
+	return nil
 }

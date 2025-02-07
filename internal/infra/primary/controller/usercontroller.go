@@ -45,7 +45,11 @@ func (userC *UserController) RunController() {
 			Password string `json:"password"`
 		}
 		if err := c.ShouldBindJSON(&loginData); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				Status:  http.StatusBadRequest,
+				Message: "Error login - invalid data",
+				Data:    nil,
+			})
 			return
 		}
 		token, err := userC.authenticationService.Login(loginData.Email, loginData.Password)
@@ -53,7 +57,11 @@ func (userC *UserController) RunController() {
 			c.JSON(http.StatusBadRequest, nil)
 			return
 		}
-		c.JSON(http.StatusOK, token)
+		c.JSON(http.StatusOK, dto.ResponseDto{
+			Status:  http.StatusOK,
+			Message: "ok",
+			Data:    token,
+		})
 	})
 
 	// Protected routes group

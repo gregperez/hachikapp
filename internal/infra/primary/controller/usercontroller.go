@@ -54,7 +54,11 @@ func (userC *UserController) RunController() {
 		}
 		token, err := userC.authenticationService.Login(loginData.Email, loginData.Password)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, nil)
+			c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				Status:  http.StatusBadRequest,
+				Message: "Error login - invalid data",
+				Data:    nil,
+			})
 			return
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{

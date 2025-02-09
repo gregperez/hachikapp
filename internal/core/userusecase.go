@@ -7,7 +7,7 @@ import (
 
 type UserUseCase interface {
 	core.GenericUseCase[domain.User]
-	FindAll() ([]domain.User, error)
+	FindAll(pageSize, offset int) ([]domain.User, int, error)
 	FindByEmail(email string) (domain.User, error)
 	Create(user domain.User) error
 	FindById(id string) (domain.User, error)

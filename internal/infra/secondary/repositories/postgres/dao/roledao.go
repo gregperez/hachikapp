@@ -88,15 +88,15 @@ func (r *RoleDao) FindById(roleId string) (dto.RoleDTO, error) {
 	}, nil
 }
 
-func (r *RoleDao) FindAll() ([]dto.RoleDTO, error) {
+func (r *RoleDao) FindAll(pageSize, offset int) ([]dto.RoleDTO, error) {
 	var id, name string
 	var routes []domain.RoutePathEnum
 	var permissions []dto.PermissionDTO
 	var active bool
 
 	query := "select r.id, r.name, r.routes, r.permissions, active " +
-		" from public.roles r;"
-	rows, err := (*r.DbPgx4).QueryRows(query)
+		" from public.roles r ORDER BY r.id LIMIT $1 OFFSET $2;"
+	rows, err := (*r.DbPgx4).QueryRows(query, pageSize, offset)
 
 	if err != nil {
 		log.Errorf("error in FindAll Roles, error: %s", err.Error())
@@ -206,4 +206,18 @@ func (r *RoleDao) ChangeStatus(id string) error {
 		return err
 	}
 	return nil
+}
+
+func (r *RoleDao) Count() (int, error) {
+	query := "select count(id) from public.roles;"
+	row := (*r.DbPgx4).QueryRow(query)
+
+	var count int
+	err := row.Scan(&count)
+	if err != nil {
+		log.Errorf("error in Count Roles, error: %s", err.Error())
+		return 0, err
+	}
+
+	return count, nil
 }

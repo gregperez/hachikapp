@@ -9,7 +9,8 @@ import (
 	"jwt/base/internal/core/domain"
 	"jwt/base/internal/infra/config"
 	"jwt/base/internal/infra/primary/controller/dto"
-	"jwt/base/internal/infra/primary/controller/dto/users"
+	"jwt/base/internal/infra/primary/controller/dto/inputs/users"
+	users2 "jwt/base/internal/infra/primary/controller/dto/outputs/users"
 	"net/http"
 )
 
@@ -68,7 +69,8 @@ func (userC *UserController) RunController() {
 
 func (userC *UserController) GetAll() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		usersDb, err := userC.userService.FindAll()
+		page, pageSize, offset := handlePagination(c)
+		usersDb, total, err := userC.userService.FindAll(pageSize, offset)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
@@ -78,9 +80,9 @@ func (userC *UserController) GetAll() func(c *gin.Context) {
 			return
 		}
 
-		list := make([]users.UseDto, 0)
+		list := make([]users2.UserResponse, 0)
 		for _, user := range usersDb {
-			list = append(list, users.UseDto{
+			list = append(list, users2.UserResponse{
 				BaseDto: dto.BaseDto{
 					Id:     user.GetId(),
 					Active: user.Active,
@@ -91,7 +93,13 @@ func (userC *UserController) GetAll() func(c *gin.Context) {
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
 			Message: "Ok",
-			Data:    list,
+			Data: users2.UsersPageResponse{
+				Page:       page,
+				PageSize:   pageSize,
+				TotalItems: total,
+				TotalPages: (total + pageSize - 1) / pageSize,
+				Data:       list,
+			},
 		})
 	}
 }

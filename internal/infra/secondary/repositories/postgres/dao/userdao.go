@@ -66,14 +66,13 @@ func (c *UserDao) FindById(id string) (dto.UserDTO, error) {
 	return user, nil
 }
 
-func (c *UserDao) FindAll() ([]dto.UserDTO, error) {
-
+func (c *UserDao) FindAll(pageSize, offset int) ([]dto.UserDTO, error) {
 	var (
 		id, email       string
 		isAdmin, active bool
 	)
-	query := "SELECT id, email, is_admin, active FROM public.users;"
-	rows, err := (*c.DbPgx4).QueryRows(query)
+	query := "SELECT id, email, is_admin, active FROM public.users ORDER BY id LIMIT $1 OFFSET $2;"
+	rows, err := (*c.DbPgx4).QueryRows(query, pageSize, offset)
 	if err != nil {
 		log.Errorf("error in FindAll users, error: %s", err.Error())
 		return nil, err
@@ -146,4 +145,15 @@ func (c *UserDao) ChangeStatus(id string) error {
 		return err
 	}
 	return nil
+}
+
+func (c *UserDao) Count() (int, error) {
+	var totalRow int
+	query := "SELECT COUNT(*) FROM public.users;"
+	err := (*c.DbPgx4).QueryRow(query).Scan(&totalRow)
+	if err != nil {
+		log.Errorf("error in Count User, error: %s", err.Error())
+		return 0, err
+	}
+	return totalRow, nil
 }

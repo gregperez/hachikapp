@@ -32,11 +32,11 @@ func (r RoleRepository) FindById(id string) (domain.Role, error) {
 	return ToRoleDomain(role), nil
 }
 
-func (r RoleRepository) FindAll() ([]domain.Role, error) {
-	// find all roles
-	roles, err := (r.roleDao).FindAll()
+func (r RoleRepository) FindAll(pageSize, offset int) ([]domain.Role, int, error) {
+	total, err := (r.roleDao).Count()
+	roles, err := (r.roleDao).FindAll(pageSize, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	// convert roles to domain
@@ -45,7 +45,7 @@ func (r RoleRepository) FindAll() ([]domain.Role, error) {
 		domainRoles = append(domainRoles, ToRoleDomain(role))
 	}
 
-	return domainRoles, nil
+	return domainRoles, total, nil
 }
 
 func (r RoleRepository) Save(role domain.Role) (domain.Role, error) {

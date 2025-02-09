@@ -4,6 +4,7 @@ import (
 	"jwt/base/internal/core/domain"
 	"jwt/base/internal/infra/config"
 	"jwt/base/internal/infra/primary/controller/dto"
+	"jwt/base/internal/infra/primary/controller/dto/outputs/roles"
 	"net/http"
 
 	authBaseCore "github.com/WilsonSayago/authBase/core"
@@ -60,7 +61,8 @@ func (roleC *RoleController) RunController() {
 
 func (roleC *RoleController) GetAll() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		roles, err := roleC.roleService.GetRoles()
+		page, pageSize, offset := handlePagination(c)
+		rolesDb, total, err := roleC.roleService.GetRoles(pageSize, offset)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
@@ -70,9 +72,9 @@ func (roleC *RoleController) GetAll() func(c *gin.Context) {
 			return
 		}
 
-		list := make([]dto.RoleDto, 0)
-		for _, role := range roles {
-			var r dto.RoleDto = dto.RoleDto{
+		list := make([]roles.RoleResponse, 0)
+		for _, role := range rolesDb {
+			var r = roles.RoleResponse{
 				BaseDto: dto.BaseDto{
 					Id:     role.GetId(),
 					Active: role.GetActive(),
@@ -86,7 +88,13 @@ func (roleC *RoleController) GetAll() func(c *gin.Context) {
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
 			Message: "Ok",
-			Data:    list,
+			Data: roles.RolesPageResponse{
+				Page:       page,
+				PageSize:   pageSize,
+				TotalItems: total,
+				TotalPages: (total + pageSize - 1) / pageSize,
+				Data:       list,
+			},
 		})
 	}
 }
@@ -104,7 +112,7 @@ func (roleC *RoleController) GetById() func(c *gin.Context) {
 			return
 		}
 
-		roleDto := dto.RoleDto{
+		roleDto := roles.RoleResponse{
 			BaseDto: dto.BaseDto{
 				Id:     role.GetId(),
 				Active: role.GetActive(),
@@ -206,10 +214,10 @@ func (roleC *RoleController) ChangeStatus() func(c *gin.Context) {
 	}
 }
 
-func convertPermissionsToDto(permissions []authBaseDomain.Permission) []dto.PermissionDto {
-	permissionDtos := make([]dto.PermissionDto, len(permissions))
+func convertPermissionsToDto(permissions []authBaseDomain.Permission) []roles.PermissionResponse {
+	permissionDtos := make([]roles.PermissionResponse, len(permissions))
 	for i, permission := range permissions {
-		permissionDtos[i] = dto.PermissionDto{
+		permissionDtos[i] = roles.PermissionResponse{
 			Entity: permission.Entity,
 			Create: permission.Create,
 			Read:   permission.Read,

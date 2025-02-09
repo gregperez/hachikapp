@@ -7,6 +7,7 @@ import (
 	"jwt/base/internal/infra/config"
 	"jwt/base/internal/infra/primary/controller/dto"
 	"net/http"
+	"strconv"
 )
 
 func handleBind(t config.ITranslate, c *gin.Context, data interface{}) bool {
@@ -36,4 +37,21 @@ func handleBind(t config.ITranslate, c *gin.Context, data interface{}) bool {
 		return false
 	}
 	return true
+}
+
+func handlePagination(c *gin.Context) (int, int, int) {
+	page := c.DefaultQuery("page", "1")
+	pageSize := c.DefaultQuery("pageSize", "10")
+	pageInt, _ := strconv.Atoi(page)
+	pageSizeInt, _ := strconv.Atoi(pageSize)
+
+	if pageInt < 1 {
+		pageInt = 1
+	}
+	if pageSizeInt < 1 {
+		pageSizeInt = 10
+	}
+
+	offset := (pageInt - 1) * pageSizeInt
+	return pageInt, pageSizeInt, offset
 }

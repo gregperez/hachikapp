@@ -89,17 +89,18 @@ func (repository *UserRepository) FindById(id string) (domain.User, error) {
 	return toUserDomain(user), nil
 }
 
-func (repository *UserRepository) FindAll() ([]domain.User, error) {
-	users, err := (repository.userDao).FindAll()
+func (repository *UserRepository) FindAll(pageSize, offset int) ([]domain.User, int, error) {
+	totalRow, err := (repository.userDao).Count()
+	users, err := (repository.userDao).FindAll(pageSize, offset)
 	if err != nil {
-		return []domain.User{}, err
+		return []domain.User{}, 0, err
 	}
 
 	list := make([]domain.User, 0)
 	for _, user := range users {
 		list = append(list, toUserDomain(user))
 	}
-	return list, nil
+	return list, totalRow, nil
 }
 
 func (repository *UserRepository) Update(v domain.User) error {

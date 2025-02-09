@@ -20,8 +20,8 @@ func GetUserServiceInstance(userRepository ports.UserPort) core.UserUseCase {
 	return instance.(*UserService)
 }
 
-func (s *UserService) FindAll() ([]domain.User, error) {
-	return s.userRepository.FindAll()
+func (s *UserService) FindAll(pageSize, offset int) ([]domain.User, int, error) {
+	return s.userRepository.FindAll(pageSize, offset)
 }
 
 func (s *UserService) FindByEmail(email string) (domain.User, error) {

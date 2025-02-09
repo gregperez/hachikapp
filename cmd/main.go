@@ -31,6 +31,7 @@ func main() {
 
 	r := gin.Default()
 
+	initModules.RegisterProcess(instance.TranslateInstance())
 	initModules.RegisterProcess(instance.GetDatabasePersistencePgxInstance())
 	initModules.RegisterProcess(instance.AuthControllerInstance(r))
 	initModules.RegisterProcess(instance.UserControllerInstance(r))

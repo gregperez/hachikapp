@@ -1,6 +1,7 @@
 package instance
 
 import (
+	"jwt/base/internal/infra/config"
 	"jwt/base/internal/infra/config/database"
 	"jwt/base/internal/infra/config/prop"
 	"jwt/base/internal/infra/config/sql"
@@ -20,7 +21,8 @@ func AuthControllerInstance(r *gin.Engine) initModules.IProcess {
 		AuthenticationUseCaseInstance(),
 		AuthorizationUseCaseInstance(),
 		UserUseCaseInstance(),
-		r)
+		r,
+		TranslateInstance())
 }
 
 func UserControllerInstance(r *gin.Engine) initModules.IProcess {
@@ -28,16 +30,22 @@ func UserControllerInstance(r *gin.Engine) initModules.IProcess {
 		AuthenticationUseCaseInstance(),
 		AuthorizationUseCaseInstance(),
 		UserUseCaseInstance(),
-		r)
+		r,
+		TranslateInstance())
 }
 
 func RoleControllerInstance(r *gin.Engine) initModules.IProcess {
 	return controller.GetRoleControllerInstance(
 		AuthorizationUseCaseInstance(),
 		RoleUseCaseInstance(),
-		r)
+		r,
+		TranslateInstance())
 }
 
 func ExecuteMigration() {
 	sql.Migrate("internal/resources/sql/migrations")
+}
+
+func TranslateInstance() config.ITranslate {
+	return config.GetTranslateInstance()
 }

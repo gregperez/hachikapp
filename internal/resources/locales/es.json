@@ -1,0 +1,23 @@
+{
+  "errors": {
+    "no-data-form": "No se proporcionaron datos",
+    "invalid-email": "Correo electrónico inválido",
+    "invalid-field-required": "Campo {{.Field}} requerido",
+    "token-login": "Error generando token",
+    "refresh-token": "Error refrescando token",
+    "roles": {
+      "get-all": "Error obteniendo roles",
+      "get-by-id": "Error obteniendo rol por id",
+      "save": "Error guardando rol",
+      "update": "Error actualizando rol",
+      "change-status": "Error cambiando estado de rol"
+    },
+    "users": {
+        "get-all": "Error obteniendo usuarios",
+        "get-by-id": "Error obteniendo usuario por id",
+        "save": "Error guardando usuario",
+        "update": "Error actualizando usuario",
+        "change-status": "Error cambiando estado de usuario"
+    }
+  }
+}

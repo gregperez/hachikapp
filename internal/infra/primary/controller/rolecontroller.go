@@ -2,6 +2,7 @@ package controller
 
 import (
 	"jwt/base/internal/core/domain"
+	"jwt/base/internal/infra/config"
 	"jwt/base/internal/infra/primary/controller/dto"
 	"net/http"
 
@@ -15,17 +16,20 @@ type RoleController struct {
 	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *gin.Context]
 	roleService          authBaseCore.RoleUseCase
 	r                    *gin.Engine
+	t                    config.ITranslate
 }
 
 func GetRoleControllerInstance(
 	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *gin.Context],
 	roleService authBaseCore.RoleUseCase,
-	r *gin.Engine) *RoleController {
+	r *gin.Engine,
+	t config.ITranslate) *RoleController {
 	instance := initModules.GetInstance("RoleController", func() interface{} {
 		return &RoleController{
 			authorizationService: authorizationService,
 			roleService:          roleService,
 			r:                    r,
+			t:                    t,
 		}
 	})
 	return instance.(*RoleController)
@@ -36,7 +40,7 @@ func (roleC *RoleController) Start() {
 }
 
 func (roleC *RoleController) RunController() {
-	protected := (*roleC.r).Group("/roles")
+	protected := (*roleC.r).Group("/v1/roles")
 	protected.Use(roleC.authorizationService.AuthorizeJWT())
 	{
 		protected.GET("/",
@@ -60,7 +64,7 @@ func (roleC *RoleController) GetAll() func(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: "Error getting roles",
+				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), "errors.roles.get-all", nil),
 				Data:    nil,
 			})
 			return
@@ -81,7 +85,7 @@ func (roleC *RoleController) GetAll() func(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
-			Message: "Get roles",
+			Message: "Ok",
 			Data:    list,
 		})
 	}
@@ -94,9 +98,10 @@ func (roleC *RoleController) GetById() func(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: "Error getting role",
+				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), "errors.roles.get-by-id", nil),
 				Data:    nil,
 			})
+			return
 		}
 
 		roleDto := dto.RoleDto{
@@ -110,7 +115,7 @@ func (roleC *RoleController) GetById() func(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
-			Message: "Get role",
+			Message: "Ok",
 			Data:    roleDto,
 		})
 	}
@@ -119,13 +124,7 @@ func (roleC *RoleController) GetById() func(c *gin.Context) {
 func (roleC *RoleController) Save() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		roleDto := dto.RoleDto{}
-		err := c.ShouldBindJSON(&roleDto)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: "Error binding role",
-				Data:    nil,
-			})
+		if !handleBind(roleC.t, c, &roleDto) {
 			return
 		}
 
@@ -135,11 +134,11 @@ func (roleC *RoleController) Save() func(c *gin.Context) {
 			Permissions: convertDtoToPermissions(roleDto.Permissions),
 		}
 
-		_, err = roleC.roleService.CreateRole(role)
+		_, err := roleC.roleService.CreateRole(role)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: "Error creating role",
+				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), "errors.roles.save", nil),
 				Data:    nil,
 			})
 			return
@@ -147,7 +146,7 @@ func (roleC *RoleController) Save() func(c *gin.Context) {
 
 		c.JSON(http.StatusCreated, dto.ResponseDto{
 			Status:  http.StatusCreated,
-			Message: "Role created",
+			Message: "Ok",
 			Data:    nil,
 		})
 	}
@@ -157,13 +156,7 @@ func (roleC *RoleController) Update() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id := c.Param("id")
 		roleDto := dto.RoleDto{}
-		err := c.ShouldBindJSON(&roleDto)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: "Error binding role",
-				Data:    nil,
-			})
+		if !handleBind(roleC.t, c, &roleDto) {
 			return
 		}
 
@@ -174,11 +167,11 @@ func (roleC *RoleController) Update() func(c *gin.Context) {
 			Permissions: convertDtoToPermissions(roleDto.Permissions),
 		}
 
-		_, err = roleC.roleService.UpdateRole(role)
+		_, err := roleC.roleService.UpdateRole(role)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: "Error updating role",
+				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), "errors.roles.update", nil),
 				Data:    nil,
 			})
 			return
@@ -186,7 +179,7 @@ func (roleC *RoleController) Update() func(c *gin.Context) {
 
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
-			Message: "Role updated",
+			Message: "Ok",
 			Data:    nil,
 		})
 	}
@@ -199,7 +192,7 @@ func (roleC *RoleController) ChangeStatus() func(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: "Error disabling role",
+				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), "errors.roles.change-status", nil),
 				Data:    nil,
 			})
 			return
@@ -207,7 +200,7 @@ func (roleC *RoleController) ChangeStatus() func(c *gin.Context) {
 
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
-			Message: "Role disabled",
+			Message: "Ok",
 			Data:    nil,
 		})
 	}

@@ -7,7 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"jwt/base/internal/core"
 	"jwt/base/internal/core/domain"
+	"jwt/base/internal/infra/config"
 	"jwt/base/internal/infra/primary/controller/dto"
+	"jwt/base/internal/infra/primary/controller/dto/users"
 	"net/http"
 )
 
@@ -16,19 +18,22 @@ type UserController struct {
 	authorizationService  authBaseCore.AuthorizationUseCase[domain.User, *gin.Context]
 	userService           core.UserUseCase
 	r                     *gin.Engine
+	t                     config.ITranslate
 }
 
 func GetUserControllerInstance(
 	authenticationService authBaseCore.AuthenticationUseCase,
 	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *gin.Context],
 	userService core.UserUseCase,
-	r *gin.Engine) *UserController {
+	r *gin.Engine,
+	t config.ITranslate) *UserController {
 	instance := initModules.GetInstance("UserController", func() interface{} {
 		return &UserController{
 			authenticationService: authenticationService,
 			authorizationService:  authorizationService,
 			userService:           userService,
 			r:                     r,
+			t:                     t,
 		}
 	})
 	return instance.(*UserController)
@@ -40,7 +45,7 @@ func (userC *UserController) Start() {
 
 func (userC *UserController) RunController() {
 	// Protected routes group
-	protected := (*userC.r).Group("/users")
+	protected := (*userC.r).Group("/v1/users")
 	protected.Use(userC.authorizationService.AuthorizeJWT())
 	{
 		protected.GET("/",
@@ -63,19 +68,19 @@ func (userC *UserController) RunController() {
 
 func (userC *UserController) GetAll() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		users, err := userC.userService.FindAll()
+		usersDb, err := userC.userService.FindAll()
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: "Error getting all users",
+				Message: userC.t.TranslateByLang(c.GetHeader("lang"), "errors.users.get-all", nil),
 				Data:    nil,
 			})
 			return
 		}
 
-		list := make([]dto.UserDto, 0)
-		for _, user := range users {
-			list = append(list, dto.UserDto{
+		list := make([]users.UseDto, 0)
+		for _, user := range usersDb {
+			list = append(list, users.UseDto{
 				BaseDto: dto.BaseDto{
 					Id:     user.GetId(),
 					Active: user.Active,
@@ -85,7 +90,7 @@ func (userC *UserController) GetAll() func(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
-			Message: "Get all users",
+			Message: "Ok",
 			Data:    list,
 		})
 	}
@@ -93,13 +98,8 @@ func (userC *UserController) GetAll() func(c *gin.Context) {
 
 func (userC *UserController) Create() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		var userDto dto.UserDto
-		if err := c.ShouldBindJSON(&userDto); err != nil {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: "Error creating user",
-				Data:    nil,
-			})
+		var userDto users.UseDto
+		if !handleBind(userC.t, c, &userDto) {
 			return
 		}
 		user := domain.User{
@@ -117,13 +117,13 @@ func (userC *UserController) Create() func(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: "Error creating user",
+				Message: userC.t.TranslateByLang(c.GetHeader("lang"), "errors.users.save", nil),
 				Data:    nil,
 			})
 		} else {
 			c.JSON(http.StatusOK, dto.ResponseDto{
 				Status:  http.StatusOK,
-				Message: "User created",
+				Message: "Ok",
 				Data:    nil,
 			})
 		}
@@ -137,13 +137,13 @@ func (userC *UserController) GetById() func(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: "Error getting user by id",
+				Message: userC.t.TranslateByLang(c.GetHeader("lang"), "errors.users.get-by-id", nil),
 				Data:    nil,
 			})
 			return
 		}
 
-		userDto := dto.UserDto{
+		userDto := users.UseDto{
 			BaseDto: dto.BaseDto{
 				Id:     user.GetId(),
 				Active: user.Active,
@@ -154,7 +154,7 @@ func (userC *UserController) GetById() func(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
-			Message: "Get user by id",
+			Message: "Ok",
 			Data:    userDto,
 		})
 	}
@@ -162,14 +162,9 @@ func (userC *UserController) GetById() func(c *gin.Context) {
 
 func (userC *UserController) Update() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		var userDto dto.UserDto
+		var userDto users.UserUpdateDto
 		id := c.Param("id")
-		if err := c.ShouldBindJSON(&userDto); err != nil {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: "Error updating user",
-				Data:    nil,
-			})
+		if !handleBind(userC.t, c, &userDto) {
 			return
 		}
 		user := domain.User{
@@ -187,13 +182,13 @@ func (userC *UserController) Update() func(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: "Error updating user",
+				Message: userC.t.TranslateByLang(c.GetHeader("lang"), "errors.users.update", nil),
 				Data:    nil,
 			})
 		} else {
 			c.JSON(http.StatusOK, dto.ResponseDto{
 				Status:  http.StatusOK,
-				Message: "User updated",
+				Message: "Ok",
 				Data:    nil,
 			})
 		}
@@ -207,13 +202,13 @@ func (userC *UserController) ChangeStatus() func(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: "Error disabling user",
+				Message: userC.t.TranslateByLang(c.GetHeader("lang"), "errors.users.change-status", nil),
 				Data:    nil,
 			})
 		} else {
 			c.JSON(http.StatusOK, dto.ResponseDto{
 				Status:  http.StatusOK,
-				Message: "User status changed",
+				Message: "Ok",
 				Data:    nil,
 			})
 		}

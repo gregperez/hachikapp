@@ -5,7 +5,7 @@ import (
 	"jwt/base/internal/core/domain"
 )
 
-type IUserUseCase interface {
+type UserUseCase interface {
 	core.GenericUseCase[domain.User]
 	FindAll() ([]domain.User, error)
 	FindByEmail(email string) (domain.User, error)

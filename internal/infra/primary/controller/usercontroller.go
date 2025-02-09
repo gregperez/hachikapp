@@ -14,14 +14,14 @@ import (
 type UserController struct {
 	authenticationService authBaseCore.AuthenticationUseCase
 	authorizationService  authBaseCore.AuthorizationUseCase[domain.User, *gin.Context]
-	userService           core.IUserUseCase
+	userService           core.UserUseCase
 	r                     *gin.Engine
 }
 
 func GetUserControllerInstance(
 	authenticationService authBaseCore.AuthenticationUseCase,
 	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *gin.Context],
-	userService core.IUserUseCase,
+	userService core.UserUseCase,
 	r *gin.Engine) *UserController {
 	instance := initModules.GetInstance("UserController", func() interface{} {
 		return &UserController{
@@ -39,35 +39,6 @@ func (userC *UserController) Start() {
 }
 
 func (userC *UserController) RunController() {
-	(*userC.r).POST("/login", func(c *gin.Context) {
-		var loginData struct {
-			Email    string `json:"email"`
-			Password string `json:"password"`
-		}
-		if err := c.ShouldBindJSON(&loginData); err != nil {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: "Error login - invalid data",
-				Data:    nil,
-			})
-			return
-		}
-		token, err := userC.authenticationService.Login(loginData.Email, loginData.Password)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: "Error login - invalid data",
-				Data:    nil,
-			})
-			return
-		}
-		c.JSON(http.StatusOK, dto.ResponseDto{
-			Status:  http.StatusOK,
-			Message: "ok",
-			Data:    token,
-		})
-	})
-
 	// Protected routes group
 	protected := (*userC.r).Group("/users")
 	protected.Use(userC.authorizationService.AuthorizeJWT())

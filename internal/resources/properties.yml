@@ -16,8 +16,8 @@ datasource:
 log:
   level: info
 
-middleware:
-  jwt:
-    secret-key: tuSecretKey
 jwt:
   secret-key: tuSecretKey
+  refresh-secret: tuRefreshSecret
+  expiration-time: 1
+  refresh-token-time: 2

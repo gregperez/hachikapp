@@ -24,7 +24,7 @@ func AuthorizationUseCaseInstance() authBaseCore.AuthorizationUseCase[domain.Use
 		initModules.NewInstance[properties.JwtProp]().GetInstance(properties.NewJwtProp))
 }
 
-func UserUseCaseInstance() core.IUserUseCase {
+func UserUseCaseInstance() core.UserUseCase {
 	return services.GetUserServiceInstance(GetUserRepositoryInstance())
 }
 

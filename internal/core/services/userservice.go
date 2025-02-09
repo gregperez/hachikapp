@@ -11,7 +11,7 @@ type UserService struct {
 	userRepository ports.UserPort
 }
 
-func GetUserServiceInstance(userRepository ports.UserPort) core.IUserUseCase {
+func GetUserServiceInstance(userRepository ports.UserPort) core.UserUseCase {
 	instance := initModules.GetInstance("UserService", func() interface{} {
 		return &UserService{
 			userRepository: userRepository,

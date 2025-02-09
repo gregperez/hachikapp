@@ -15,6 +15,14 @@ func GetDatabasePersistencePgxInstance() initModules.IProcess {
 	return database.NewConnectionPostgresPgx(initModules.NewInstance[prop.DatabaseProperty]().GetInstance(prop.NewDatabaseProperty))
 }
 
+func AuthControllerInstance(r *gin.Engine) initModules.IProcess {
+	return controller.GetAuthControllerInstance(
+		AuthenticationUseCaseInstance(),
+		AuthorizationUseCaseInstance(),
+		UserUseCaseInstance(),
+		r)
+}
+
 func UserControllerInstance(r *gin.Engine) initModules.IProcess {
 	return controller.GetUserControllerInstance(
 		AuthenticationUseCaseInstance(),

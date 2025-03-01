@@ -59,6 +59,17 @@ func (roleC *RoleController) RunController() {
 	}
 }
 
+// GetAll godoc
+// @Summary Get all roles
+// @Description Retrieves a paginated list of roles
+// @Tags Roles
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param pageSize query int false "Page size" default(10)
+// @Success 200 {object} dto.ResponseDto{data=roles.RolesPageResponse} "List of roles"
+// @Failure 400 {object} dto.ResponseDto "Error retrieving roles"
+// @Router /v1/roles [get]
 func (roleC *RoleController) GetAll() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		page, pageSize, offset := handlePagination(c)
@@ -80,7 +91,7 @@ func (roleC *RoleController) GetAll() func(c *gin.Context) {
 					Active: role.GetActive(),
 				},
 				Name:        role.GetName(),
-				Routes:      role.GetRoutes(),
+				Routes:      roles.ConvertRoutesToDto(role.GetRoutes()),
 				Permissions: convertPermissionsToDto(role.GetPermissions()),
 			}
 			list = append(list, r)
@@ -118,7 +129,7 @@ func (roleC *RoleController) GetById() func(c *gin.Context) {
 				Active: role.GetActive(),
 			},
 			Name:        role.GetName(),
-			Routes:      role.GetRoutes(),
+			Routes:      roles.ConvertRoutesToDto(role.GetRoutes()),
 			Permissions: convertPermissionsToDto(role.GetPermissions()),
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{

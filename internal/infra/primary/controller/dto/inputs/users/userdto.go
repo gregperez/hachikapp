@@ -2,6 +2,9 @@ package users
 
 import "jwt/base/internal/infra/primary/controller/dto"
 
+// UseDto represents a user dto.
+// @swagger:model
+// @Description UseDto represents a user dto.
 type UseDto struct {
 	dto.BaseDto
 	Name     string `json:"name,omitempty" binding:"required"`

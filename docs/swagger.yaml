@@ -1,0 +1,210 @@
+basePath: /v1/auth
+definitions:
+  auth.LoginRequestDto:
+    description: Estructura esperada para autenticación de usuario
+    properties:
+      email:
+        description: "\U0001F539 Ejemplo de correo"
+        example: user@example.com
+        type: string
+      password:
+        description: "\U0001F539 Ejemplo de contraseña"
+        example: password123
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  auth.RefreshTokenRequestDto:
+    description: Estructura esperada para refrescar un token JWT
+    properties:
+      refreshToken:
+        description: "\U0001F539 Token de refresco"
+        example: eyJhbGciOiJIUzI1...
+        type: string
+    required:
+    - refreshToken
+    type: object
+  dto.AuthDto:
+    description: Contiene los tokens generados tras una autenticación exitosa
+    properties:
+      accessToken:
+        description: "\U0001F539 Token JWT de acceso"
+        example: eyJhbGciOiJIUzI1...
+        type: string
+      refreshToken:
+        example: eyJhbGciOiJIUzI1...
+        type: string
+    type: object
+  dto.ResponseDto:
+    description: Modelo de respuesta estándar para los endpoints
+    properties:
+      data:
+        description: "\U0001F539 Datos dinámicos según el endpoint"
+      message:
+        description: "\U0001F539 Mensaje descriptivo de la respuesta"
+        example: Ok
+        type: string
+      status:
+        description: "\U0001F539 Código HTTP de respuesta"
+        example: 200
+        type: integer
+    type: object
+  roles.PermissionResponse:
+    description: PermissionResponse represents a permission response.
+    properties:
+      create:
+        type: boolean
+      delete:
+        type: boolean
+      entity:
+        type: string
+      read:
+        type: boolean
+      update:
+        type: boolean
+    type: object
+  roles.RoleResponse:
+    description: RoleResponse represents a role response.
+    properties:
+      active:
+        type: boolean
+      createdAt:
+        type: string
+      createdBy:
+        type: string
+      id:
+        type: string
+      messagesDefault:
+        type: string
+      name:
+        type: string
+      permissions:
+        items:
+          $ref: '#/definitions/roles.PermissionResponse'
+        type: array
+      routes:
+        items:
+          description: Enumeración de rutas en el sistema
+          type: string
+        type: array
+      updatedAt:
+        type: string
+      updatedBy:
+        type: string
+    type: object
+  roles.RolesPageResponse:
+    description: RolesPageResponse represents a paginated response of roles.
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/roles.RoleResponse'
+        type: array
+      page:
+        type: integer
+      pageSize:
+        type: integer
+      totalItems:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API de Autenticación con JWT en Go con Arquitectura Hexagonal
+  title: Mi API en Golang
+  version: "1.0"
+paths:
+  /v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Autentica a un usuario y devuelve tokens JWT
+      parameters:
+      - description: Credenciales de inicio de sesión
+        in: body
+        name: loginData
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginRequestDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Tokens de acceso y refresh
+          schema:
+            $ref: '#/definitions/dto.AuthDto'
+        "400":
+          description: Error en la petición
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+        "401":
+          description: Credenciales incorrectas
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+      summary: User login
+      tags:
+      - Authentication
+  /v1/auth/refresh-token:
+    post:
+      consumes:
+      - application/json
+      description: Refreshes an expired access token using a refresh token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: refreshToken
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RefreshTokenRequestDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: New tokens
+          schema:
+            $ref: '#/definitions/dto.AuthDto'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+      summary: Refresh JWT token
+      tags:
+      - Authentication
+  /v1/roles:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of roles
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of roles
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/roles.RolesPageResponse'
+              type: object
+        "400":
+          description: Error retrieving roles
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+      summary: Get all roles
+      tags:
+      - Roles
+swagger: "2.0"

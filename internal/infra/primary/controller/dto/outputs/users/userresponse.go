@@ -6,6 +6,9 @@ import (
 	"jwt/base/internal/infra/primary/controller/dto/outputs/roles"
 )
 
+// UserResponse represents a user response.
+// @swagger:model
+// @Description UserResponse represents a user response.
 type UserResponse struct {
 	dto.BaseDto
 	Name        string                     `json:"name,omitempty"`

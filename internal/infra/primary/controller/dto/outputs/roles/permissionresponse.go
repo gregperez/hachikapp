@@ -2,6 +2,9 @@ package roles
 
 import "github.com/WilsonSayago/authBase/core/domain"
 
+// PermissionResponse represents a permission response.
+// @swagger:model
+// @Description PermissionResponse represents a permission response.
 type PermissionResponse struct {
 	Entity string `json:"entity,omitempty"`
 	Create bool   `json:"create,omitempty"`

@@ -46,3 +46,11 @@ To run the project, ensure you have Go installed and set up your PostgreSQL data
 ```sh
 go mod tidy
 go run main.go
+```
+
+## Generate Documentation with Swagger (Swaggo) 
+To generate documentation using Swagger (Swaggo), use the following command:
+
+```sh 
+  swag init -d ./cmd,./internal/infra/primary/controller,./internal/infra/primary/controller/dto 
+```

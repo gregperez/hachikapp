@@ -1,12 +1,15 @@
 package main
 
 import (
+	ginSwagger "github.com/swaggo/gin-swagger"
+	_ "jwt/base/docs"
 	"jwt/base/internal/infra/config/instance"
 	"jwt/base/internal/infra/config/prop"
 
 	"github.com/WilsonSayago/authBase/infra/config/properties"
 	"github.com/WilsonSayago/initModules"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
 )
 
 var (
@@ -17,6 +20,11 @@ const (
 	propertiesFile = "internal/resources/properties.yml"
 )
 
+// @title Mi API en Golang
+// @version 1.0
+// @description API de Autenticación con JWT en Go con Arquitectura Hexagonal
+// @host localhost:8080
+// @BasePath /v1/auth
 func main() {
 
 	initModules.SetFilePath(initModules.YML, propertiesFile)
@@ -30,6 +38,7 @@ func main() {
 	instance.ExecuteMigration()
 
 	r := gin.Default()
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	initModules.RegisterProcess(instance.TranslateInstance())
 	initModules.RegisterProcess(instance.GetDatabasePersistencePgxInstance())

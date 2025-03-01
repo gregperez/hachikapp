@@ -5,6 +5,9 @@ import (
 	"time"
 )
 
+// BaseDto represents a base dto.
+// @swagger:model
+// @Description BaseDto represents a base dto.
 type BaseDto struct {
 	Id        string     `json:"id,omitempty"`
 	UpdatedAt *time.Time `json:"updatedAt,omitempty"`

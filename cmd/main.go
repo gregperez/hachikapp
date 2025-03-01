@@ -38,5 +38,6 @@ func main() {
 	initModules.RegisterProcess(instance.RoleControllerInstance(r))
 	initModules.Init(true, true)
 
+	//r.Run(":8081")
 	r.Run()
 }

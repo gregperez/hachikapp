@@ -10,7 +10,7 @@ import (
 	"jwt/base/internal/infra/config"
 	"jwt/base/internal/infra/primary/controller/dto"
 	"jwt/base/internal/infra/primary/controller/dto/inputs/users"
-	users2 "jwt/base/internal/infra/primary/controller/dto/outputs/users"
+	usersOutputs "jwt/base/internal/infra/primary/controller/dto/outputs/users"
 	"net/http"
 )
 
@@ -58,6 +58,9 @@ func (userC *UserController) RunController() {
 		protected.GET("/:id",
 			userC.authorizationService.PoliciesGuard(userC.GetById(), nil,
 				"USERS", authBaseDomain.READ))
+		protected.GET("/full-info",
+			userC.authorizationService.PoliciesGuard(userC.FindFullById(), nil,
+				"USERS", authBaseDomain.READ))
 		protected.PUT("/change-status/:id",
 			userC.authorizationService.PoliciesGuard(userC.ChangeStatus(), nil,
 				"USERS", authBaseDomain.UPDATE))
@@ -80,9 +83,9 @@ func (userC *UserController) GetAll() func(c *gin.Context) {
 			return
 		}
 
-		list := make([]users2.UserResponse, 0)
+		list := make([]usersOutputs.UserResponse, 0)
 		for _, user := range usersDb {
-			list = append(list, users2.UserResponse{
+			list = append(list, usersOutputs.UserResponse{
 				BaseDto: dto.BaseDto{
 					Id:     user.GetId(),
 					Active: user.Active,
@@ -93,7 +96,7 @@ func (userC *UserController) GetAll() func(c *gin.Context) {
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
 			Message: "Ok",
-			Data: users2.UsersPageResponse{
+			Data: usersOutputs.UsersPageResponse{
 				Page:       page,
 				PageSize:   pageSize,
 				TotalItems: total,
@@ -164,6 +167,29 @@ func (userC *UserController) GetById() func(c *gin.Context) {
 			Status:  http.StatusOK,
 			Message: "Ok",
 			Data:    userDto,
+		})
+	}
+}
+
+func (userC *UserController) FindFullById() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		userToken, _ := c.Get("user")
+		user, err := userC.userService.FindFullById(userToken.(domain.User).GetId())
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ResponseDto{
+				Status:  http.StatusBadRequest,
+				Message: userC.t.TranslateByLang(c.GetHeader("lang"), "errors.users.get-by-id", nil),
+				Data:    nil,
+			})
+			return
+		}
+		response := usersOutputs.UserResponse{}
+		response.MapDomainToResponse(user)
+
+		c.JSON(http.StatusOK, dto.ResponseDto{
+			Status:  http.StatusOK,
+			Message: "Ok",
+			Data:    response,
 		})
 	}
 }

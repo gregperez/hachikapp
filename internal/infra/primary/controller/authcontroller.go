@@ -73,7 +73,7 @@ func (authC *AuthController) Login() func(c *gin.Context) {
 			Status:  http.StatusOK,
 			Message: "Ok",
 			Data: dto.AuthDto{
-				Token:        token,
+				AccessToken:  token,
 				RefreshToken: refreshToken,
 			},
 		})
@@ -101,7 +101,7 @@ func (authC *AuthController) RefreshToken() func(c *gin.Context) {
 			Status:  http.StatusOK,
 			Message: "ok",
 			Data: dto.AuthDto{
-				Token:        token,
+				AccessToken:  token,
 				RefreshToken: refreshTokenNew,
 			},
 		})

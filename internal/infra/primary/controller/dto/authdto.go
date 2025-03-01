@@ -1,6 +1,6 @@
 package dto
 
 type AuthDto struct {
-	Token        string `json:"token"`
+	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
 }

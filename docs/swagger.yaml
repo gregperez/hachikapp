@@ -26,7 +26,7 @@ definitions:
     - refreshToken
     type: object
   dto.AuthDto:
-    description: Contiene los tokens generados tras una autenticación exitosa
+    description: Authentication response model containing JWT tokens for user authentication
     properties:
       accessToken:
         description: "\U0001F539 Token JWT de acceso"
@@ -37,7 +37,7 @@ definitions:
         type: string
     type: object
   dto.ResponseDto:
-    description: Modelo de respuesta estándar para los endpoints
+    description: Standard response model used across all API endpoints
     properties:
       data:
         description: "\U0001F539 Datos dinámicos según el endpoint"
@@ -49,6 +49,8 @@ definitions:
         description: "\U0001F539 Código HTTP de respuesta"
         example: 200
         type: integer
+    type: object
+  dto.RoleDto:
     type: object
   roles.PermissionResponse:
     description: PermissionResponse represents a permission response.
@@ -99,6 +101,97 @@ definitions:
       data:
         items:
           $ref: '#/definitions/roles.RoleResponse'
+        type: array
+      page:
+        type: integer
+      pageSize:
+        type: integer
+      totalItems:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+  users.UseDto:
+    description: UseDto represents a user dto.
+    properties:
+      active:
+        type: boolean
+      createdAt:
+        type: string
+      createdBy:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      isAdmin:
+        type: boolean
+      messagesDefault:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      updatedAt:
+        type: string
+      updatedBy:
+        type: string
+    required:
+    - email
+    - isAdmin
+    - name
+    - password
+    type: object
+  users.UserResponse:
+    description: UserResponse represents a user response.
+    properties:
+      active:
+        type: boolean
+      createdAt:
+        type: string
+      createdBy:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      isAdmin:
+        type: boolean
+      messagesDefault:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      permissions:
+        items:
+          $ref: '#/definitions/roles.PermissionResponse'
+        type: array
+      updatedAt:
+        type: string
+      updatedBy:
+        type: string
+    type: object
+  users.UserUpdateDto:
+    description: UserUpdateDto represents a user update dto.
+    properties:
+      email:
+        type: string
+      isAdmin:
+        type: boolean
+      name:
+        type: string
+    required:
+    - email
+    - isAdmin
+    - name
+    type: object
+  users.UsersPageResponse:
+    description: UserResponse represents a user response.
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/users.UserResponse'
         type: array
       page:
         type: integer
@@ -207,4 +300,295 @@ paths:
       summary: Get all roles
       tags:
       - Roles
+    post:
+      consumes:
+      - application/json
+      description: Creates a new role with the provided details
+      parameters:
+      - description: Role details
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RoleDto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Role created successfully
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+        "400":
+          description: Error creating role
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+      summary: Create new role
+      tags:
+      - Roles
+  /v1/roles/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a role by its ID
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Role details
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/roles.RoleResponse'
+              type: object
+        "400":
+          description: Error retrieving role
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+      summary: Get role by ID
+      tags:
+      - Roles
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing role with the provided details
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role details
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RoleDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Role updated successfully
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+        "400":
+          description: Error updating role
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+      summary: Update role
+      tags:
+      - Roles
+  /v1/roles/change-status/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Changes the active status of a role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Status changed successfully
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+        "400":
+          description: Error changing status
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+      summary: Change role status
+      tags:
+      - Roles
+  /v1/users:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of users
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of users
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/users.UsersPageResponse'
+              type: object
+        "400":
+          description: Error retrieving users
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all users
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user with the provided details
+      parameters:
+      - description: User details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/users.UseDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User created successfully
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+        "400":
+          description: Error creating user
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+      security:
+      - ApiKeyAuth: []
+      summary: Create new user
+      tags:
+      - Users
+  /v1/users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a user by their ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User details
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/users.UseDto'
+              type: object
+        "400":
+          description: Error retrieving user
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user by ID
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing user with the provided details
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User update details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/users.UserUpdateDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User updated successfully
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+        "400":
+          description: Error updating user
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+      security:
+      - ApiKeyAuth: []
+      summary: Update user
+      tags:
+      - Users
+  /v1/users/change-status/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Changes the active status of a user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Status changed successfully
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+        "400":
+          description: Error changing status
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+      security:
+      - ApiKeyAuth: []
+      summary: Change user status
+      tags:
+      - Users
+  /v1/users/full-info:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves complete user information including roles and permissions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Full user details
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/users.UserResponse'
+              type: object
+        "400":
+          description: Error retrieving user info
+          schema:
+            $ref: '#/definitions/dto.ResponseDto'
+      security:
+      - ApiKeyAuth: []
+      summary: Get full user info
+      tags:
+      - Users
 swagger: "2.0"

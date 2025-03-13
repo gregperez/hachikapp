@@ -1,13 +1,14 @@
 package dto
 
 import (
-	"github.com/WilsonSayago/authBase/core/domain"
 	"time"
+
+	"github.com/WilsonSayago/authBase/core/domain"
 )
 
-// BaseDto represents a base dto.
+// BaseDto represents a base dto with common fields for all entities
 // @swagger:model
-// @Description BaseDto represents a base dto.
+// @Description BaseDto contains common fields used across all DTOs in the system
 type BaseDto struct {
 	Id        string     `json:"id,omitempty"`
 	UpdatedAt *time.Time `json:"updatedAt,omitempty"`

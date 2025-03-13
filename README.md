@@ -44,11 +44,13 @@ The project includes configuration for different instances such as user reposito
 To run the project, ensure you have Go installed and set up your PostgreSQL database. Then, use the following commands:
 
 ```sh
-go mod tidy
-go run main.go
+  go mod tidy
+  go run main.go
 ```
 
 ## Generate Documentation with Swagger (Swaggo) 
+You can test the generated documentation by visiting [http://localhost:8080/swagger/index.html#/](http://localhost:8080/swagger/index.html#/).
+
 To generate documentation using Swagger (Swaggo), use the following command:
 
 ```sh 

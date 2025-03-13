@@ -110,6 +110,16 @@ func (roleC *RoleController) GetAll() func(c *gin.Context) {
 	}
 }
 
+// GetById godoc
+// @Summary Get role by ID
+// @Description Retrieves a role by its ID
+// @Tags Roles
+// @Accept json
+// @Produce json
+// @Param id path string true "Role ID"
+// @Success 200 {object} dto.ResponseDto{data=roles.RoleResponse} "Role details"
+// @Failure 400 {object} dto.ResponseDto "Error retrieving role"
+// @Router /v1/roles/{id} [get]
 func (roleC *RoleController) GetById() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id := c.Param("id")
@@ -140,6 +150,16 @@ func (roleC *RoleController) GetById() func(c *gin.Context) {
 	}
 }
 
+// Save godoc
+// @Summary Create new role
+// @Description Creates a new role with the provided details
+// @Tags Roles
+// @Accept json
+// @Produce json
+// @Param role body dto.RoleDto true "Role details"
+// @Success 201 {object} dto.ResponseDto "Role created successfully"
+// @Failure 400 {object} dto.ResponseDto "Error creating role"
+// @Router /v1/roles [post]
 func (roleC *RoleController) Save() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		roleDto := dto.RoleDto{}
@@ -171,6 +191,17 @@ func (roleC *RoleController) Save() func(c *gin.Context) {
 	}
 }
 
+// Update godoc
+// @Summary Update role
+// @Description Updates an existing role with the provided details
+// @Tags Roles
+// @Accept json
+// @Produce json
+// @Param id path string true "Role ID"
+// @Param role body dto.RoleDto true "Role details"
+// @Success 200 {object} dto.ResponseDto "Role updated successfully"
+// @Failure 400 {object} dto.ResponseDto "Error updating role"
+// @Router /v1/roles/{id} [put]
 func (roleC *RoleController) Update() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id := c.Param("id")
@@ -204,6 +235,16 @@ func (roleC *RoleController) Update() func(c *gin.Context) {
 	}
 }
 
+// ChangeStatus godoc
+// @Summary Change role status
+// @Description Changes the active status of a role
+// @Tags Roles
+// @Accept json
+// @Produce json
+// @Param id path string true "Role ID"
+// @Success 200 {object} dto.ResponseDto "Status changed successfully"
+// @Failure 400 {object} dto.ResponseDto "Error changing status"
+// @Router /v1/roles/change-status/{id} [put]
 func (roleC *RoleController) ChangeStatus() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id := c.Param("id")

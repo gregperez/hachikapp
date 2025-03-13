@@ -1,10 +1,6 @@
 package controller
 
 import (
-	authBaseCore "github.com/WilsonSayago/authBase/core"
-	authBaseDomain "github.com/WilsonSayago/authBase/core/domain"
-	"github.com/WilsonSayago/initModules"
-	"github.com/gin-gonic/gin"
 	"jwt/base/internal/core"
 	"jwt/base/internal/core/domain"
 	"jwt/base/internal/infra/config"
@@ -12,6 +8,11 @@ import (
 	"jwt/base/internal/infra/primary/controller/dto/inputs/users"
 	usersOutputs "jwt/base/internal/infra/primary/controller/dto/outputs/users"
 	"net/http"
+
+	authBaseCore "github.com/WilsonSayago/authBase/core"
+	authBaseDomain "github.com/WilsonSayago/authBase/core/domain"
+	"github.com/WilsonSayago/initModules"
+	"github.com/gin-gonic/gin"
 )
 
 type UserController struct {
@@ -70,6 +71,18 @@ func (userC *UserController) RunController() {
 	}
 }
 
+// GetAll godoc
+// @Summary Get all users
+// @Description Retrieves a paginated list of users
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param pageSize query int false "Page size" default(10)
+// @Success 200 {object} dto.ResponseDto{data=usersOutputs.UsersPageResponse} "List of users"
+// @Failure 400 {object} dto.ResponseDto "Error retrieving users"
+// @Security ApiKeyAuth
+// @Router /v1/users [get]
 func (userC *UserController) GetAll() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		page, pageSize, offset := handlePagination(c)
@@ -107,6 +120,17 @@ func (userC *UserController) GetAll() func(c *gin.Context) {
 	}
 }
 
+// Create godoc
+// @Summary Create new user
+// @Description Creates a new user with the provided details
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param user body users.UseDto true "User details"
+// @Success 200 {object} dto.ResponseDto "User created successfully"
+// @Failure 400 {object} dto.ResponseDto "Error creating user"
+// @Security ApiKeyAuth
+// @Router /v1/users [post]
 func (userC *UserController) Create() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		var userDto users.UseDto
@@ -141,6 +165,17 @@ func (userC *UserController) Create() func(c *gin.Context) {
 	}
 }
 
+// GetById godoc
+// @Summary Get user by ID
+// @Description Retrieves a user by their ID
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} dto.ResponseDto{data=users.UseDto} "User details"
+// @Failure 400 {object} dto.ResponseDto "Error retrieving user"
+// @Security ApiKeyAuth
+// @Router /v1/users/{id} [get]
 func (userC *UserController) GetById() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id := c.Param("id")
@@ -171,6 +206,16 @@ func (userC *UserController) GetById() func(c *gin.Context) {
 	}
 }
 
+// FindFullById godoc
+// @Summary Get full user info
+// @Description Retrieves complete user information including roles and permissions
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Success 200 {object} dto.ResponseDto{data=usersOutputs.UserResponse} "Full user details"
+// @Failure 400 {object} dto.ResponseDto "Error retrieving user info"
+// @Security ApiKeyAuth
+// @Router /v1/users/full-info [get]
 func (userC *UserController) FindFullById() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		userToken, _ := c.Get("user")
@@ -194,6 +239,18 @@ func (userC *UserController) FindFullById() func(c *gin.Context) {
 	}
 }
 
+// Update godoc
+// @Summary Update user
+// @Description Updates an existing user with the provided details
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param user body users.UserUpdateDto true "User update details"
+// @Success 200 {object} dto.ResponseDto "User updated successfully"
+// @Failure 400 {object} dto.ResponseDto "Error updating user"
+// @Security ApiKeyAuth
+// @Router /v1/users/{id} [put]
 func (userC *UserController) Update() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		var userDto users.UserUpdateDto
@@ -229,6 +286,17 @@ func (userC *UserController) Update() func(c *gin.Context) {
 	}
 }
 
+// ChangeStatus godoc
+// @Summary Change user status
+// @Description Changes the active status of a user
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} dto.ResponseDto "Status changed successfully"
+// @Failure 400 {object} dto.ResponseDto "Error changing status"
+// @Security ApiKeyAuth
+// @Router /v1/users/change-status/{id} [put]
 func (userC *UserController) ChangeStatus() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id := c.Param("id")

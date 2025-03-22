@@ -1,13 +1,15 @@
 package main
 
 import (
-	ginSwagger "github.com/swaggo/gin-swagger"
 	_ "jwt/base/docs"
 	"jwt/base/internal/infra/config/instance"
 	"jwt/base/internal/infra/config/prop"
 
+	ginSwagger "github.com/swaggo/gin-swagger"
+
 	"github.com/WilsonSayago/authBase/infra/config/properties"
 	"github.com/WilsonSayago/initModules"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 )
@@ -38,6 +40,17 @@ func main() {
 	instance.ExecuteMigration()
 
 	r := gin.Default()
+
+	// Configuración de CORS
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"http://localhost:3000", "http://localhost:5173"} // Puertos comunes de desarrollo React
+	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization", "lang", "Accept"}
+	config.ExposeHeaders = []string{"Content-Length", "Content-Type", "Authorization"}
+	config.AllowCredentials = true
+	config.MaxAge = 12 * 60 * 60 // 12 horas
+	r.Use(cors.New(config))
+
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	initModules.RegisterProcess(instance.TranslateInstance())

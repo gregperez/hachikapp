@@ -19,6 +19,7 @@ type UserController struct {
 	authenticationService authBaseCore.AuthenticationUseCase
 	authorizationService  authBaseCore.AuthorizationUseCase[domain.User, *gin.Context]
 	userService           core.UserUseCase
+	roleService           authBaseCore.RoleUseCase
 	r                     *gin.Engine
 	t                     config.ITranslate
 }
@@ -62,7 +63,7 @@ func (userC *UserController) RunController() {
 		protected.GET("/full-info",
 			userC.authorizationService.PoliciesGuard(userC.FindFullById(), nil,
 				"USERS", authBaseDomain.READ))
-		protected.PUT("/change-status/:id",
+		protected.PUT("/:id/change-status",
 			userC.authorizationService.PoliciesGuard(userC.ChangeStatus(), nil,
 				"USERS", authBaseDomain.UPDATE))
 		protected.PUT("/:id",
@@ -103,6 +104,7 @@ func (userC *UserController) GetAll() func(c *gin.Context) {
 					Id:     user.GetId(),
 					Active: user.Active,
 				},
+				Name:    user.GetName(),
 				Email:   user.GetEmail(),
 				IsAdmin: user.GetIsAdmin()})
 		}
@@ -143,7 +145,7 @@ func (userC *UserController) Create() func(c *gin.Context) {
 				userDto.Name,
 				userDto.Email,
 				userDto.Password,
-				nil,
+				getRolesFromIds(userDto.Roles),
 				userDto.IsAdmin,
 				false,
 			),
@@ -152,7 +154,7 @@ func (userC *UserController) Create() func(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: userC.t.TranslateByLang(c.GetHeader("lang"), "errors.users.save", nil),
+				Message: userC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
 				Data:    nil,
 			})
 		} else {
@@ -163,6 +165,14 @@ func (userC *UserController) Create() func(c *gin.Context) {
 			})
 		}
 	}
+}
+
+func getRolesFromIds(roleIds []string) []authBaseDomain.Role {
+	roles := make([]authBaseDomain.Role, 0)
+	for _, roleId := range roleIds {
+		roles = append(roles, authBaseDomain.Role{Base: authBaseDomain.Base{Id: roleId}})
+	}
+	return roles
 }
 
 // GetById godoc
@@ -189,19 +199,19 @@ func (userC *UserController) GetById() func(c *gin.Context) {
 			return
 		}
 
-		userDto := users.UseDto{
-			BaseDto: dto.BaseDto{
-				Id:     user.GetId(),
-				Active: user.Active,
-			},
-			Name:    user.GetName(),
-			Email:   user.GetEmail(),
-			IsAdmin: user.GetIsAdmin(),
-		}
+		// userDto := users.UseDto{
+		// 	BaseDto: dto.BaseDto{
+		// 		Id:     user.GetId(),
+		// 		Active: user.Active,
+		// 	},
+		// 	Name:    user.GetName(),
+		// 	Email:   user.GetEmail(),
+		// 	IsAdmin: user.GetIsAdmin(),
+		// }
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
 			Message: "Ok",
-			Data:    userDto,
+			Data:    usersOutputs.MapDomainToUserResponse(user),
 		})
 	}
 }
@@ -264,11 +274,12 @@ func (userC *UserController) Update() func(c *gin.Context) {
 				userDto.Name,
 				userDto.Email,
 				"",
-				nil,
+				getRolesFromIds(userDto.Roles),
 				userDto.IsAdmin,
 				false,
 			),
 		}
+
 		err := userC.userService.Update(user)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{

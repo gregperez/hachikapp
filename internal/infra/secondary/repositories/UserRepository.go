@@ -2,26 +2,29 @@ package repositories
 
 import (
 	"fmt"
-	authBaseDomain "github.com/WilsonSayago/authBase/core/domain"
-	authBasePorts "github.com/WilsonSayago/authBase/core/port"
-	"github.com/WilsonSayago/initModules"
 	"jwt/base/internal/core/domain"
 	"jwt/base/internal/core/ports"
 	"jwt/base/internal/infra/secondary/repositories/dto"
 	"jwt/base/internal/infra/secondary/repositories/postgres/dao"
+
+	authBaseDomain "github.com/WilsonSayago/authBase/core/domain"
+	authBasePorts "github.com/WilsonSayago/authBase/core/port"
+	"github.com/WilsonSayago/initModules"
 )
 
 type UserRepository struct {
 	userDao           dao.IUserDao
 	roleDao           dao.IRoleDao
+	userRoleDao       dao.IUserRoleDao
 	validationService authBasePorts.ValidationPort
 }
 
-func NewUserInstance(userDao dao.IUserDao, roleDao dao.IRoleDao, validationService authBasePorts.ValidationPort) ports.UserPort {
+func NewUserInstance(userDao dao.IUserDao, roleDao dao.IRoleDao, userRoleDao dao.IUserRoleDao, validationService authBasePorts.ValidationPort) ports.UserPort {
 	instance := initModules.GetInstance("UserRepository", func() interface{} {
 		return &UserRepository{
 			userDao:           userDao,
 			roleDao:           roleDao,
+			userRoleDao:       userRoleDao,
 			validationService: validationService,
 		}
 	})
@@ -53,29 +56,35 @@ func (repository *UserRepository) FindFullById(id string) (domain.User, error) {
 	return toUserDomain(user), nil
 }
 
-func (repository *UserRepository) Save(v domain.User) error {
-	// find user by email
-	userFound, err := (repository.userDao).FindByEmail(v.GetEmail())
+func (repository *UserRepository) Save(user domain.User) error {
+	userFound, err := (repository.userDao).FindByEmail(user.GetEmail())
 	if err != nil {
 		return err
 	}
 	if userFound.Id != "" {
-		return fmt.Errorf("user already exists")
+		return fmt.Errorf("errors.users.already-exists")
 	}
 
-	hashedPassword, err := (repository.validationService).HashPassword(v.GetPassword())
+	hashedPassword, err := (repository.validationService).HashPassword(user.GetPassword())
 	if err != nil {
-		return err
+		return fmt.Errorf("errors.users.hash-password")
 	}
 	var userDTO = dto.UserDTO{
-		Name:     v.GetName(),
-		Email:    v.GetEmail(),
+		Name:     user.GetName(),
+		Email:    user.GetEmail(),
 		Password: hashedPassword,
-		IsAdmin:  v.GetIsAdmin(),
+		IsAdmin:  user.GetIsAdmin(),
 	}
-	err = (repository.userDao).Save(userDTO)
+	err = (repository.userDao).Save(&userDTO)
 	if err != nil {
-		return err
+		return fmt.Errorf("errors.users.save")
+	}
+
+	for _, role := range user.GetRole() {
+		err = (repository.userRoleDao).Save(userDTO.Id, role.Id)
+		if err != nil {
+			return fmt.Errorf("errors.users.save-user-role")
+		}
 	}
 	return nil
 }
@@ -86,7 +95,14 @@ func (repository *UserRepository) FindById(id string) (domain.User, error) {
 		return domain.User{}, err
 	}
 
-	return toUserDomain(user), nil
+	user.Roles, err = repository.roleDao.FindAllByUserId(user.Id)
+
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	response := toUserDomain(user)
+	return response, nil
 }
 
 func (repository *UserRepository) FindAll(pageSize, offset int) ([]domain.User, int, error) {
@@ -103,16 +119,28 @@ func (repository *UserRepository) FindAll(pageSize, offset int) ([]domain.User, 
 	return list, totalRow, nil
 }
 
-func (repository *UserRepository) Update(v domain.User) error {
+func (repository *UserRepository) Update(user domain.User) error {
 	userDTO := dto.UserDTO{
-		BaseDTO: dto.BaseDTO{Id: v.GetId()},
-		Name:    v.GetName(),
-		Email:   v.GetEmail(),
-		IsAdmin: v.GetIsAdmin(),
+		BaseDTO: dto.BaseDTO{Id: user.GetId()},
+		Name:    user.GetName(),
+		Email:   user.GetEmail(),
+		IsAdmin: user.GetIsAdmin(),
 	}
 	err := (repository.userDao).Update(userDTO)
 	if err != nil {
 		return err
+	}
+
+	err = (repository.userRoleDao).DeleteAllByUserId(userDTO.Id)
+	if err != nil {
+		return fmt.Errorf("errors.users.delete-user-role")
+	}
+
+	for _, role := range user.GetRole() {
+		err = (repository.userRoleDao).Save(userDTO.Id, role.Id)
+		if err != nil {
+			return fmt.Errorf("errors.users.save-user-role")
+		}
 	}
 	return nil
 }

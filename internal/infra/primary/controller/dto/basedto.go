@@ -21,8 +21,6 @@ type BaseDto struct {
 
 func (baseDto *BaseDto) DomainToEntity(base domain.Base) {
 	baseDto.Id = base.Id
-	baseDto.UpdatedAt = &base.UpdatedAt
-	baseDto.CreatedAt = &base.CreatedAt
 	baseDto.CreatedBy = base.CreatedBy
 	baseDto.UpdatedBy = base.UpdatedBy
 	baseDto.Active = base.Active

@@ -2,11 +2,12 @@ package dao
 
 import (
 	"database/sql"
+	"jwt/base/internal/infra/config/database"
+	"jwt/base/internal/infra/secondary/repositories/dto"
+
 	"github.com/WilsonSayago/initModules"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"jwt/base/internal/infra/config/database"
-	"jwt/base/internal/infra/secondary/repositories/dto"
 )
 
 type UserDao struct {
@@ -27,18 +28,20 @@ func (c *UserDao) FindByUserId(userId string) ([]interface{}, error) {
 	panic("implement me")
 }
 
-func (c *UserDao) Save(user dto.UserDTO) error {
-	query := "INSERT INTO public.users (name, email, password, is_admin) VALUES($1, $2, $3, $4)"
-	err := (*c.DbPgx4).Exec(query,
+func (c *UserDao) Save(user *dto.UserDTO) error {
+	query := "INSERT INTO public.users (name, email, password, is_admin) VALUES($1, $2, $3, $4) RETURNING id"
+	var id string
+	err := (*c.DbPgx4).QueryRow(query,
 		user.Name,
 		user.Email,
 		user.Password,
 		user.IsAdmin,
-	)
+	).Scan(&id)
 	if err != nil {
 		log.Errorf("error in Save User, error: %s", err.Error())
 		return err
 	}
+	user.Id = id
 	return nil
 }
 
@@ -68,10 +71,10 @@ func (c *UserDao) FindById(id string) (dto.UserDTO, error) {
 
 func (c *UserDao) FindAll(pageSize, offset int) ([]dto.UserDTO, error) {
 	var (
-		id, email       string
+		id, name, email string
 		isAdmin, active bool
 	)
-	query := "SELECT id, email, is_admin, active FROM public.users ORDER BY id LIMIT $1 OFFSET $2;"
+	query := "SELECT id, name, email, is_admin, active FROM public.users ORDER BY id LIMIT $1 OFFSET $2;"
 	rows, err := (*c.DbPgx4).QueryRows(query, pageSize, offset)
 	if err != nil {
 		log.Errorf("error in FindAll users, error: %s", err.Error())
@@ -80,7 +83,7 @@ func (c *UserDao) FindAll(pageSize, offset int) ([]dto.UserDTO, error) {
 
 	list := make([]dto.UserDTO, 0)
 	for rows.Next() {
-		err = rows.Scan(&id, &email, &isAdmin, &active)
+		err = rows.Scan(&id, &name, &email, &isAdmin, &active)
 
 		if err != nil {
 			log.Errorf("error in Scan FindAll users, error: %s", err.Error())
@@ -92,6 +95,7 @@ func (c *UserDao) FindAll(pageSize, offset int) ([]dto.UserDTO, error) {
 				Id:     id,
 				Active: active,
 			},
+			Name:    name,
 			Email:   email,
 			IsAdmin: isAdmin,
 		})

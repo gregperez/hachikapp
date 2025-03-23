@@ -5,7 +5,7 @@ import (
 )
 
 type IUserDao interface {
-	Save(user dto.UserDTO) error
+	Save(user *dto.UserDTO) error
 	FindById(id string) (dto.UserDTO, error)
 	FindByUserId(userId string) ([]interface{}, error)
 	FindAll(page, offset int) ([]dto.UserDTO, error)

@@ -11,5 +11,5 @@ log:
 jwt:
   secret-key: tuSecretKey
   refresh-secret: tuRefreshSecret
-  expiration-time: 1
-  refresh-token-time: 2
+  expiration-time: 12
+  refresh-token-time: 24

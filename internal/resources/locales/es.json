@@ -17,7 +17,11 @@
         "get-by-id": "Error obteniendo usuario por id",
         "save": "Error guardando usuario",
         "update": "Error actualizando usuario",
-        "change-status": "Error cambiando estado de usuario"
+        "change-status": "Error cambiando estado de usuario",
+        "already-exists": "El usuario ya existe",
+        "hash-password": "Error hasheando contraseña",
+        "save-user-role": "Error asignando rol al usuario",
+        "delete-user-role": "Error eliminando roles del usuario"
     }
   }
 }

@@ -7,5 +7,5 @@ type UserDTO struct {
 	Password    string          `bson:"password,omitempty"`
 	Permissions []PermissionDTO `bson:"permissions,omitempty"`
 	Roles       []RoleDTO       `bson:"roles,omitempty"`
-	IsAdmin     bool            `bson:"is_admin,omitempty"`
+	IsAdmin     bool            `bson:"isAdmin,omitempty"`
 }

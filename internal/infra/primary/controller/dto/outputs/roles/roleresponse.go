@@ -1,8 +1,9 @@
 package roles
 
 import (
-	"github.com/WilsonSayago/authBase/core/domain"
 	"jwt/base/internal/infra/primary/controller/dto"
+
+	"github.com/WilsonSayago/authBase/core/domain"
 )
 
 // RoutePathEnumDto extiende domain.RoutePathEnum para Swagger
@@ -31,4 +32,12 @@ func ConvertRoutesToDto(routes []domain.RoutePathEnum) []RoutePathEnumDto {
 		routesDto = append(routesDto, RoutePathEnumDto(route))
 	}
 	return routesDto
+}
+
+func MapDomainToResponse(role domain.Role) RoleResponse {
+	var response RoleResponse
+	response.BaseDto.DomainToEntity(role.Base)
+	response.Name = role.GetName()
+	response.Routes = ConvertRoutesToDto(role.GetRoutes())
+	return response
 }

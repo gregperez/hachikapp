@@ -7,8 +7,9 @@ import "jwt/base/internal/infra/primary/controller/dto"
 // @Description UseDto represents a user dto.
 type UseDto struct {
 	dto.BaseDto
-	Name     string `json:"name,omitempty" binding:"required"`
-	Email    string `json:"email,omitempty" binding:"required"`
-	Password string `json:"password,omitempty" binding:"required"`
-	IsAdmin  bool   `json:"isAdmin,omitempty" binding:"required"`
+	Name     string   `json:"name,omitempty" binding:"required"`
+	Email    string   `json:"email,omitempty" binding:"required"`
+	Password string   `json:"password,omitempty" binding:"required"`
+	IsAdmin  bool     `json:"isAdmin,omitempty" default:"false" example:"false"`
+	Roles    []string `json:"roles,omitempty" binding:"required" example:"1sdasdsd12,2sdasdsd12"`
 }

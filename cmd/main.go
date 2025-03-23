@@ -14,10 +14,6 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 )
 
-var (
-	portEnv string
-)
-
 const (
 	propertiesFile = "internal/resources/properties.yml"
 )

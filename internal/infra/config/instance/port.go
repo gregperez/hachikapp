@@ -21,8 +21,8 @@ func GetRoleRepositoryInstance() portsAuthBase.RolePort {
 }
 
 func GetUserDaoInstance() pg.IUserDao {
-	var dbPgx database2.Database = database2.GetDatabasePostgresPgx()
-	return pg.NewUserDaoInstance(&dbPgx)
+	var dbPgx *database2.PostgresPgx = database2.GetDatabasePostgresPgx()
+	return pg.NewUserDaoInstance(dbPgx)
 }
 
 func GetPermissionDaoInstance() pg.IPermissionDao {
@@ -40,6 +40,6 @@ func GetValidationService() portsAuthBase.ValidationPort {
 }
 
 func GetUserRoleDaoInstance() pg.IUserRoleDao {
-	var dbPgx database2.Database = database2.GetDatabasePostgresPgx()
-	return pg.NewUserRoleDaoInstance(&dbPgx)
+	var dbPgx *database2.PostgresPgx = database2.GetDatabasePostgresPgx()
+	return pg.NewUserRoleDaoInstance(dbPgx)
 }

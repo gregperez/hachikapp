@@ -11,10 +11,10 @@ import (
 )
 
 type UserDao struct {
-	DbPgx4 *database.Database
+	DbPgx4 *database.PostgresPgx
 }
 
-func NewUserDaoInstance(db *database.Database) IUserDao {
+func NewUserDaoInstance(db *database.PostgresPgx) IUserDao {
 	instance := initModules.GetInstance("UserDao", func() interface{} {
 		return &UserDao{
 			DbPgx4: db,
@@ -39,6 +39,23 @@ func (c *UserDao) Save(user *dto.UserDTO) error {
 	).Scan(&id)
 	if err != nil {
 		log.Errorf("error in Save User, error: %s", err.Error())
+		return err
+	}
+	user.Id = id
+	return nil
+}
+
+func (c *UserDao) SaveWithTx(tx database.Transaction, user *dto.UserDTO) error {
+	query := "INSERT INTO public.users (name, email, password, is_admin) VALUES($1, $2, $3, $4) RETURNING id"
+	var id string
+	err := tx.QueryRow(query,
+		user.Name,
+		user.Email,
+		user.Password,
+		user.IsAdmin,
+	).Scan(&id)
+	if err != nil {
+		log.Errorf("error in Save User with Tx, error: %s", err.Error())
 		return err
 	}
 	user.Id = id
@@ -141,11 +158,36 @@ func (c *UserDao) Update(user dto.UserDTO) error {
 	return nil
 }
 
+func (c *UserDao) UpdateWithTx(tx database.Transaction, user dto.UserDTO) error {
+	query := "UPDATE public.users SET name = $1, email = $2, is_admin = $3 WHERE id = $4;"
+	err := tx.Exec(query,
+		user.Name,
+		user.Email,
+		user.IsAdmin,
+		user.Id,
+	)
+	if err != nil {
+		log.Errorf("error in Update User with Tx, error: %s", err.Error())
+		return err
+	}
+	return nil
+}
+
 func (c *UserDao) ChangeStatus(id string) error {
 	query := "UPDATE public.users SET active = NOT active WHERE id = $1;"
 	err := (*c.DbPgx4).Exec(query, id)
 	if err != nil {
 		log.Errorf("error in Disable User, error: %s", err.Error())
+		return err
+	}
+	return nil
+}
+
+func (c *UserDao) ChangeStatusWithTx(tx database.Transaction, id string) error {
+	query := "UPDATE public.users SET active = NOT active WHERE id = $1;"
+	err := tx.Exec(query, id)
+	if err != nil {
+		log.Errorf("error in Disable User with Tx, error: %s", err.Error())
 		return err
 	}
 	return nil
@@ -160,4 +202,13 @@ func (c *UserDao) Count() (int, error) {
 		return 0, err
 	}
 	return totalRow, nil
+}
+
+func (c *UserDao) BeginTx() (database.Transaction, error) {
+	tx, err := c.DbPgx4.BeginTx()
+	if err != nil {
+		log.Errorf("error in BeginTx, error: %s", err.Error())
+		return nil, err
+	}
+	return tx, nil
 }

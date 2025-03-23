@@ -1,5 +1,12 @@
 {
   "errors": {
+    "generals": {
+      "errors": "Error general"
+    },
+    "transaction": {
+      "begin": "Error iniciando transacción",
+      "commit": "Error haciendo commit"
+    },
     "no-data-form": "No se proporcionaron datos",
     "invalid-email": "Correo electrónico inválido",
     "invalid-field-required": "Campo {{.Field}} requerido",
@@ -10,7 +17,8 @@
       "get-by-id": "Error obteniendo rol por id",
       "save": "Error guardando rol",
       "update": "Error actualizando rol",
-      "change-status": "Error cambiando estado de rol"
+      "change-status": "Error cambiando estado de rol",
+      "not-found": "Rol no encontrado"
     },
     "users": {
         "get-all": "Error obteniendo usuarios",
@@ -21,7 +29,8 @@
         "already-exists": "El usuario ya existe",
         "hash-password": "Error hasheando contraseña",
         "save-user-role": "Error asignando rol al usuario",
-        "delete-user-role": "Error eliminando roles del usuario"
+        "delete-user-role": "Error eliminando roles del usuario",
+        "not-found": "Usuario no encontrado"
     }
   }
 }

@@ -91,7 +91,7 @@ func (userC *UserController) GetAll() func(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: userC.t.TranslateByLang(c.GetHeader("lang"), "errors.users.get-all", nil),
+				Message: userC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
 				Data:    nil,
 			})
 			return
@@ -193,7 +193,7 @@ func (userC *UserController) GetById() func(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: userC.t.TranslateByLang(c.GetHeader("lang"), "errors.users.get-by-id", nil),
+				Message: userC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
 				Data:    nil,
 			})
 			return
@@ -233,7 +233,7 @@ func (userC *UserController) FindFullById() func(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: userC.t.TranslateByLang(c.GetHeader("lang"), "errors.users.get-by-id", nil),
+				Message: userC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
 				Data:    nil,
 			})
 			return
@@ -284,7 +284,7 @@ func (userC *UserController) Update() func(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: userC.t.TranslateByLang(c.GetHeader("lang"), "errors.users.update", nil),
+				Message: userC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
 				Data:    nil,
 			})
 		} else {
@@ -315,7 +315,7 @@ func (userC *UserController) ChangeStatus() func(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: userC.t.TranslateByLang(c.GetHeader("lang"), "errors.users.change-status", nil),
+				Message: userC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
 				Data:    nil,
 			})
 		} else {

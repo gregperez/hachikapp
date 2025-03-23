@@ -3,17 +3,62 @@ package database
 import (
 	"context"
 	"fmt"
+	"jwt/base/internal/infra/config/prop"
+	"sync"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
-	"jwt/base/internal/infra/config/prop"
-	"sync"
 )
 
 var (
 	databasePostgresPgxSingleton *PostgresPgx
 	databasePostgresSQLDBOnce    sync.Once
 )
+
+// Transaction representa una transacción de base de datos
+type Transaction interface {
+	QueryRow(sql string, args ...interface{}) pgx.Row
+	QueryRows(sql string, args ...interface{}) (pgx.Rows, error)
+	Exec(sql string, args ...interface{}) error
+	Commit() error
+	Rollback() error
+}
+
+// pgxTransaction implementa la interfaz Transaction usando pgx
+type pgxTransaction struct {
+	tx  pgx.Tx
+	ctx context.Context
+}
+
+func (t *pgxTransaction) QueryRow(sql string, args ...interface{}) pgx.Row {
+	return t.tx.QueryRow(t.ctx, sql, args...)
+}
+
+func (t *pgxTransaction) QueryRows(sql string, args ...interface{}) (pgx.Rows, error) {
+	return t.tx.Query(t.ctx, sql, args...)
+}
+
+func (t *pgxTransaction) Exec(sql string, args ...interface{}) error {
+	_, err := t.tx.Exec(t.ctx, sql, args...)
+	return err
+}
+
+func (t *pgxTransaction) Commit() error {
+	return t.tx.Commit(t.ctx)
+}
+
+func (t *pgxTransaction) Rollback() error {
+	return t.tx.Rollback(t.ctx)
+}
+
+// Database define la interfaz para operaciones de base de datos
+type DatabaseOperations interface {
+	QueryRow(sql string, args ...interface{}) pgx.Row
+	QueryRows(sql string, args ...interface{}) (pgx.Rows, error)
+	Exec(sql string, args ...interface{}) error
+	BeginTx() (Transaction, error)
+}
 
 type PostgresPgx struct {
 	pool *pgxpool.Pool
@@ -28,9 +73,19 @@ func (db *PostgresPgx) QueryRows(sql string, args ...interface{}) (pgx.Rows, err
 	rows, err := db.pool.Query(db.ctx, sql, args...)
 	return rows, err
 }
+
 func (db *PostgresPgx) Exec(sql string, args ...interface{}) error {
 	_, err := db.pool.Exec(db.ctx, sql, args...)
 	return err
+}
+
+// BeginTx inicia una nueva transacción
+func (db *PostgresPgx) BeginTx() (Transaction, error) {
+	tx, err := db.pool.Begin(db.ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pgxTransaction{tx: tx, ctx: db.ctx}, nil
 }
 
 func NewConnectionPostgresPgx(prop *prop.DatabaseProperty) *PostgresPgx {

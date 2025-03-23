@@ -52,7 +52,7 @@ func (roleC *RoleController) RunController() {
 				"USERS", authBaseDomain.READ))
 		protected.POST("/", roleC.authorizationService.PoliciesGuard(roleC.Save(), nil,
 			"USERS", authBaseDomain.CREATE))
-		protected.PUT("/change-status/:id", roleC.authorizationService.PoliciesGuard(roleC.ChangeStatus(), nil,
+		protected.PUT("/:id/change-status", roleC.authorizationService.PoliciesGuard(roleC.ChangeStatus(), nil,
 			"USERS", authBaseDomain.UPDATE))
 		protected.PUT("/:id", roleC.authorizationService.PoliciesGuard(roleC.Update(), nil,
 			"USERS", authBaseDomain.UPDATE))
@@ -77,7 +77,7 @@ func (roleC *RoleController) GetAll() func(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), "errors.roles.get-all", nil),
+				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
 				Data:    nil,
 			})
 			return
@@ -127,7 +127,7 @@ func (roleC *RoleController) GetById() func(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), "errors.roles.get-by-id", nil),
+				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
 				Data:    nil,
 			})
 			return
@@ -177,7 +177,7 @@ func (roleC *RoleController) Save() func(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), "errors.roles.save", nil),
+				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
 				Data:    nil,
 			})
 			return
@@ -217,11 +217,11 @@ func (roleC *RoleController) Update() func(c *gin.Context) {
 			Permissions: convertDtoToPermissions(roleDto.Permissions),
 		}
 
-		_, err := roleC.roleService.UpdateRole(role)
+		err := roleC.roleService.UpdateRole(role)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), "errors.roles.update", nil),
+				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
 				Data:    nil,
 			})
 			return
@@ -252,7 +252,7 @@ func (roleC *RoleController) ChangeStatus() func(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
-				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), "errors.roles.change-status", nil),
+				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
 				Data:    nil,
 			})
 			return
@@ -274,6 +274,7 @@ func convertPermissionsToDto(permissions []authBaseDomain.Permission) []roles.Pe
 			Create: permission.Create,
 			Read:   permission.Read,
 			Update: permission.Update,
+			Delete: permission.Delete,
 		}
 	}
 	return permissionDtos
@@ -287,6 +288,7 @@ func convertDtoToPermissions(permissionDtos []dto.PermissionDto) []authBaseDomai
 			Create: permissionDto.Create,
 			Read:   permissionDto.Read,
 			Update: permissionDto.Update,
+			Delete: permissionDto.Delete,
 		}
 	}
 	return permissions

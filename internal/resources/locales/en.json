@@ -18,7 +18,8 @@
       "save": "Error saving role",
       "update": "Error updating role",
       "change-status": "Error changing role status",
-      "not-found": "Role not found"
+      "not-found": "Role not found",
+      "already-exists": "Role already exists"
     },
     "users": {
       "get-all": "Error getting users",

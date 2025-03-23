@@ -3,14 +3,26 @@ package dao
 import (
 	"database/sql"
 	"fmt"
-	"github.com/pkg/errors"
 	"jwt/base/internal/infra/config/database"
 	"jwt/base/internal/infra/secondary/repositories/dto"
+
+	"github.com/pkg/errors"
 
 	domain "github.com/WilsonSayago/authBase/core/domain"
 	"github.com/WilsonSayago/initModules"
 	log "github.com/sirupsen/logrus"
 )
+
+type IRoleDao interface {
+	FindAllByUserId(userId string) ([]dto.RoleDTO, error)
+	FindById(userId string) (dto.RoleDTO, error)
+	FindAll(pageSize, offset int) ([]dto.RoleDTO, error)
+	Save(role dto.RoleDTO) (dto.RoleDTO, error)
+	Update(role dto.RoleDTO) error
+	FindByName(name string) (dto.RoleDTO, error)
+	ChangeStatus(id string) error
+	Count() (int, error)
+}
 
 type RoleDao struct {
 	DbPgx4 *database.Database
@@ -77,7 +89,7 @@ func (r *RoleDao) FindById(roleId string) (dto.RoleDTO, error) {
 		return dto.RoleDTO{}, err
 	}
 
-	return dto.RoleDTO{
+	data := dto.RoleDTO{
 		BaseDTO: dto.BaseDTO{
 			Id:     id,
 			Active: active,
@@ -85,7 +97,9 @@ func (r *RoleDao) FindById(roleId string) (dto.RoleDTO, error) {
 		Name:        name,
 		Routes:      routes,
 		Permissions: permissions,
-	}, nil
+	}
+
+	return data, nil
 }
 
 func (r *RoleDao) FindAll(pageSize, offset int) ([]dto.RoleDTO, error) {
@@ -177,27 +191,6 @@ func (r *RoleDao) FindByName(name string) (dto.RoleDTO, error) {
 	}, nil
 }
 
-func (r *RoleDao) Update(role dto.RoleDTO) (dto.RoleDTO, error) {
-	query := "update public.roles set name = $1, routes = $2, permissions = $3 where id = $4 returning id;"
-	row := (*r.DbPgx4).QueryRow(query, role.Name, role.Routes, role.Permissions, role.Id)
-
-	var id string
-	err := row.Scan(&id)
-	if err != nil {
-		log.Errorf("error in Update Role, error: %s", err.Error())
-		return dto.RoleDTO{}, err
-	}
-
-	return dto.RoleDTO{
-		BaseDTO: dto.BaseDTO{
-			Id: id,
-		},
-		Name:        role.Name,
-		Routes:      role.Routes,
-		Permissions: role.Permissions,
-	}, nil
-}
-
 func (r *RoleDao) ChangeStatus(id string) error {
 	query := "UPDATE public.roles SET active = NOT active WHERE id = $1;"
 	err := (*r.DbPgx4).Exec(query, id)
@@ -220,4 +213,14 @@ func (r *RoleDao) Count() (int, error) {
 	}
 
 	return count, nil
+}
+
+func (r *RoleDao) Update(role dto.RoleDTO) error {
+	query := "update public.roles set name = $1, permissions = $2 where id = $3;"
+	err := (*r.DbPgx4).Exec(query, role.Name, role.Permissions, role.Id)
+	if err != nil {
+		log.Errorf("error in Update Role, error: %s", err.Error())
+		return err
+	}
+	return nil
 }

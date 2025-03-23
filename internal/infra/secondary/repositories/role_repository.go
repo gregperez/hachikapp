@@ -36,7 +36,7 @@ func (r RoleRepository) FindAll(pageSize, offset int) ([]domain.Role, int, error
 	total, err := (r.roleDao).Count()
 	roles, err := (r.roleDao).FindAll(pageSize, offset)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("errors.roles.get-all")
 	}
 
 	// convert roles to domain
@@ -51,41 +51,41 @@ func (r RoleRepository) FindAll(pageSize, offset int) ([]domain.Role, int, error
 func (r RoleRepository) Save(role domain.Role) (domain.Role, error) {
 	roleFound, err := (r.roleDao).FindByName(role.Name)
 	if err != nil || roleFound.Id != "" {
-		return domain.Role{}, fmt.Errorf("role already exists")
+		return domain.Role{}, fmt.Errorf("errors.roles.already-exists")
 	}
 	roleDto := ToRoleDTO(role)
 	roleSave, err := (r.roleDao).Save(roleDto)
 	if err != nil {
-		return domain.Role{}, err
+		return domain.Role{}, fmt.Errorf("errors.roles.save")
 	}
 
 	return ToRoleDomain(roleSave), nil
 }
 
-func (r RoleRepository) Update(role domain.Role) (domain.Role, error) {
+func (r RoleRepository) Update(role domain.Role) error {
 	roleFound, err := (r.roleDao).FindById(role.Id)
 	if err != nil || roleFound.Id == "" {
-		return domain.Role{}, fmt.Errorf("role not found")
+		return fmt.Errorf("errors.roles.not-found")
 	}
 
 	roleDto := ToRoleDTO(role)
-	roleSave, err := (r.roleDao).Save(roleDto)
+	err = (r.roleDao).Update(roleDto)
 	if err != nil {
-		return domain.Role{}, err
+		return fmt.Errorf("errors.roles.update")
 	}
 
-	return ToRoleDomain(roleSave), nil
+	return nil
 }
 
 func (r RoleRepository) ChangeStatus(id string) error {
 	roleFound, err := (r.roleDao).FindById(id)
 	if err != nil || roleFound.Id == "" {
-		return fmt.Errorf("role not found")
+		return fmt.Errorf("errors.roles.not-found")
 	}
 
 	err = (r.roleDao).ChangeStatus(id)
 	if err != nil {
-		return err
+		return fmt.Errorf("errors.roles.change-status")
 	}
 
 	return nil
@@ -105,6 +105,9 @@ func ToRoleDomain(role dto.RoleDTO) domain.Role {
 
 func ToRoleDTO(role domain.Role) dto.RoleDTO {
 	return dto.RoleDTO{
+		BaseDTO: dto.BaseDTO{
+			Id: role.Id,
+		},
 		Name:        role.Name,
 		Routes:      role.Routes,
 		Permissions: ToPermissionDTO(role.Permissions),

@@ -18,7 +18,8 @@
       "save": "Error guardando rol",
       "update": "Error actualizando rol",
       "change-status": "Error cambiando estado de rol",
-      "not-found": "Rol no encontrado"
+      "not-found": "Rol no encontrado",
+      "already-exists": "El rol ya existe"
     },
     "users": {
         "get-all": "Error obteniendo usuarios",

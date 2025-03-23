@@ -3,11 +3,16 @@ package dao
 import (
 	"database/sql"
 	"fmt"
-	"github.com/WilsonSayago/initModules"
-	log "github.com/sirupsen/logrus"
 	"jwt/base/internal/infra/config/database"
 	"jwt/base/internal/infra/secondary/repositories/dto"
+
+	"github.com/WilsonSayago/initModules"
+	log "github.com/sirupsen/logrus"
 )
+
+type IPermissionDao interface {
+	FindAllByUserId(userId string) ([]dto.PermissionDTO, error)
+}
 
 type PermissionDao struct {
 	DbPgx4 *database.Database

@@ -30,7 +30,14 @@ explícito (O-027).
 
 ## Criterios de aceptación
 
-- [ ] Ningún import productivo de Logrus permanece.
-- [ ] `go.mod` no requiere Logrus (salvo transitivo justificado).
-- [ ] `make verify` verde.
-- [ ] O-027 marcada Resuelto con commit.
+- [x] Ningún import productivo de Logrus permanece.
+- [x] `go.mod` no requiere Logrus (salvo transitivo justificado).
+- [x] `make verify` verde.
+- [x] O-027 marcada Resuelto con commit.
+
+## Implementación
+
+- `internal/infra/logging`: `New` (JSON stdout) + `ParseLevel` + `OrDefault`.
+- `cmd/main.go` crea el logger, llama `slog.SetDefault` y lo inyecta en `HTTPDeps`.
+- Recovery, access log, audit y translate usan `*slog.Logger` / `slog.Default()`.
+- Dependabot ya no ignora Logrus (la dep se eliminó).

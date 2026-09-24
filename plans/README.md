@@ -28,7 +28,7 @@ Estos documentos son instrucciones autocontenidas para que otro agente pueda eje
 | 008 | [Estabilizar contrato HTTP y OpenAPI](./008-estabilizar-contrato-http-openapi.md) | P1 | L | 004, 006, 007 | Verificado (`03f1c47`) — observaciones P1/P2 diferidas a 010 |
 | 009 | [Actualizar dependencias de terceros](./009-actualizar-dependencias.md) | P2 | M | 003–008 | Implementado — observaciones P1/P2 diferidas a 010 |
 | 010 | [Remediar observaciones de verificación y cierre](./010-remediar-observaciones-y-cierre.md) | P0/P1 | M | 001–009 | Implementado — residual O-014 (P2) y O-030 (`replace` authBase) |
-| 011 | [Migrar logging a log/slog](./011-migrar-logging-slog.md) | P2 | M | 009, 010 | Pendiente (O-027) |
+| 011 | [Migrar logging a log/slog](./011-migrar-logging-slog.md) | P2 | M | 009, 010 | Hecho (`codex/011-logging-slog`) |
 
 ```text
 001 -> 002 -> 003 -> 005 -> 006 -----> 007 -> 008 -> 009 -> 010

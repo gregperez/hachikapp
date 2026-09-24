@@ -7,8 +7,8 @@ This project is a Go-based application that uses PostgreSQL for data storage and
 
 ### Go Modules
 - **github.com/WilsonSayago/authBase**: A library for handling authentication and authorization.
-- **github.com/sirupsen/logrus**: A structured logger for Go.
 - **github.com/WilsonSayago/initModules**: A library for initializing modules in a Go application.
+- Logging uses Go's standard `log/slog` (JSON to stdout).
 
 ## Running PostgreSQL with Docker
 To run a PostgreSQL instance using Docker, use a local password of your choice (do not reuse production secrets):
@@ -70,7 +70,7 @@ Security operations (rotation, bootstrap contract, exposure response, secret sca
 
 ## Dependencies
 
-Go minimum **1.26.6** / preferred toolchain **1.27.1**. Update policy, deferred majors, and Logrus→slog decision: [docs/dependency-policy.md](docs/dependency-policy.md).
+Go minimum **1.26.6** / preferred toolchain **1.27.1**. Update policy: [docs/dependency-policy.md](docs/dependency-policy.md).
 
 ## Development quality gate
 

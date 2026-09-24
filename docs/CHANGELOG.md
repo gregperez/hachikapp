@@ -19,3 +19,4 @@
 - Go minimum raised to 1.26.6 (O-029).
 - Temporary `replace` of `authBase/v3` to `../authBase` until the module is
   published (O-030).
+- Process logging migrated from Logrus to `log/slog` (O-027 / plan 011).

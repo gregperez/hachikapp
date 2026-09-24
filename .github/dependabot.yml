@@ -13,10 +13,6 @@ updates:
         update-types:
           - patch
     # Minors stay ungrouped so each is reviewed. Majors never auto-merge.
-    ignore:
-      # Logrus minor+ reserved for an explicit slog migration plan.
-      - dependency-name: github.com/sirupsen/logrus
-        update-types: ["version-update:semver-minor", "version-update:semver-major"]
     labels:
       - dependencies
       - go

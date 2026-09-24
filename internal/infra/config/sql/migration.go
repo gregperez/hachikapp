@@ -1,22 +1,32 @@
 package sql
 
 import (
-	"log"
+	"errors"
+	"fmt"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-func Migrate(migrationsDir string) {
-	m, err := migrate.New(
-		"file://"+migrationsDir,
-		"postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable")
+// Migrate applies all up migrations using the same DSN as the runtime pool.
+func Migrate(migrationsDir, dsn string) error {
+	if migrationsDir == "" {
+		return fmt.Errorf("migrations path is required")
+	}
+	if dsn == "" {
+		return fmt.Errorf("database dsn is required")
+	}
+	m, err := migrate.New("file://"+migrationsDir, dsn)
 	if err != nil {
-		log.Fatalf("Failed to create migrate instance: %v", err)
+		return fmt.Errorf("create migrate instance: %w", err)
 	}
+	defer func() {
+		_, _ = m.Close()
+	}()
 
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Fatalf("Failed to run migrations: %v", err)
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return fmt.Errorf("run migrations: %w", err)
 	}
+	return nil
 }

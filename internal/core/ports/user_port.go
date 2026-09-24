@@ -17,4 +17,7 @@ type UserPort interface {
 	FindFullById(id string) (domain.User, error)
 	Update(u domain.User) error
 	ChangeStatus(id string) error
+	CountAdmins() (int, error)
+	UpdatePassword(id, passwordHash string) error
+	FindRoleIDByName(name string) (string, error)
 }

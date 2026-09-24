@@ -10,6 +10,7 @@ type DataSource struct {
 	Name       string `yaml:"database"`
 	User       string `yaml:"user"`
 	Password   string `yaml:"password"`
+	SSLMode    string `yaml:"sslmode"`
 	DbMaxConns int32  `yaml:"dbMaxConns"`
 }
 

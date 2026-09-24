@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/WilsonSayago/base-golang/internal/core"
+	"github.com/WilsonSayago/base-golang/internal/core/authz"
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/infra/config"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
@@ -45,42 +47,35 @@ func (userC *UserController) RunController() {
 	protected.Use(ginadapter.Middleware(userC.authorizationService.AuthorizeJWT()))
 	{
 		protected.GET("/", ginadapter.Middleware(userC.authorizationService.PoliciesGuard(
-			ginadapter.Handler(userC.GetAll()), nil, "USERS", authBaseDomain.READ)))
+			ginadapter.Handler(userC.GetAll()), nil, authz.EntityUsers, authz.Read)))
 		protected.POST("/", ginadapter.Middleware(userC.authorizationService.PoliciesGuard(
-			ginadapter.Handler(userC.Create()), nil, "USERS", authBaseDomain.CREATE)))
+			ginadapter.Handler(userC.Create()), nil, authz.EntityUsers, authz.Create)))
+
+		// Own-profile routes before /:id.
+		protected.GET("/me", userC.FindFullById())
+		protected.PUT("/me", userC.UpdateOwnProfile())
+		protected.PUT("/me/password", userC.ChangePassword())
+		protected.GET("/full-info", userC.FindFullById())
+
 		protected.GET("/:id", ginadapter.Middleware(userC.authorizationService.PoliciesGuard(
-			ginadapter.Handler(userC.GetById()), nil, "USERS", authBaseDomain.READ)))
-		protected.GET("/full-info", ginadapter.Middleware(userC.authorizationService.PoliciesGuard(
-			ginadapter.Handler(userC.FindFullById()), nil, "USERS", authBaseDomain.READ)))
-		protected.PUT("/:id/change-status", ginadapter.Middleware(userC.authorizationService.PoliciesGuard(
-			ginadapter.Handler(userC.ChangeStatus()), nil, "USERS", authBaseDomain.UPDATE)))
+			ginadapter.Handler(userC.GetById()), nil, authz.EntityUsers, authz.Read)))
 		protected.PUT("/:id", ginadapter.Middleware(userC.authorizationService.PoliciesGuard(
-			ginadapter.Handler(userC.Update()), nil, "USERS", authBaseDomain.UPDATE)))
+			ginadapter.Handler(userC.AdminUpdate()), nil, authz.EntityUsers, authz.Update)))
+		protected.PUT("/:id/change-status", ginadapter.Middleware(userC.authorizationService.PoliciesGuard(
+			ginadapter.Handler(userC.ChangeStatus()), nil, authz.EntityUsers, authz.Update)))
+		protected.PUT("/:id/roles", ginadapter.Middleware(userC.authorizationService.PoliciesGuard(
+			ginadapter.Handler(userC.AssignRoles()), nil, authz.EntityUsersPrivileges, authz.Update)))
+		protected.PUT("/:id/admin", ginadapter.Middleware(userC.authorizationService.PoliciesGuard(
+			ginadapter.Handler(userC.SetAdminFlag()), nil, authz.EntityUsersPrivileges, authz.Update)))
 	}
 }
 
-// GetAll godoc
-// @Summary Get all users
-// @Description Retrieves a paginated list of users
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Param page query int false "Page number" default(1)
-// @Param pageSize query int false "Page size" default(10)
-// @Success 200 {object} dto.ResponseDto{data=usersOutputs.UsersPageResponse} "List of users"
-// @Failure 400 {object} dto.ResponseDto "Error retrieving users"
-// @Security ApiKeyAuth
-// @Router /v1/users [get]
 func (userC *UserController) GetAll() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		page, pageSize, offset := handlePagination(c)
 		usersDb, total, err := userC.userService.FindAll(pageSize, offset)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: userC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
-				Data:    nil,
-			})
+			writeTranslatedError(userC.t, c, http.StatusBadRequest, err)
 			return
 		}
 
@@ -109,91 +104,42 @@ func (userC *UserController) GetAll() func(c *gin.Context) {
 	}
 }
 
-// Create godoc
-// @Summary Create new user
-// @Description Creates a new user with the provided details
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Param user body users.UseDto true "User details"
-// @Success 200 {object} dto.ResponseDto "User created successfully"
-// @Failure 400 {object} dto.ResponseDto "Error creating user"
-// @Security ApiKeyAuth
-// @Router /v1/users [post]
 func (userC *UserController) Create() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		var userDto users.UseDto
-		if !handleBind(userC.t, c, &userDto) {
+		var req users.CreateUserRequest
+		if !handleBind(userC.t, c, &req) {
 			return
 		}
 		user := domain.WithPlainPassword(domain.User{
 			UserGeneric: authBaseDomain.NewUserGeneric(
 				"",
-				userDto.Name,
-				userDto.Email,
-				getRolesFromIds(userDto.Roles),
-				userDto.IsAdmin,
+				req.Name,
+				req.Email,
+				nil,
 				false,
+				true,
 			),
-		}, userDto.Password)
-		err := userC.userService.Create(user)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: userC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
-				Data:    nil,
-			})
-		} else {
-			c.JSON(http.StatusOK, dto.ResponseDto{
-				Status:  http.StatusOK,
-				Message: "Ok",
-				Data:    nil,
-			})
+		}, req.Password)
+		if err := userC.userService.Create(user); err != nil {
+			writeUseCaseError(userC.t, c, err)
+			return
 		}
+		c.JSON(http.StatusCreated, dto.ResponseDto{
+			Status:  http.StatusCreated,
+			Message: "Ok",
+			Data:    nil,
+		})
 	}
 }
 
-func getRolesFromIds(roleIds []string) []authBaseDomain.Role {
-	roles := make([]authBaseDomain.Role, 0)
-	for _, roleId := range roleIds {
-		roles = append(roles, authBaseDomain.Role{Base: authBaseDomain.Base{Id: roleId}})
-	}
-	return roles
-}
-
-// GetById godoc
-// @Summary Get user by ID
-// @Description Retrieves a user by their ID
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Param id path string true "User ID"
-// @Success 200 {object} dto.ResponseDto{data=users.UseDto} "User details"
-// @Failure 400 {object} dto.ResponseDto "Error retrieving user"
-// @Security ApiKeyAuth
-// @Router /v1/users/{id} [get]
 func (userC *UserController) GetById() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id := c.Param("id")
 		user, err := userC.userService.FindById(id)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: userC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
-				Data:    nil,
-			})
+			writeTranslatedError(userC.t, c, http.StatusBadRequest, err)
 			return
 		}
-
-		// userDto := users.UseDto{
-		// 	BaseDto: dto.BaseDto{
-		// 		Id:     user.GetId(),
-		// 		Active: user.Active,
-		// 	},
-		// 	Name:    user.GetName(),
-		// 	Email:   user.GetEmail(),
-		// 	IsAdmin: user.GetIsAdmin(),
-		// }
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
 			Message: "Ok",
@@ -202,16 +148,6 @@ func (userC *UserController) GetById() func(c *gin.Context) {
 	}
 }
 
-// FindFullById godoc
-// @Summary Get full user info
-// @Description Retrieves complete user information including roles and permissions
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Success 200 {object} dto.ResponseDto{data=usersOutputs.UserResponse} "Full user details"
-// @Failure 400 {object} dto.ResponseDto "Error retrieving user info"
-// @Security ApiKeyAuth
-// @Router /v1/users/full-info [get]
 func (userC *UserController) FindFullById() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		userToken, ok := userC.authorizationService.GetUserToken(ginadapter.Wrap(c))
@@ -225,16 +161,11 @@ func (userC *UserController) FindFullById() func(c *gin.Context) {
 		}
 		user, err := userC.userService.FindFullById(userToken.GetId())
 		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: userC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
-				Data:    nil,
-			})
+			writeTranslatedError(userC.t, c, http.StatusBadRequest, err)
 			return
 		}
 		response := usersOutputs.UserResponse{}
 		response.MapDomainToResponse(user)
-
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
 			Message: "Ok",
@@ -243,80 +174,161 @@ func (userC *UserController) FindFullById() func(c *gin.Context) {
 	}
 }
 
-// Update godoc
-// @Summary Update user
-// @Description Updates an existing user with the provided details
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Param id path string true "User ID"
-// @Param user body users.UserUpdateDto true "User update details"
-// @Success 200 {object} dto.ResponseDto "User updated successfully"
-// @Failure 400 {object} dto.ResponseDto "Error updating user"
-// @Security ApiKeyAuth
-// @Router /v1/users/{id} [put]
-func (userC *UserController) Update() func(c *gin.Context) {
+func (userC *UserController) UpdateOwnProfile() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		var userDto users.UserUpdateDto
-		id := c.Param("id")
-		if !handleBind(userC.t, c, &userDto) {
+		userToken, ok := userC.authorizationService.GetUserToken(ginadapter.Wrap(c))
+		if !ok {
+			c.JSON(http.StatusUnauthorized, dto.ResponseDto{
+				Status:  http.StatusUnauthorized,
+				Message: "unauthorized",
+				Data:    nil,
+			})
 			return
 		}
-		user := domain.User{
-			UserGeneric: authBaseDomain.NewUserGeneric(
-				id,
-				userDto.Name,
-				userDto.Email,
-				getRolesFromIds(userDto.Roles),
-				userDto.IsAdmin,
-				false,
-			),
+		var req users.UpdateOwnProfileRequest
+		if !handleBind(userC.t, c, &req) {
+			return
 		}
-
-		err := userC.userService.Update(user)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: userC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
-				Data:    nil,
-			})
-		} else {
-			c.JSON(http.StatusOK, dto.ResponseDto{
-				Status:  http.StatusOK,
-				Message: "Ok",
-				Data:    nil,
-			})
+		if err := userC.userService.UpdateOwnProfile(userToken.GetId(), userToken.GetId(), req.Name); err != nil {
+			writeUseCaseError(userC.t, c, err)
+			return
 		}
+		c.JSON(http.StatusOK, dto.ResponseDto{Status: http.StatusOK, Message: "Ok", Data: nil})
 	}
 }
 
-// ChangeStatus godoc
-// @Summary Change user status
-// @Description Changes the active status of a user
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Param id path string true "User ID"
-// @Success 200 {object} dto.ResponseDto "Status changed successfully"
-// @Failure 400 {object} dto.ResponseDto "Error changing status"
-// @Security ApiKeyAuth
-// @Router /v1/users/change-status/{id} [put]
+func (userC *UserController) ChangePassword() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		userToken, ok := userC.authorizationService.GetUserToken(ginadapter.Wrap(c))
+		if !ok {
+			c.JSON(http.StatusUnauthorized, dto.ResponseDto{
+				Status:  http.StatusUnauthorized,
+				Message: "unauthorized",
+				Data:    nil,
+			})
+			return
+		}
+		var req users.ChangePasswordRequest
+		if !handleBind(userC.t, c, &req) {
+			return
+		}
+		if err := userC.userService.ChangePassword(c.Request.Context(), userToken.GetId(), req.CurrentPassword, req.NewPassword); err != nil {
+			writeUseCaseError(userC.t, c, err)
+			return
+		}
+		c.JSON(http.StatusOK, dto.ResponseDto{Status: http.StatusOK, Message: "Ok", Data: nil})
+	}
+}
+
+func (userC *UserController) AdminUpdate() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		var req users.AdminUpdateUserRequest
+		id := c.Param("id")
+		if !handleBind(userC.t, c, &req) {
+			return
+		}
+		if err := userC.userService.AdminUpdateUser(id, req.Name, req.Email); err != nil {
+			writeUseCaseError(userC.t, c, err)
+			return
+		}
+		c.JSON(http.StatusOK, dto.ResponseDto{Status: http.StatusOK, Message: "Ok", Data: nil})
+	}
+}
+
+func (userC *UserController) AssignRoles() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		actor, ok := userC.authorizationService.GetUserToken(ginadapter.Wrap(c))
+		if !ok {
+			c.JSON(http.StatusUnauthorized, dto.ResponseDto{
+				Status:  http.StatusUnauthorized,
+				Message: "unauthorized",
+				Data:    nil,
+			})
+			return
+		}
+		var req users.AssignUserRolesRequest
+		if !handleBind(userC.t, c, &req) {
+			return
+		}
+		if err := userC.userService.AssignRoles(actor.GetId(), c.Param("id"), req.RoleIDs); err != nil {
+			writeUseCaseError(userC.t, c, err)
+			return
+		}
+		c.JSON(http.StatusOK, dto.ResponseDto{Status: http.StatusOK, Message: "Ok", Data: nil})
+	}
+}
+
+func (userC *UserController) SetAdminFlag() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		actor, ok := userC.authorizationService.GetUserToken(ginadapter.Wrap(c))
+		if !ok {
+			c.JSON(http.StatusUnauthorized, dto.ResponseDto{
+				Status:  http.StatusUnauthorized,
+				Message: "unauthorized",
+				Data:    nil,
+			})
+			return
+		}
+		var req users.SetAdminFlagRequest
+		if !handleBind(userC.t, c, &req) {
+			return
+		}
+		if err := userC.userService.SetAdminFlag(actor.GetId(), c.Param("id"), req.IsAdmin); err != nil {
+			writeUseCaseError(userC.t, c, err)
+			return
+		}
+		c.JSON(http.StatusOK, dto.ResponseDto{Status: http.StatusOK, Message: "Ok", Data: nil})
+	}
+}
+
 func (userC *UserController) ChangeStatus() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		id := c.Param("id")
-		err := userC.userService.ChangeStatus(id)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: userC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
+		actor, ok := userC.authorizationService.GetUserToken(ginadapter.Wrap(c))
+		if !ok {
+			c.JSON(http.StatusUnauthorized, dto.ResponseDto{
+				Status:  http.StatusUnauthorized,
+				Message: "unauthorized",
 				Data:    nil,
 			})
-		} else {
-			c.JSON(http.StatusOK, dto.ResponseDto{
-				Status:  http.StatusOK,
-				Message: "Ok",
-				Data:    nil,
-			})
+			return
 		}
+		if err := userC.userService.ChangeStatus(actor.GetId(), c.Param("id")); err != nil {
+			writeUseCaseError(userC.t, c, err)
+			return
+		}
+		c.JSON(http.StatusOK, dto.ResponseDto{Status: http.StatusOK, Message: "Ok", Data: nil})
 	}
+}
+
+func writeUseCaseError(t config.ITranslate, c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, domain.ErrForbidden):
+		c.JSON(http.StatusForbidden, dto.ResponseDto{
+			Status:  http.StatusForbidden,
+			Message: "forbidden",
+			Data:    nil,
+		})
+	case errors.Is(err, domain.ErrLastAdmin):
+		c.JSON(http.StatusConflict, dto.ResponseDto{
+			Status:  http.StatusConflict,
+			Message: t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
+			Data:    nil,
+		})
+	case errors.Is(err, domain.ErrWeakPassword):
+		c.JSON(http.StatusBadRequest, dto.ResponseDto{
+			Status:  http.StatusBadRequest,
+			Message: "weak password",
+			Data:    nil,
+		})
+	default:
+		writeTranslatedError(t, c, http.StatusBadRequest, err)
+	}
+}
+
+func writeTranslatedError(t config.ITranslate, c *gin.Context, status int, err error) {
+	c.JSON(status, dto.ResponseDto{
+		Status:  status,
+		Message: t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
+		Data:    nil,
+	})
 }

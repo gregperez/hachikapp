@@ -30,31 +30,39 @@ This document never contains real secret values.
 
 See also the Configuration section in [README.md](../README.md).
 
-## Administrative bootstrap (contract)
+## Administrative bootstrap
 
 Migrations must not create a privileged account with a known identity or password.
-The first administrator is created once through an explicit bootstrap utility
-(implementation target: plan 004). Until that utility exists, do not insert admins
-via ad-hoc SQL with a literal password.
+Create the first administrator once with:
+
+```bash
+BOOTSTRAP_ADMIN_NAME='Admin' \
+BOOTSTRAP_ADMIN_EMAIL='admin@example.com' \
+go run ./cmd/bootstrap-admin
+```
+
+Password is read from a non-echoing prompt, or from the short-lived
+`BOOTSTRAP_ADMIN_PASSWORD` environment variable (unset immediately after read).
+Never pass the password on argv or commit it.
 
 ### Required behavior
 
 | Step | Contract |
 |---|---|
 | Input | Password only via non-echoing prompt (`terminal.ReadPassword`) or a short-lived environment variable that is unset after use. Never argv, never logs, never committed files. |
-| Hashing | Generate bcrypt (or the project password hasher) at runtime. Never store or paste a precomputed hash into SQL by hand. |
-| Uniqueness | Validate that no administrator already exists (or that the chosen natural key is free). |
-| Failure | If an administrator already exists, exit non-zero without modifying data. |
-| Atomicity | Run inside a transaction; roll back on any error. |
-| Output | Report success without printing the password or hash. |
+| Hashing | Generate bcrypt at runtime via the project password hasher. |
+| Uniqueness | Fails if any active administrator already exists. |
+| Failure | Exit non-zero without modifying data when an admin exists or the password is weak. |
+| Atomicity | Persistence runs inside the repository transaction. |
+| Output | Prints success without the password or hash. |
 
-### Suggested acceptance tests (when the utility lands)
+### Acceptance tests
+
+Covered by `internal/core/services/user_privilege_test.go`:
 
 - First bootstrap succeeds.
 - Second bootstrap is rejected.
 - Weak password is rejected.
-- Password is never written to logs or stdout.
-- Failure mid-flight leaves no partial admin row (transaction rollback).
 
 ## Rotating secrets after exposure
 

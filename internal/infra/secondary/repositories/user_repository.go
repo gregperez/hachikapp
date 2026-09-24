@@ -248,6 +248,31 @@ func (repository *UserRepository) ChangeStatus(id string) error {
 	return nil
 }
 
+func (repository *UserRepository) CountAdmins() (int, error) {
+	return repository.userDao.CountAdmins()
+}
+
+func (repository *UserRepository) UpdatePassword(id, passwordHash string) error {
+	if id == "" || passwordHash == "" {
+		return fmt.Errorf("errors.users.update-password")
+	}
+	if err := repository.userDao.UpdatePassword(id, passwordHash); err != nil {
+		return fmt.Errorf("errors.users.update-password")
+	}
+	return nil
+}
+
+func (repository *UserRepository) FindRoleIDByName(name string) (string, error) {
+	role, err := repository.roleDao.FindByName(name)
+	if err != nil {
+		return "", fmt.Errorf("errors.roles.not-found")
+	}
+	if role.Id == "" {
+		return "", fmt.Errorf("errors.roles.not-found")
+	}
+	return role.Id, nil
+}
+
 func toUserDomain(user dto.UserDTO) domain.User {
 	roles := make([]authBaseDomain.Role, 0, len(user.Roles))
 	for _, role := range user.Roles {

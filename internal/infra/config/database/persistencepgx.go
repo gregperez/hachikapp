@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
+	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/prop"
 
 	"github.com/jackc/pgx/v5"
@@ -16,6 +18,7 @@ import (
 var (
 	databasePostgresPgxSingleton *PostgresPgx
 	databasePostgresSQLDBOnce    sync.Once
+	databaseOpenErr              error
 )
 
 // Transaction representa una transacción de base de datos
@@ -28,7 +31,6 @@ type Transaction interface {
 	Rollback() error
 }
 
-// pgxTransaction implementa la interfaz Transaction usando pgx
 type pgxTransaction struct {
 	tx  pgx.Tx
 	ctx context.Context
@@ -59,7 +61,7 @@ func (t *pgxTransaction) Rollback() error {
 	return t.tx.Rollback(t.ctx)
 }
 
-// Database define la interfaz para operaciones de base de datos
+// DatabaseOperations defines the interface for database operations.
 type DatabaseOperations interface {
 	QueryRow(sql string, args ...interface{}) pgx.Row
 	QueryRows(sql string, args ...interface{}) (pgx.Rows, error)
@@ -86,18 +88,15 @@ func (db *PostgresPgx) Exec(sql string, args ...interface{}) error {
 	return err
 }
 
-// ExecContext executes a statement with the caller's context.
 func (db *PostgresPgx) ExecContext(ctx context.Context, sql string, args ...interface{}) error {
 	_, err := db.pool.Exec(ctx, sql, args...)
 	return err
 }
 
-// BeginTx inicia una nueva transacción
 func (db *PostgresPgx) BeginTx() (Transaction, error) {
 	return db.BeginTxContext(db.ctx)
 }
 
-// BeginTxContext starts a transaction bound to ctx.
 func (db *PostgresPgx) BeginTxContext(ctx context.Context) (Transaction, error) {
 	tx, err := db.pool.Begin(ctx)
 	if err != nil {
@@ -106,9 +105,23 @@ func (db *PostgresPgx) BeginTxContext(ctx context.Context) (Transaction, error) 
 	return &pgxTransaction{tx: tx, ctx: ctx}, nil
 }
 
-// Pool exposes the underlying pool for tests and advanced adapters.
 func (db *PostgresPgx) Pool() *pgxpool.Pool {
 	return db.pool
+}
+
+// Ping verifies connectivity with a timeout.
+func (db *PostgresPgx) Ping(ctx context.Context) error {
+	if db == nil || db.pool == nil {
+		return fmt.Errorf("database pool is nil")
+	}
+	return db.pool.Ping(ctx)
+}
+
+// Close closes the underlying pool.
+func (db *PostgresPgx) Close() {
+	if db != nil && db.pool != nil {
+		db.pool.Close()
+	}
 }
 
 // NewPostgresPgxForTest constructs a non-singleton pool wrapper (tests only).
@@ -116,25 +129,80 @@ func NewPostgresPgxForTest(pool *pgxpool.Pool) *PostgresPgx {
 	return &PostgresPgx{pool: pool, ctx: context.Background()}
 }
 
+// OpenPool creates a pgx pool from validated app config (same DSN as migrations).
+func OpenPool(ctx context.Context, cfg appconfig.DatabaseConfig) (*PostgresPgx, error) {
+	dsn, err := cfg.DSN()
+	if err != nil {
+		return nil, err
+	}
+	poolCfg, err := pgxpool.ParseConfig(dsn)
+	if err != nil {
+		return nil, fmt.Errorf("parse database config: %w", err)
+	}
+	if cfg.MaxConns > 0 {
+		poolCfg.MaxConns = cfg.MaxConns
+	}
+	if cfg.MaxConnLifetime > 0 {
+		poolCfg.MaxConnLifetime = cfg.MaxConnLifetime
+	}
+	if cfg.ConnectTimeout > 0 {
+		poolCfg.ConnConfig.ConnectTimeout = cfg.ConnectTimeout
+	}
+
+	openCtx := ctx
+	if cfg.ConnectTimeout > 0 {
+		var cancel context.CancelFunc
+		openCtx, cancel = context.WithTimeout(ctx, cfg.ConnectTimeout)
+		defer cancel()
+	}
+
+	pool, err := pgxpool.NewWithConfig(openCtx, poolCfg)
+	if err != nil {
+		return nil, fmt.Errorf("create database pool: %w", err)
+	}
+
+	pingCtx, cancel := context.WithTimeout(ctx, cfg.ConnectTimeout)
+	defer cancel()
+	if err := pool.Ping(pingCtx); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("database ping: %w", err)
+	}
+
+	return &PostgresPgx{pool: pool, ctx: context.Background()}, nil
+}
+
+// SetSingleton installs the process-wide pool used by legacy Once wiring.
+func SetSingleton(db *PostgresPgx) {
+	databasePostgresPgxSingleton = db
+}
+
+// NewConnectionPostgresPgx opens (once) using YAML database properties.
+// Prefer OpenPool + SetSingleton from the application bootstrap.
 func NewConnectionPostgresPgx(prop *prop.DatabaseProperty) *PostgresPgx {
 	databasePostgresSQLDBOnce.Do(func() {
-		/*psqlInfo := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
-		prop.User, prop.Password, prop.Host, prop.Port, prop.Name)*/
-
-		psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable", prop.Host, prop.Port, prop.User, prop.Password, prop.Name)
-		cnxCfg, err := pgxpool.ParseConfig(psqlInfo)
-		if err != nil {
-			log.Fatalf("could not parse database config: %v", err)
+		ssl := prop.SSLMode
+		if ssl == "" {
+			ssl = "disable"
 		}
-		cnxCfg.MaxConns = prop.DbMaxConns
-		pool, err := pgxpool.NewWithConfig(context.Background(), cnxCfg)
-		if err != nil {
-			log.Fatalf("could not create database connection: %v", err)
+		cfg := appconfig.DatabaseConfig{
+			Host:            prop.Host,
+			Port:            prop.Port,
+			Name:            prop.Name,
+			User:            prop.User,
+			Password:        prop.Password,
+			SSLMode:         ssl,
+			MaxConns:        prop.DbMaxConns,
+			ConnectTimeout:  5 * time.Second,
+			MaxConnLifetime: time.Hour,
 		}
-
-		log.Info("Connection successfully to database")
-
-		databasePostgresPgxSingleton = &PostgresPgx{pool, context.Background()}
+		db, err := OpenPool(context.Background(), cfg)
+		if err != nil {
+			databaseOpenErr = err
+			log.Errorf("database open failed: %v", err)
+			return
+		}
+		databasePostgresPgxSingleton = db
+		log.Info("database pool ready")
 	})
 	return databasePostgresPgxSingleton
 }
@@ -143,13 +211,16 @@ func GetDatabasePostgresPgx() *PostgresPgx {
 	return databasePostgresPgxSingleton
 }
 
-func (db *PostgresPgx) Start() {
-	log.Info("Started database connection/ping")
+// OpenError returns the last singleton open error, if any.
+func OpenError() error {
+	return databaseOpenErr
+}
 
-	err := db.pool.Ping(context.Background())
-	if err != nil {
+// Start pings the pool (legacy lifecycle hook).
+func (db *PostgresPgx) Start() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := db.Ping(ctx); err != nil {
 		log.Fatalf("database is unreachable: %v", err)
 	}
-	log.Info("Connection successfully to database")
-	log.Info("Finished database connection/ping")
 }

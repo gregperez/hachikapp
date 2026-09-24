@@ -21,6 +21,8 @@ type IUserDao interface {
 	Update(user dto.UserDTO) error
 	ChangeStatus(id string) error
 	Count() (int, error)
+	CountAdmins() (int, error)
+	UpdatePassword(id, passwordHash string) error
 
 	// Operaciones con transacciones
 	SaveWithTx(tx database.Transaction, user *dto.UserDTO) error
@@ -232,6 +234,27 @@ func (c *UserDao) Count() (int, error) {
 		return 0, err
 	}
 	return totalRow, nil
+}
+
+func (c *UserDao) CountAdmins() (int, error) {
+	var totalRow int
+	query := "SELECT COUNT(*) FROM public.users WHERE is_admin IS TRUE AND active IS TRUE;"
+	err := (*c.DbPgx4).QueryRow(query).Scan(&totalRow)
+	if err != nil {
+		log.Errorf("error in CountAdmins, error: %s", err.Error())
+		return 0, err
+	}
+	return totalRow, nil
+}
+
+func (c *UserDao) UpdatePassword(id, passwordHash string) error {
+	query := "UPDATE public.users SET password = $1 WHERE id = $2;"
+	err := (*c.DbPgx4).Exec(query, passwordHash, id)
+	if err != nil {
+		log.Errorf("error in UpdatePassword, error: %s", err.Error())
+		return err
+	}
+	return nil
 }
 
 func (c *UserDao) BeginTx() (database.Transaction, error) {

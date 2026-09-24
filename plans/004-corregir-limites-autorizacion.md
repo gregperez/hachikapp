@@ -107,12 +107,12 @@ La última orden no debe devolver coincidencias. `make verify` debe salir 0.
 
 ## Criterios de aceptación
 
-- [ ] Cada ruta usa la entidad/acción correcta y la matriz está cubierta por tests table-driven.
-- [ ] Ningún endpoint general permite mass assignment de privilegios.
-- [ ] Los defaults de `user` e `guest` no administran usuarios, roles o permisos.
-- [ ] Cambios privilegiados pasan por un caso de uso explícito y auditable.
-- [ ] Bootstrap administrativo no crea credenciales conocidas y no puede repetirse.
-- [ ] 401 y 403 tienen semántica consistente.
+- [x] Cada ruta usa la entidad/acción correcta y la matriz está cubierta por tests table-driven.
+- [x] Ningún endpoint general permite mass assignment de privilegios.
+- [x] Los defaults de `user` e `guest` no administran usuarios, roles o permisos.
+- [x] Cambios privilegiados pasan por un caso de uso explícito y auditable.
+- [x] Bootstrap administrativo no crea credenciales conocidas y no puede repetirse.
+- [x] 401 y 403 tienen semántica consistente.
 
 ## Condiciones de parada
 

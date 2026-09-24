@@ -3,6 +3,7 @@ package controller
 import (
 	"net/http"
 
+	"github.com/WilsonSayago/base-golang/internal/core/authz"
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/infra/config"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
@@ -43,15 +44,15 @@ func (roleC *RoleController) RunController() {
 	protected.Use(ginadapter.Middleware(roleC.authorizationService.AuthorizeJWT()))
 	{
 		protected.GET("/", ginadapter.Middleware(roleC.authorizationService.PoliciesGuard(
-			ginadapter.Handler(roleC.GetAll()), nil, "USERS", authBaseDomain.READ)))
+			ginadapter.Handler(roleC.GetAll()), nil, authz.EntityRoles, authz.Read)))
 		protected.GET("/:id", ginadapter.Middleware(roleC.authorizationService.PoliciesGuard(
-			ginadapter.Handler(roleC.GetById()), nil, "USERS", authBaseDomain.READ)))
+			ginadapter.Handler(roleC.GetById()), nil, authz.EntityRoles, authz.Read)))
 		protected.POST("/", ginadapter.Middleware(roleC.authorizationService.PoliciesGuard(
-			ginadapter.Handler(roleC.Save()), nil, "USERS", authBaseDomain.CREATE)))
+			ginadapter.Handler(roleC.Save()), nil, authz.EntityRoles, authz.Create)))
 		protected.PUT("/:id/change-status", ginadapter.Middleware(roleC.authorizationService.PoliciesGuard(
-			ginadapter.Handler(roleC.ChangeStatus()), nil, "USERS", authBaseDomain.UPDATE)))
+			ginadapter.Handler(roleC.ChangeStatus()), nil, authz.EntityRoles, authz.Update)))
 		protected.PUT("/:id", ginadapter.Middleware(roleC.authorizationService.PoliciesGuard(
-			ginadapter.Handler(roleC.Update()), nil, "USERS", authBaseDomain.UPDATE)))
+			ginadapter.Handler(roleC.Update()), nil, authz.EntityRoles, authz.Update)))
 	}
 }
 

@@ -18,6 +18,7 @@ require (
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.8.12
+	golang.org/x/term v0.46.0
 	golang.org/x/text v0.42.0
 )
 

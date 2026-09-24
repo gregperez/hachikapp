@@ -1,28 +1,32 @@
 package audit
 
 import (
+	"log/slog"
+
 	"github.com/WilsonSayago/base-golang/internal/core/ports"
-	log "github.com/sirupsen/logrus"
+	"github.com/WilsonSayago/base-golang/internal/infra/logging"
 )
 
 // Logger implements ports.PrivilegeAuditor with structured logs (no secrets).
-type Logger struct{}
-
-func NewLogger() ports.PrivilegeAuditor {
-	return Logger{}
+type Logger struct {
+	log *slog.Logger
 }
 
-func (Logger) PrivilegeChange(action, actorID, subjectID string, roleIDs []string, isAdmin *bool) {
-	fields := log.Fields{
-		"action":     action,
-		"actor_id":   actorID,
-		"subject_id": subjectID,
+func NewLogger(log *slog.Logger) ports.PrivilegeAuditor {
+	return Logger{log: logging.OrDefault(log)}
+}
+
+func (l Logger) PrivilegeChange(action, actorID, subjectID string, roleIDs []string, isAdmin *bool) {
+	attrs := []any{
+		"action", action,
+		"actor_id", actorID,
+		"subject_id", subjectID,
 	}
 	if len(roleIDs) > 0 {
-		fields["role_ids"] = roleIDs
+		attrs = append(attrs, "role_ids", roleIDs)
 	}
 	if isAdmin != nil {
-		fields["is_admin"] = *isAdmin
+		attrs = append(attrs, "is_admin", *isAdmin)
 	}
-	log.WithFields(fields).Info("privilege change")
+	l.log.Info("privilege change", attrs...)
 }

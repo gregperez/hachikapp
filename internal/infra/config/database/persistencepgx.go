@@ -3,6 +3,8 @@ package database
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"os"
 	"sync"
 	"time"
 
@@ -12,7 +14,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -164,11 +165,11 @@ func NewConnectionPostgresPgx(prop *prop.DatabaseProperty) *PostgresPgx {
 		db, err := OpenPool(context.Background(), cfg)
 		if err != nil {
 			databaseOpenErr = err
-			log.Errorf("database open failed: %v", err)
+			slog.Error("database open failed", "err", err)
 			return
 		}
 		databasePostgresPgxSingleton = db
-		log.Info("database pool ready")
+		slog.Info("database pool ready")
 	})
 	return databasePostgresPgxSingleton
 }
@@ -186,6 +187,7 @@ func (db *PostgresPgx) Start() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := db.Ping(ctx); err != nil {
-		log.Fatalf("database is unreachable: %v", err)
+		slog.Error("database is unreachable", "err", err)
+		os.Exit(1)
 	}
 }

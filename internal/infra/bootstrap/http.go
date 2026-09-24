@@ -6,16 +6,17 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
+	"github.com/WilsonSayago/base-golang/internal/infra/logging"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -25,17 +26,19 @@ type HTTPDeps struct {
 	Config   appconfig.Config
 	Register func(r *gin.Engine)
 	Gate     *ReadyGate
+	Logger   *slog.Logger
 }
 
 // NewEngine builds the Gin engine with middleware, health, CORS, and routes.
 // Routes are registered before the caller starts listening.
 func NewEngine(deps HTTPDeps) *gin.Engine {
 	gin.SetMode(deps.Config.EffectiveGinMode())
+	lg := logging.OrDefault(deps.Logger)
 	r := gin.New()
-	r.Use(httpapi.Recovery())
+	r.Use(httpapi.Recovery(lg))
 	r.Use(requestIDMiddleware())
 	r.Use(httpapi.LimitRequestBody(httpapi.DefaultMaxBodyBytes))
-	r.Use(accessLogMiddleware())
+	r.Use(accessLogMiddleware(lg))
 
 	corsCfg := cors.Config{
 		AllowOrigins:     deps.Config.CORS.AllowedOrigins,
@@ -123,17 +126,18 @@ func requestIDMiddleware() gin.HandlerFunc {
 	}
 }
 
-func accessLogMiddleware() gin.HandlerFunc {
+func accessLogMiddleware(logger *slog.Logger) gin.HandlerFunc {
+	lg := logging.OrDefault(logger)
 	return func(c *gin.Context) {
 		start := time.Now()
 		c.Next()
-		log.WithFields(log.Fields{
-			"request_id": c.GetString("request_id"),
-			"status":     c.Writer.Status(),
-			"method":     c.Request.Method,
-			"path":       c.Request.URL.Path,
-			"latency_ms": time.Since(start).Milliseconds(),
-		}).Info("http")
+		lg.Info("http",
+			"request_id", c.GetString("request_id"),
+			"status", c.Writer.Status(),
+			"method", c.Request.Method,
+			"path", c.Request.URL.Path,
+			"latency_ms", time.Since(start).Milliseconds(),
+		)
 	}
 }
 

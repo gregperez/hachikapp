@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 
 	_ "github.com/WilsonSayago/base-golang/docs"
@@ -12,11 +13,11 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/infra/config/instance"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/prop"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/sql"
+	"github.com/WilsonSayago/base-golang/internal/infra/logging"
 
 	"github.com/WilsonSayago/authBase/v3/infra/config/properties"
 	initModules "github.com/WilsonSayago/initModules/v2"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 )
 
 const propertiesFile = "internal/resources/properties.yml"
@@ -32,7 +33,7 @@ const propertiesFile = "internal/resources/properties.yml"
 // @description JWT access token. Value must be: Bearer <token>
 func main() {
 	if err := run(); err != nil {
-		log.Errorf("application stopped: %v", err)
+		slog.Error("application stopped", "err", err)
 		os.Exit(1)
 	}
 }
@@ -73,7 +74,9 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("invalid configuration: %w", err)
 	}
-	applyLogLevel(cfg.Runtime.LogLevel)
+
+	logger := logging.New(cfg.Runtime.LogLevel)
+	slog.SetDefault(logger)
 
 	dsn, err := cfg.Database.DSN()
 	if err != nil {
@@ -99,6 +102,7 @@ func run() error {
 	engine := bootstrap.NewEngine(bootstrap.HTTPDeps{
 		Config: cfg,
 		Gate:   gate,
+		Logger: logger,
 		Register: func(r *gin.Engine) {
 			instance.RegisterControllers(r)
 		},
@@ -110,19 +114,10 @@ func run() error {
 	runCtx, stop := bootstrap.SignalContext(ctx)
 	defer stop()
 
-	log.WithField("addr", cfg.Server.Address).Info("http listening")
+	logger.Info("http listening", "addr", cfg.Server.Address)
 	if err := bootstrap.RunServer(runCtx, srv, gate, cfg.Server.ShutdownTimeout); err != nil {
 		return err
 	}
-	log.Info("shutdown complete")
+	logger.Info("shutdown complete")
 	return nil
-}
-
-func applyLogLevel(level string) {
-	parsed, err := log.ParseLevel(level)
-	if err != nil {
-		parsed = log.InfoLevel
-	}
-	log.SetLevel(parsed)
-	log.SetFormatter(&log.JSONFormatter{})
 }

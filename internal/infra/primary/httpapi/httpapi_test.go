@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -173,9 +174,13 @@ func TestUserResponseNeverSerializesPassword(t *testing.T) {
 
 func TestRecovery_ReturnsProblemJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
+
+	var buf bytes.Buffer
+	lg := slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelError}))
+
 	r := gin.New()
 	r.Use(func(c *gin.Context) { c.Set("request_id", "rid-1"); c.Next() })
-	r.Use(httpapi.Recovery())
+	r.Use(httpapi.Recovery(lg))
 	r.GET("/boom", func(c *gin.Context) { panic("boom") })
 
 	w := httptest.NewRecorder()
@@ -193,6 +198,26 @@ func TestRecovery_ReturnsProblemJSON(t *testing.T) {
 	}
 	if p.Code != httpapi.CodeInternal || strings.Contains(p.Detail, "boom") {
 		t.Fatalf("problem=%+v", p)
+	}
+
+	var logLine map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &logLine); err != nil {
+		t.Fatalf("log json: %v body=%s", err, buf.String())
+	}
+	if logLine["msg"] != "http panic recovered" {
+		t.Fatalf("msg=%v", logLine["msg"])
+	}
+	if logLine["request_id"] != "rid-1" {
+		t.Fatalf("request_id=%v", logLine["request_id"])
+	}
+	if logLine["path"] != "/boom" || logLine["method"] != "GET" {
+		t.Fatalf("path/method=%v/%v", logLine["path"], logLine["method"])
+	}
+	if _, ok := logLine["stack"]; !ok {
+		t.Fatal("expected stack attr")
+	}
+	if strings.Contains(strings.ToLower(p.Detail), "stack") {
+		t.Fatalf("stack leaked to client: %q", p.Detail)
 	}
 }
 

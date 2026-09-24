@@ -3,10 +3,10 @@ package config
 import (
 	"encoding/json"
 	"log"
+	"log/slog"
 
 	"github.com/WilsonSayago/initModules/v2"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-	logrus "github.com/sirupsen/logrus"
 	"golang.org/x/text/language"
 )
 
@@ -58,10 +58,10 @@ func (t *Translate) TranslateByLang(lang string, messageID string, data map[stri
 		TemplateData: data,
 	})
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"message_id": messageID,
-			"lang":       lang,
-		}).Warn("missing translation")
+		slog.Warn("missing translation",
+			"message_id", messageID,
+			"lang", lang,
+		)
 		return "An error occurred"
 	}
 	return msg

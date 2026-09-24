@@ -69,7 +69,7 @@ func UserUseCaseInstance() core.UserUseCase {
 	return services.GetUserServiceInstance(
 		GetUserRepositoryInstance(),
 		GetValidationService(),
-		audit.NewLogger(),
+		audit.NewLogger(nil),
 	)
 }
 

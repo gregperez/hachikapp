@@ -8,19 +8,21 @@ BIN_DIR := $(CURDIR)/.tmp/bin
 export PATH := $(BIN_DIR):$(PATH)
 
 .PHONY: help fmt-check lint test test-race test-db vuln secrets verify tools \
-	check-secrets migrate-verify coverage
+	check-secrets migrate-verify migrations-test coverage
 
 help:
 	@echo "Targets:"
-	@echo "  fmt-check    gofmt -l (fail if dirty)"
-	@echo "  lint         go vet + golangci-lint"
-	@echo "  test         unit tests (no DB required)"
-	@echo "  test-race    unit + race detector"
-	@echo "  test-db      migrations up/down/up + DB integration tests"
-	@echo "  vuln         govulncheck"
-	@echo "  secrets      gitleaks (redacted)"
-	@echo "  coverage     unit coverage profile (informational)"
-	@echo "  verify       full local gate (same intent as CI)"
+	@echo "  fmt-check         gofmt -l (fail if dirty)"
+	@echo "  lint              go vet + staticcheck"
+	@echo "  test              unit tests (no DB required)"
+	@echo "  test-race         unit + race detector"
+	@echo "  migrate-verify    migrations up/down/up against DATABASE_TEST_URL"
+	@echo "  migrations-test   alias for migrate-verify"
+	@echo "  test-db           migrate-verify + DB integration tests"
+	@echo "  vuln              govulncheck"
+	@echo "  secrets           gitleaks (redacted)"
+	@echo "  coverage          unit coverage profile (informational)"
+	@echo "  verify            full local gate (same intent as CI)"
 
 tools: $(BIN_DIR)/golangci-lint $(BIN_DIR)/govulncheck $(BIN_DIR)/staticcheck
 
@@ -51,7 +53,7 @@ test:
 test-race:
 	$(GO) test -race -count=1 ./internal/...
 
-migrate-verify:
+migrate-verify migrations-test:
 	@chmod +x scripts/migrate-verify.sh
 	./scripts/migrate-verify.sh
 

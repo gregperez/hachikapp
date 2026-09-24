@@ -15,7 +15,3 @@ CREATE TABLE IF NOT EXISTS public.users_roles
         references roles
             on delete cascade
 );
-
-alter table users_roles
-    owner to postgres;
-

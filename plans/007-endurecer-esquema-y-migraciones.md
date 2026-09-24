@@ -107,12 +107,12 @@ La búsqueda de ownership no devuelve coincidencias en el baseline ejecutable y 
 
 ## Criterios de aceptación
 
-- [ ] El esquema impide duplicados, nulls y FKs huérfanas en relaciones críticas.
-- [ ] Existen índices acordes a los paths de usuario/rol/refresh.
-- [ ] La estrategia para migraciones históricas aplicadas está documentada sin alterar checksums silenciosamente.
-- [ ] Cada migración nueva tiene down seguro y tests up/down/up.
-- [ ] No se requiere un owner PostgreSQL fijo.
-- [ ] `init.sql` obsoleto no puede ejecutarse accidentalmente.
+- [x] El esquema impide duplicados, nulls y FKs huérfanas en relaciones críticas.
+- [x] Existen índices acordes a los paths de usuario/rol/refresh.
+- [x] La estrategia para migraciones históricas aplicadas está documentada sin alterar checksums silenciosamente.
+- [x] Cada migración nueva tiene down seguro y tests up/down/up.
+- [x] No se requiere un owner PostgreSQL fijo.
+- [x] `init.sql` obsoleto no puede ejecutarse accidentalmente.
 
 ## Condiciones de parada
 

@@ -16,6 +16,3 @@ CREATE TABLE IF NOT EXISTS public.users
     password   varchar                              not null,
     is_admin   boolean   default false
 );
-
-alter table public.users
-    owner to postgres;

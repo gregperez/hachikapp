@@ -1,1 +1,1 @@
-DROP TABLE public.roles CASCADE;
+DROP TABLE IF EXISTS public.roles CASCADE;

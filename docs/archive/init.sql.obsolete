@@ -1,3 +1,4 @@
+<!-- OBSOLETE — do not execute. Divergent legacy schema retained only as historical reference (plan 007). Official init path: internal/resources/sql/migrations. -->
 CREATE TABLE public.users
 (
     id         serial  NOT NULL,

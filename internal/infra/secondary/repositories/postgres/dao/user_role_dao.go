@@ -30,7 +30,7 @@ func (d *UserRoleDao) Save(ctx context.Context, userId, roleId string) error {
 }
 
 func (d *UserRoleDao) SaveWithTx(ctx context.Context, tx database.Transaction, userId, roleId string) error {
-	const q = `INSERT INTO public.users_roles (user_id, role_id) VALUES ($1, $2)`
+	const q = `INSERT INTO public.users_roles (user_id, role_id) VALUES ($1, $2) ON CONFLICT (user_id, role_id) DO NOTHING`
 	var err error
 	if tx != nil {
 		_, err = tx.Exec(ctx, q, userId, roleId)

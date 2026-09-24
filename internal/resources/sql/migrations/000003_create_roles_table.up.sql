@@ -12,7 +12,3 @@ CREATE TABLE IF NOT EXISTS public.roles
     active      boolean   default true,
     messages    varchar
 );
-
-alter table roles
-    owner to postgres;
-

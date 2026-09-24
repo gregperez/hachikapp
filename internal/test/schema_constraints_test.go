@@ -1,0 +1,152 @@
+package testdb_test
+
+import (
+	"context"
+	"errors"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/WilsonSayago/base-golang/internal/test/testdb"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+func openPool(t *testing.T) (*pgxpool.Pool, context.Context) {
+	t.Helper()
+	dsn, err := testdb.RequireURL()
+	if err != nil {
+		t.Skip(err.Error())
+	}
+	ctx := context.Background()
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	var hardened bool
+	if err := pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'roles_name_key')`).Scan(&hardened); err != nil {
+		t.Fatal(err)
+	}
+	if !hardened {
+		t.Skip("migration 000009 not applied (run make test-db / migrate-verify first)")
+	}
+	return pool, ctx
+}
+
+func isUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505"
+}
+
+func isNotNullViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23502"
+}
+
+func TestRolesNameUnique(t *testing.T) {
+	pool, ctx := openPool(t)
+	name := "dup-role-" + time.Now().Format("150405.000")
+	if _, err := pool.Exec(ctx, `INSERT INTO public.roles (name) VALUES ($1)`, name); err != nil {
+		t.Fatalf("first insert: %v", err)
+	}
+	_, err := pool.Exec(ctx, `INSERT INTO public.roles (name) VALUES ($1)`, name)
+	if !isUniqueViolation(err) {
+		t.Fatalf("second insert err=%v, want unique_violation", err)
+	}
+}
+
+func TestUsersRolesRejectsNullAndDuplicate(t *testing.T) {
+	pool, ctx := openPool(t)
+
+	var userID, roleID string
+	email := "schema-" + time.Now().Format("150405.000") + "@example.com"
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO public.users (name, email, password) VALUES ('t', $1, 'x') RETURNING id`, email,
+	).Scan(&userID); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO public.roles (name) VALUES ($1) RETURNING id`, "r-"+time.Now().Format("150405.000"),
+	).Scan(&roleID); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := pool.Exec(ctx, `INSERT INTO public.users_roles (user_id, role_id) VALUES (NULL, $1)`, roleID)
+	if !isNotNullViolation(err) {
+		t.Fatalf("null user_id err=%v, want not_null_violation", err)
+	}
+
+	if _, err := pool.Exec(ctx, `INSERT INTO public.users_roles (user_id, role_id) VALUES ($1, $2)`, userID, roleID); err != nil {
+		t.Fatal(err)
+	}
+	_, err = pool.Exec(ctx, `INSERT INTO public.users_roles (user_id, role_id) VALUES ($1, $2)`, userID, roleID)
+	if !isUniqueViolation(err) {
+		t.Fatalf("duplicate pair err=%v, want unique_violation", err)
+	}
+}
+
+func TestUsersRolesCascadeOnUserDelete(t *testing.T) {
+	pool, ctx := openPool(t)
+	var userID, roleID string
+	email := "cascade-" + time.Now().Format("150405.000") + "@example.com"
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO public.users (name, email, password) VALUES ('t', $1, 'x') RETURNING id`, email,
+	).Scan(&userID); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO public.roles (name) VALUES ($1) RETURNING id`, "rc-"+time.Now().Format("150405.000"),
+	).Scan(&roleID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO public.users_roles (user_id, role_id) VALUES ($1, $2)`, userID, roleID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `DELETE FROM public.users WHERE id = $1`, userID); err != nil {
+		t.Fatal(err)
+	}
+	var n int
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM public.users_roles WHERE role_id = $1`, roleID).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	if n != 0 {
+		t.Fatalf("expected cascade delete of junction rows, remaining=%d", n)
+	}
+}
+
+func TestLoginEmailUsesUniqueIndex(t *testing.T) {
+	pool, ctx := openPool(t)
+	rows, err := pool.Query(ctx, `EXPLAIN SELECT id FROM public.users WHERE email = $1`, "nobody@example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var b strings.Builder
+	for rows.Next() {
+		var line string
+		if err := rows.Scan(&line); err != nil {
+			t.Fatal(err)
+		}
+		b.WriteString(line)
+		b.WriteByte('\n')
+	}
+	plan := strings.ToLower(b.String())
+	if !strings.Contains(plan, "index") && !strings.Contains(plan, "unique") {
+		t.Fatalf("expected index usage hint in plan, got:\n%s", b.String())
+	}
+}
+
+func TestSchemaHasHardenedConstraints(t *testing.T) {
+	pool, ctx := openPool(t)
+	for _, name := range []string{"roles_name_key", "users_roles_user_id_role_id_key"} {
+		var exists bool
+		if err := pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = $1)`, name).Scan(&exists); err != nil {
+			t.Fatal(err)
+		}
+		if !exists {
+			t.Fatalf("%s missing — apply migration 000009", name)
+		}
+	}
+}

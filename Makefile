@@ -66,7 +66,8 @@ vuln:
 	$(GO) run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) ./...
 
 secrets check-secrets:
-	@chmod +x scripts/check-secrets.sh
+	@chmod +x scripts/check-secrets.sh scripts/secrets-smoke.sh
+	./scripts/secrets-smoke.sh
 	./scripts/check-secrets.sh
 
 coverage:

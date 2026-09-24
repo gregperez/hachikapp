@@ -1,0 +1,32 @@
+# Dependabot — conservative weekly updates for base-golang
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      go-patch:
+        applies-to: version-updates
+        update-types:
+          - patch
+    # Minors stay ungrouped so each is reviewed. Majors never auto-merge.
+    ignore:
+      # Logrus minor+ reserved for an explicit slog migration plan.
+      - dependency-name: github.com/sirupsen/logrus
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+    labels:
+      - dependencies
+      - go
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - github-actions

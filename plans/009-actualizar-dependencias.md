@@ -109,13 +109,13 @@ La primera orden puede mostrar majors deliberadamente no adoptadas; deben quedar
 
 ## Criterios de aceptación
 
-- [ ] Cada versión elegida fue revalidada contra una fuente oficial al ejecutar el plan.
-- [ ] `go.mod` distingue correctamente dependencias directas/transitivas.
-- [ ] Cada familia se actualizó y verificó en un commit aislable.
-- [ ] La suite completa, race, migraciones, OpenAPI, lint y `govulncheck` están verdes.
-- [ ] CI prueba la versión Go mínima y la preferida.
-- [ ] Majors omitidas y decisión Logrus/slog están documentadas, no ocultas.
-- [ ] Existe automatización conservadora para futuras actualizaciones.
+- [x] Cada versión elegida fue revalidada contra una fuente oficial al ejecutar el plan.
+- [x] `go.mod` distingue correctamente dependencias directas/transitivas.
+- [x] Cada familia se actualizó y verificó en un commit aislable.
+- [x] La suite completa, race, migraciones, OpenAPI, lint y `govulncheck` están verdes.
+- [x] CI prueba la versión Go mínima y la preferida.
+- [x] Majors omitidas y decisión Logrus/slog están documentadas, no ocultas.
+- [x] Existe automatización conservadora para futuras actualizaciones.
 
 ## Condiciones de parada
 

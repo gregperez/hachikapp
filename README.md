@@ -66,6 +66,10 @@ Security operations (rotation, bootstrap contract, exposure response, secret sca
 
 **Auth note:** after upgrading to authBase v3, all prior JWTs are invalid; users must sign in again. Refresh tokens rotate atomically and are never stored in plaintext.
 
+## Dependencies
+
+Go minimum **1.26** / preferred toolchain **1.27.1**. Update policy, deferred majors, and Logrus→slog decision: [docs/dependency-policy.md](docs/dependency-policy.md).
+
 ## Development quality gate
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Short version:

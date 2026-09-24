@@ -84,6 +84,16 @@ Posponer una corrección no equivale a aceptar el riesgo.
 | O-021 | P2 | `internal/infra/secondary/repositories/dto/permissiondto.go` sigue con tags `bson` | No afecta la frontera HTTP (corregido en `controller/dto`), pero confunde el modelo interno. | Abierto | Unificar tags a `json` o eliminar DTOs muertos del repositorio secundario. |
 | O-022 | P2 | `O-011` sigue abierta: hay contrato OpenAPI y tests de bind/map, pero no matriz HTTP completa 401/403 por rol | Las garantías de autorización en rutas reales siguen sin evidencia de handler. | Abierto | Añadir tests de router con JWT de invitado/usuario/admin y payloads privilegiados rechazados. |
 | O-023 | P2 | Errores HTTP cambian a `application/problem+json` (breaking para clientes del envelope `ResponseDto`) | Consumidores que parseaban `message`/`status` en 4xx/5xx deben adaptarse. | Abierto | Comunicar breaking change / bump de versión de API documentada; añadir nota en changelog de release. |
+| O-024 | P1 | `internal/infra/primary/controller/dto/inputs/users/requests.go:28-31,39-42` usa `bool` no puntero y sin validación de presencia para operaciones privilegiadas/de estado | `{}` o un campo omitido se decodifica como `false`; una solicitud incompleta puede desactivar un usuario, un rol o el flag admin en vez de responder 400/422. | Abierto | Usar un tipo que distinga ausente de `false` (por ejemplo `*bool`) y rechazar ausencia; añadir pruebas de handlers para `{}`, `true` y `false` en los tres endpoints. |
+| O-025 | P1 | `internal/infra/secondary/repositories/user_repository.go:93-100` y `role_repository.go:51-61` devuelven conflictos como `fmt.Errorf`; `internal/infra/primary/httpapi/map.go:18-59` no los reconoce | Crear un usuario/rol existente, o una carrera contra la constraint única, acaba como `500 INTERNAL_ERROR` en lugar de `409 CONFLICT`, incumpliendo la taxonomía pública. | Abierto | Definir error de dominio de conflicto/duplicado, mapear las violaciones PostgreSQL relevantes y añadir pruebas HTTP de precheck y carrera de unicidad que devuelvan el mismo 409 estable. |
+| O-026 | P1 | `git status --short` durante la revisión mostró modificados `cmd`, controladores, docs, Makefile y archivos nuevos de `httpapi`/scripts/pruebas | La implementación no estaba inicialmente versionada, pero quedó incorporada durante la revisión. | Resuelto | `03f1c47` incorpora los artefactos; el árbol de fuente quedó limpio y `make verify` pasó incluyendo OpenAPI. |
+
+### Observaciones de la verificación del plan 009
+
+| ID | Prioridad | Evidencia | Impacto | Estado | Cierre esperado |
+|---|---:|---|---|---|---|
+| O-027 | P2 | Logrus queda en `v1.9.4`; `go list -m -u` ofrece `v1.10.2` | Se omite un minor deliberadamente (política patch-only + decisión slog). | Abierto | Abrir plan de migración a `log/slog` (o adoptar 1.10.x con pruebas de formato) y quitar el ignore de Dependabot. |
+| O-028 | P2 | Gin `v1.12.0` cambió `Context.Get/Set` a claves `any`; adaptador local reexpone `string` | Sin el wrapper, el código no compila contra authBase. El riesgo residual es divergencia futura de la API de Gin. | Resuelto | `ginadapter` implementa `Get/Set(string)` y assertion de interfaz; cubierta por test unitario. |
 
 ### Plantilla para observaciones de los planes 005–009
 

@@ -16,6 +16,18 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Minimum supported (go.mod) and preferred toolchain (go.mod toolchain line).
+        include:
+          - go-version: "1.26.3"
+            toolchain: local
+            name: go-min
+          - go-version: "1.27.1"
+            toolchain: local
+            name: go-preferred
+    name: verify (${{ matrix.name }})
     services:
       postgres:
         image: postgres:16-alpine
@@ -35,17 +47,18 @@ jobs:
       # Ephemeral CI credentials only; never log this value.
       DATABASE_TEST_URL: postgres://postgres:test@localhost:5432/base_golang_test?sslmode=disable
       GOWORK: "off"
+      GOTOOLCHAIN: ${{ matrix.toolchain }}
 
     steps:
       # actions/checkout@v4.2.2
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      # actions/setup-go@v5.4.0 — uses go.mod toolchain
-      - name: Set up Go
+      # actions/setup-go@v5.4.0
+      - name: Set up Go ${{ matrix.go-version }}
         uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b
         with:
-          go-version-file: go.mod
+          go-version: ${{ matrix.go-version }}
           cache-dependency-path: go.sum
 
       - name: Install gitleaks

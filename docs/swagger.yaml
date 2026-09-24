@@ -187,8 +187,7 @@ definitions:
         type: array
       routes:
         items:
-          description: Enumeración de rutas en el sistema
-          type: string
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoutePathEnumDto'
         type: array
       updatedAt:
         type: string
@@ -211,6 +210,20 @@ definitions:
       totalPages:
         type: integer
     type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoutePathEnumDto:
+    description: Enumeración de rutas en el sistema
+    enum:
+    - USERS
+    - ROLES
+    type: string
+    x-enum-comments:
+      USERS: "\U0001F525 Hereda el valor del paquete externo"
+    x-enum-descriptions:
+    - "\U0001F525 Hereda el valor del paquete externo"
+    - ""
+    x-enum-varnames:
+    - USERS
+    - ROLES
   github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse:
     description: UserResponse represents a user response.
     properties:

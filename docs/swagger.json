@@ -1363,8 +1363,7 @@
                 "routes": {
                     "type": "array",
                     "items": {
-                        "description": "Enumeración de rutas en el sistema",
-                        "type": "string"
+                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoutePathEnumDto"
                     }
                 },
                 "updatedAt": {
@@ -1398,6 +1397,25 @@
                     "type": "integer"
                 }
             }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoutePathEnumDto": {
+            "description": "Enumeración de rutas en el sistema",
+            "type": "string",
+            "enum": [
+                "USERS",
+                "ROLES"
+            ],
+            "x-enum-comments": {
+                "USERS": "🔥 Hereda el valor del paquete externo"
+            },
+            "x-enum-descriptions": [
+                "🔥 Hereda el valor del paquete externo",
+                ""
+            ],
+            "x-enum-varnames": [
+                "USERS",
+                "ROLES"
+            ]
         },
         "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse": {
             "description": "UserResponse represents a user response.",

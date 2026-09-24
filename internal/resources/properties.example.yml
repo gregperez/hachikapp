@@ -1,0 +1,48 @@
+# Template only — copy to properties.yml (gitignored) before running locally.
+# Do not put real credentials in this file or commit properties.yml.
+#
+# Secret fields use ${ENV_VAR} placeholders expanded by initModules
+# (os.ExpandEnv: $NAME or ${NAME}; no bash ${NAME:-default} syntax).
+#
+# Required environment variables:
+#   DB_PASSWORD
+#   JWT_ACCESS_SECRET   (>= 32 bytes, different from refresh)
+#   JWT_REFRESH_SECRET  (>= 32 bytes, different from access)
+#
+# Optional environment variables (override the non-secret defaults below):
+#   DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_SSLMODE, DB_MAX_CONNS
+#   JWT_ISSUER, JWT_AUDIENCE, JWT_ACCESS_HOURS, JWT_REFRESH_HOURS, JWT_LEEWAY_SECONDS
+#   LOG_LEVEL
+#
+# Generate secrets, for example:
+#   export DB_PASSWORD="$(openssl rand -base64 24)"
+#   export JWT_ACCESS_SECRET="$(openssl rand -base64 48)"
+#   export JWT_REFRESH_SECRET="$(openssl rand -base64 48)"
+#
+# Alternatively, for a local-only properties.yml you may temporarily replace
+# ${...} with unequivocally fake placeholders such as:
+#   change-me-with-32-random-bytes-access-token-value
+#   change-me-with-32-random-bytes-refresh-token-value
+# Never reuse values previously present in the repository history.
+
+datasource:
+  host: localhost
+  port: "5432"
+  database: base_golang
+  user: postgres
+  password: ${DB_PASSWORD}
+  # Documented for operators; sslmode wiring is completed in plan 005.
+  sslmode: disable
+  dbMaxConns: 10
+
+log:
+  level: info
+
+jwt:
+  secret-key: ${JWT_ACCESS_SECRET}
+  refresh-secret: ${JWT_REFRESH_SECRET}
+  expiration-time: 1
+  refresh-token-time: 24
+  issuer: change-me-issuer
+  audience: change-me-audience
+  leeway-seconds: 0

@@ -21,3 +21,22 @@
 
 # Go workspace file
 go.work
+
+# Local tool downloads / scratch
+.tmp/
+
+# Local configuration and secrets (track only explicit *.example files)
+internal/resources/properties.yml
+.env*
+!.env.example
+!internal/resources/properties.example.yml
+
+# Credential / key material artifacts
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub
+credentials.json
+secrets.json

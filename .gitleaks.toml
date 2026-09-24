@@ -1,0 +1,20 @@
+# Gitleaks configuration for base-golang
+# https://github.com/gitleaks/gitleaks
+
+title = "base-golang"
+
+[extend]
+useDefault = true
+
+# Minimal allowlist: only example templates and unequivocally fake placeholders.
+# Do not exclude whole documentation trees — accidental secrets in docs/plans must still fail.
+[allowlist]
+description = "Example templates and documented fake placeholders only"
+paths = [
+  '''(^|/)\.env\.example$''',
+  '''(^|/)internal/resources/properties\.example\.yml$''',
+]
+regexes = [
+  '''change-me-[A-Za-z0-9-]+''',
+  '''\$\{[A-Z0-9_]+\}''',
+]

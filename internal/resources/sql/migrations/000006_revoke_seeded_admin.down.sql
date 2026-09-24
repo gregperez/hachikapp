@@ -1,0 +1,2 @@
+-- Intentionally empty: do not restore the historically seeded privileged account
+-- or any known password hash. Re-bootstrap via the documented utility (plan 004).

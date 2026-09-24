@@ -11,10 +11,10 @@ This project is a Go-based application that uses PostgreSQL for data storage and
 - **github.com/WilsonSayago/initModules**: A library for initializing modules in a Go application.
 
 ## Running PostgreSQL with Docker
-To run a PostgreSQL instance using Docker, use the following command:
+To run a PostgreSQL instance using Docker, use a local password of your choice (do not reuse production secrets):
 
 ```sh
-docker run --name base_golang -e POSTGRES_PASSWORD=postgres -d -p 5432:5432 postgres
+docker run --name base_golang -e POSTGRES_PASSWORD=change-me-local-only -d -p 5432:5432 postgres
 ```
 
 ### Internal Packages
@@ -30,22 +30,37 @@ The project uses PostgreSQL as the primary database. The database schema include
 - `email`
 - `is_admin`
 
+Migrations create schema and catalog data. A historical seed in `000002` is revoked by forward migration `000006` so installs do not keep a known privileged account. Bootstrap a real admin via the procedure in [docs/security-operations.md](docs/security-operations.md).
+
 ## Migrations
-Database migrations are managed using SQL files. An example migration file is `000002_insert_users_table.up.sql`, which inserts an admin user into the `users` table.
+Database migrations are managed using SQL files under `internal/resources/sql/migrations`.
 
 ```sh
   migrate create -ext sql -dir internal/resources/sql/migrations -seq insert_users_table
 ```
 
 ## Configuration
-The project includes configuration for different instances such as user repository, role repository, and validation service. These configurations are defined in `internal/infra/config/instance/port.go`.
+Runtime configuration is loaded from `internal/resources/properties.yml` (gitignored). Start from the tracked template:
+
+```sh
+cp internal/resources/properties.example.yml internal/resources/properties.yml
+cp .env.example .env
+# set DB_PASSWORD, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET (see .env.example)
+```
+
+Instance wiring (repositories, validation, controllers) lives in `internal/infra/config/instance/port.go`.
+
+Security operations (rotation, bootstrap contract, exposure response, secret scanning):
+
+- [docs/security-operations.md](docs/security-operations.md)
+- `./scripts/check-secrets.sh` (gitleaks)
 
 ## Usage
 To run the project, ensure you have Go installed and set up your PostgreSQL database. Then, use the following commands:
 
 ```sh
   go mod tidy
-  go run main.go
+  go run ./cmd
 ```
 
 ## Generate Documentation with Swagger (Swaggo) 

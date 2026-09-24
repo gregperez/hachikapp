@@ -1,0 +1,22 @@
+[
+ {
+  "Description": "Detected a Generic API Key, potentially exposing access to various services and sensitive operations.",
+  "StartLine": 6,
+  "EndLine": 6,
+  "StartColumn": 4,
+  "EndColumn": 46,
+  "Match": "password: REDACTED ",
+  "Secret": "REDACTED",
+  "File": "internal/resources/properties.yml",
+  "SymlinkFile": "",
+  "Commit": "ace6bdaef2d37b80c2f43540d60e40b08efeaf97",
+  "Entropy": 4.60141,
+  "Author": "WilsonSayago",
+  "Email": "sayagowilson92@gmail.com",
+  "Date": "2026-09-23T17:09:31Z",
+  "Message": "adding new features",
+  "Tags": [],
+  "RuleID": "generic-api-key",
+  "Fingerprint": "ace6bdaef2d37b80c2f43540d60e40b08efeaf97:internal/resources/properties.yml:generic-api-key:6"
+ }
+]

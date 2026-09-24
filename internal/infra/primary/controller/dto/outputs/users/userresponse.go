@@ -1,4 +1,4 @@
-package users
+package userout
 
 import (
 	"github.com/WilsonSayago/base-golang/internal/core/domain"

@@ -1,17 +1,17 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "API de Autenticación con JWT en Go con Arquitectura Hexagonal",
+        "description": "API de Autenticación con JWT en Go con Arquitectura Hexagonal. Private routes require Authorization: Bearer \u003caccess_token\u003e.",
         "title": "Mi API en Golang",
         "contact": {},
         "version": "1.0"
     },
     "host": "localhost:8080",
-    "basePath": "/v1/auth",
+    "basePath": "/",
     "paths": {
         "/v1/auth/login": {
             "post": {
-                "description": "Autentica a un usuario y devuelve tokens JWT",
+                "description": "Authenticates a user and returns JWT access and refresh tokens",
                 "consumes": [
                     "application/json"
                 ],
@@ -24,32 +24,87 @@
                 "summary": "User login",
                 "parameters": [
                     {
-                        "description": "Credenciales de inicio de sesión",
+                        "description": "Login credentials",
                         "name": "loginData",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.LoginRequestDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.LoginRequestDto"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Tokens de acceso y refresh",
+                        "description": "Tokens",
                         "schema": {
-                            "$ref": "#/definitions/dto.AuthDto"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.AuthDto"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
-                        "description": "Error en la petición",
+                        "description": "Malformed JSON or empty body",
                         "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "401": {
-                        "description": "Credenciales incorrectas",
+                        "description": "Invalid credentials",
                         "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Validation failed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/auth/logout": {
+            "post": {
+                "description": "Revokes the refresh token family. Idempotent for invalid tokens.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Logout / revoke refresh family",
+                "parameters": [
+                    {
+                        "description": "Refresh token",
+                        "name": "refreshToken",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Revoked"
+                    },
+                    "422": {
+                        "description": "Validation failed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -57,7 +112,7 @@
         },
         "/v1/auth/refresh-token": {
             "post": {
-                "description": "Refreshes an expired access token using a refresh token",
+                "description": "Refreshes tokens using a refresh token (single-use rotation)",
                 "consumes": [
                     "application/json"
                 ],
@@ -75,7 +130,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.RefreshTokenRequestDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto"
                         }
                     }
                 ],
@@ -83,13 +138,31 @@
                     "200": {
                         "description": "New tokens",
                         "schema": {
-                            "$ref": "#/definitions/dto.AuthDto"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.AuthDto"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
-                    "400": {
-                        "description": "Invalid request",
+                    "401": {
+                        "description": "Invalid refresh",
                         "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Validation failed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -97,6 +170,11 @@
         },
         "/v1/roles": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Retrieves a paginated list of roles",
                 "consumes": [
                     "application/json"
@@ -112,14 +190,15 @@
                     {
                         "type": "integer",
                         "default": 1,
-                        "description": "Page number",
+                        "description": "Page number (\u003e=1)",
                         "name": "page",
                         "in": "query"
                     },
                     {
+                        "maximum": 100,
                         "type": "integer",
                         "default": 10,
-                        "description": "Page size",
+                        "description": "Page size (1-100)",
                         "name": "pageSize",
                         "in": "query"
                     }
@@ -130,13 +209,13 @@
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/roles.RolesPageResponse"
+                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RolesPageResponse"
                                         }
                                     }
                                 }
@@ -144,14 +223,31 @@
                         }
                     },
                     "400": {
-                        "description": "Error retrieving roles",
+                        "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Creates a new role with the provided details",
                 "consumes": [
                     "application/json"
@@ -170,7 +266,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.RoleDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.RoleDto"
                         }
                     }
                 ],
@@ -178,51 +274,31 @@
                     "201": {
                         "description": "Role created successfully",
                         "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
                         }
                     },
                     "400": {
-                        "description": "Error creating role",
+                        "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/roles/change-status/{id}": {
-            "put": {
-                "description": "Changes the active status of a role",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Roles"
-                ],
-                "summary": "Change role status",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Role ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Status changed successfully",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
                         }
                     },
-                    "400": {
-                        "description": "Error changing status",
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -230,6 +306,11 @@
         },
         "/v1/roles/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Retrieves a role by its ID",
                 "consumes": [
                     "application/json"
@@ -256,28 +337,45 @@
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/roles.RoleResponse"
+                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse"
                                         }
                                     }
                                 }
                             ]
                         }
                     },
-                    "400": {
-                        "description": "Error retrieving role",
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates an existing role with the provided details",
                 "consumes": [
                     "application/json"
@@ -303,7 +401,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.RoleDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.RoleDto"
                         }
                     }
                 ],
@@ -311,13 +409,95 @@
                     "200": {
                         "description": "Role updated successfully",
                         "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
                         }
                     },
                     "400": {
-                        "description": "Error updating role",
+                        "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/roles/{id}/change-status": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Changes the active status of a role",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Change role status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Active flag",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Status changed successfully",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -327,10 +507,10 @@
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
-                "description": "Retrieves a paginated list of users",
+                "description": "Retrieves a paginated list of users (stable order by repository)",
                 "consumes": [
                     "application/json"
                 ],
@@ -340,36 +520,37 @@
                 "tags": [
                     "Users"
                 ],
-                "summary": "Get all users",
+                "summary": "List users",
                 "parameters": [
                     {
                         "type": "integer",
                         "default": 1,
-                        "description": "Page number",
+                        "description": "Page number (\u003e=1)",
                         "name": "page",
                         "in": "query"
                     },
                     {
+                        "maximum": 100,
                         "type": "integer",
                         "default": 10,
-                        "description": "Page size",
+                        "description": "Page size (1-100)",
                         "name": "pageSize",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of users",
+                        "description": "OK",
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/users.UsersPageResponse"
+                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UsersPageResponse"
                                         }
                                     }
                                 }
@@ -377,9 +558,21 @@
                         }
                     },
                     "400": {
-                        "description": "Error retrieving users",
+                        "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -387,10 +580,9 @@
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
-                "description": "Creates a new user with the provided details",
                 "consumes": [
                     "application/json"
                 ],
@@ -400,87 +592,58 @@
                 "tags": [
                     "Users"
                 ],
-                "summary": "Create new user",
+                "summary": "Create user",
                 "parameters": [
                     {
-                        "description": "User details",
-                        "name": "user",
+                        "description": "User",
+                        "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/users.UseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.CreateUserRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "User created successfully",
+                    "201": {
+                        "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
                         }
                     },
                     "400": {
-                        "description": "Error creating user",
+                        "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
             }
         },
-        "/v1/users/change-status/{id}": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Changes the active status of a user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Users"
-                ],
-                "summary": "Change user status",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Status changed successfully",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
-                        }
-                    },
-                    "400": {
-                        "description": "Error changing status",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/users/full-info": {
+        "/v1/users/me": {
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
-                ],
-                "description": "Retrieves complete user information including roles and permissions",
-                "consumes": [
-                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -488,30 +651,128 @@
                 "tags": [
                     "Users"
                 ],
-                "summary": "Get full user info",
+                "summary": "Get current user profile",
                 "responses": {
                     "200": {
-                        "description": "Full user details",
+                        "description": "OK",
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/users.UserResponse"
+                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse"
                                         }
                                     }
                                 }
                             ]
                         }
                     },
-                    "400": {
-                        "description": "Error retrieving user info",
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Update own profile",
+                "parameters": [
+                    {
+                        "description": "Profile",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.UpdateOwnProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/users/me/password": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Change own password",
+                "parameters": [
+                    {
+                        "description": "Passwords",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.ChangePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -521,12 +782,8 @@
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
-                ],
-                "description": "Retrieves a user by their ID",
-                "consumes": [
-                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -546,27 +803,39 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "User details",
+                        "description": "OK",
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/users.UseDto"
+                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse"
                                         }
                                     }
                                 }
                             ]
                         }
                     },
-                    "400": {
-                        "description": "Error retrieving user",
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -574,10 +843,9 @@
             "put": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
-                "description": "Updates an existing user with the provided details",
                 "consumes": [
                     "application/json"
                 ],
@@ -587,7 +855,7 @@
                 "tags": [
                     "Users"
                 ],
-                "summary": "Update user",
+                "summary": "Admin update user",
                 "parameters": [
                     {
                         "type": "string",
@@ -597,26 +865,227 @@
                         "required": true
                     },
                     {
-                        "description": "User update details",
-                        "name": "user",
+                        "description": "User",
+                        "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/users.UserUpdateDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.AdminUpdateUserRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "User updated successfully",
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
                         }
                     },
-                    "400": {
-                        "description": "Error updating user",
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/users/{id}/admin": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Set admin flag",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Flag",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetAdminFlagRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/users/{id}/change-status": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Change user active status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Active flag",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/users/{id}/roles": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Assign roles to user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Roles",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.AssignUserRolesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -624,7 +1093,98 @@
         }
     },
     "definitions": {
-        "auth.LoginRequestDto": {
+        "domain.RoutePathEnum": {
+            "description": "RoutePathEnum",
+            "type": "string",
+            "enum": [
+                "USERS",
+                "ROLES"
+            ],
+            "x-enum-varnames": [
+                "USERS",
+                "ROLES"
+            ]
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.AuthDto": {
+            "description": "Authentication response model containing JWT tokens for user authentication",
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "description": "🔹 Token JWT de acceso",
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1..."
+                },
+                "refreshToken": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1..."
+                }
+            }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.PermissionDto": {
+            "description": "PermissionDto defines the CRUD permissions for a specific entity",
+            "type": "object",
+            "properties": {
+                "create": {
+                    "type": "boolean"
+                },
+                "delete": {
+                    "type": "boolean"
+                },
+                "entity": {
+                    "type": "string"
+                },
+                "read": {
+                    "type": "boolean"
+                },
+                "update": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto": {
+            "description": "Standard response model used across all API endpoints",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "🔹 Datos dinámicos según el endpoint"
+                },
+                "message": {
+                    "description": "🔹 Mensaje descriptivo de la respuesta",
+                    "type": "string",
+                    "example": "Ok"
+                },
+                "status": {
+                    "description": "🔹 Código HTTP de respuesta",
+                    "type": "integer",
+                    "example": 200
+                }
+            }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.RoleDto": {
+            "description": "RoleDto contains the information about a role including its name, routes, and permissions",
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.PermissionDto"
+                    }
+                },
+                "routes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.RoutePathEnum"
+                    }
+                }
+            }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.LoginRequestDto": {
             "description": "Estructura esperada para autenticación de usuario",
             "type": "object",
             "required": [
@@ -644,7 +1204,7 @@
                 }
             }
         },
-        "auth.RefreshTokenRequestDto": {
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto": {
             "description": "Estructura esperada para refrescar un token JWT",
             "type": "object",
             "required": [
@@ -658,44 +1218,100 @@
                 }
             }
         },
-        "dto.AuthDto": {
-            "description": "Authentication response model containing JWT tokens for user authentication",
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.AdminUpdateUserRequest": {
             "type": "object",
+            "required": [
+                "email",
+                "name"
+            ],
             "properties": {
-                "accessToken": {
-                    "description": "🔹 Token JWT de acceso",
-                    "type": "string",
-                    "example": "eyJhbGciOiJIUzI1..."
+                "email": {
+                    "type": "string"
                 },
-                "refreshToken": {
-                    "type": "string",
-                    "example": "eyJhbGciOiJIUzI1..."
+                "name": {
+                    "type": "string"
                 }
             }
         },
-        "dto.ResponseDto": {
-            "description": "Standard response model used across all API endpoints",
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.AssignUserRolesRequest": {
             "type": "object",
+            "required": [
+                "roleIds"
+            ],
             "properties": {
-                "data": {
-                    "description": "🔹 Datos dinámicos según el endpoint"
-                },
-                "message": {
-                    "description": "🔹 Mensaje descriptivo de la respuesta",
-                    "type": "string",
-                    "example": "Ok"
-                },
-                "status": {
-                    "description": "🔹 Código HTTP de respuesta",
-                    "type": "integer",
-                    "example": 200
+                "roleIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
-        "dto.RoleDto": {
-            "type": "object"
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.ChangePasswordRequest": {
+            "type": "object",
+            "required": [
+                "currentPassword",
+                "newPassword"
+            ],
+            "properties": {
+                "currentPassword": {
+                    "type": "string"
+                },
+                "newPassword": {
+                    "type": "string",
+                    "minLength": 12
+                }
+            }
         },
-        "roles.PermissionResponse": {
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.CreateUserRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 12
+                }
+            }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetAdminFlagRequest": {
+            "type": "object",
+            "properties": {
+                "isAdmin": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.UpdateOwnProfileRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse": {
             "description": "PermissionResponse represents a permission response.",
             "type": "object",
             "properties": {
@@ -716,7 +1332,7 @@
                 }
             }
         },
-        "roles.RoleResponse": {
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse": {
             "description": "RoleResponse represents a role response.",
             "type": "object",
             "properties": {
@@ -741,7 +1357,7 @@
                 "permissions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/roles.PermissionResponse"
+                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse"
                     }
                 },
                 "routes": {
@@ -759,14 +1375,14 @@
                 }
             }
         },
-        "roles.RolesPageResponse": {
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RolesPageResponse": {
             "description": "RolesPageResponse represents a paginated response of roles.",
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/roles.RoleResponse"
+                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse"
                     }
                 },
                 "page": {
@@ -783,52 +1399,7 @@
                 }
             }
         },
-        "users.UseDto": {
-            "description": "UseDto represents a user dto.",
-            "type": "object",
-            "required": [
-                "email",
-                "isAdmin",
-                "name",
-                "password"
-            ],
-            "properties": {
-                "active": {
-                    "type": "boolean"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "createdBy": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "isAdmin": {
-                    "type": "boolean"
-                },
-                "messagesDefault": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "updatedBy": {
-                    "type": "string"
-                }
-            }
-        },
-        "users.UserResponse": {
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse": {
             "description": "UserResponse represents a user response.",
             "type": "object",
             "properties": {
@@ -856,13 +1427,16 @@
                 "name": {
                     "type": "string"
                 },
-                "password": {
-                    "type": "string"
-                },
                 "permissions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/roles.PermissionResponse"
+                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse"
+                    }
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse"
                     }
                 },
                 "updatedAt": {
@@ -873,34 +1447,14 @@
                 }
             }
         },
-        "users.UserUpdateDto": {
-            "description": "UserUpdateDto represents a user update dto.",
-            "type": "object",
-            "required": [
-                "email",
-                "isAdmin",
-                "name"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "isAdmin": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "users.UsersPageResponse": {
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UsersPageResponse": {
             "description": "UserResponse represents a user response.",
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/users.UserResponse"
+                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse"
                     }
                 },
                 "page": {
@@ -916,6 +1470,54 @@
                     "type": "integer"
                 }
             }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.FieldError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "field": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "detail": {
+                    "type": "string"
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.FieldError"
+                    }
+                },
+                "requestId": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "JWT access token. Value must be: Bearer \u003ctoken\u003e",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }

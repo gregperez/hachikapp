@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/WilsonSayago/base-golang/internal/core"
@@ -10,6 +9,7 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/inputs/auth"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/ginadapter"
+	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
 
 	authBaseCore "github.com/WilsonSayago/authBase/v3/core"
 	authBaseServices "github.com/WilsonSayago/authBase/v3/core/services"
@@ -57,14 +57,15 @@ func (authC *AuthController) RunController() {
 
 // Login godoc
 // @Summary User login
-// @Description Autentica a un usuario y devuelve tokens JWT
+// @Description Authenticates a user and returns JWT access and refresh tokens
 // @Tags Authentication
 // @Accept json
 // @Produce json
-// @Param loginData body auth.LoginRequestDto true "Credenciales de inicio de sesión"
-// @Success 200 {object} dto.AuthDto "Tokens de acceso y refresh"
-// @Failure 400 {object} dto.ResponseDto "Error en la petición"
-// @Failure 401 {object} dto.ResponseDto "Credenciales incorrectas"
+// @Param loginData body auth.LoginRequestDto true "Login credentials"
+// @Success 200 {object} dto.ResponseDto{data=dto.AuthDto} "Tokens"
+// @Failure 400 {object} httpapi.Problem "Malformed JSON or empty body"
+// @Failure 401 {object} httpapi.Problem "Invalid credentials"
+// @Failure 422 {object} httpapi.Problem "Validation failed"
 // @Router /v1/auth/login [post]
 func (authC *AuthController) Login() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -74,15 +75,7 @@ func (authC *AuthController) Login() gin.HandlerFunc {
 		}
 		token, refreshToken, err := authC.authenticationService.Login(c.Request.Context(), loginData.Email, loginData.Password)
 		if err != nil {
-			status := http.StatusUnauthorized
-			if !errors.Is(err, authBaseCore.ErrInvalidCredentials) {
-				status = http.StatusBadRequest
-			}
-			c.JSON(status, dto.ResponseDto{
-				Status:  status,
-				Message: authC.t.TranslateByLang(c.GetHeader("lang"), "errors.token-login", nil),
-				Data:    nil,
-			})
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{
@@ -103,8 +96,9 @@ func (authC *AuthController) Login() gin.HandlerFunc {
 // @Accept json
 // @Produce json
 // @Param refreshToken body auth.RefreshTokenRequestDto true "Refresh token"
-// @Success 200 {object} dto.AuthDto "New tokens"
-// @Failure 401 {object} dto.ResponseDto "Invalid refresh"
+// @Success 200 {object} dto.ResponseDto{data=dto.AuthDto} "New tokens"
+// @Failure 401 {object} httpapi.Problem "Invalid refresh"
+// @Failure 422 {object} httpapi.Problem "Validation failed"
 // @Router /v1/auth/refresh-token [post]
 func (authC *AuthController) RefreshToken() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -114,16 +108,12 @@ func (authC *AuthController) RefreshToken() gin.HandlerFunc {
 		}
 		token, refreshTokenNew, err := authC.authenticationService.RefreshToken(c.Request.Context(), body.RefreshToken)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, dto.ResponseDto{
-				Status:  http.StatusUnauthorized,
-				Message: authC.t.TranslateByLang(c.GetHeader("lang"), "errors.refresh-token", nil),
-				Data:    nil,
-			})
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
-			Message: "ok",
+			Message: "Ok",
 			Data: dto.AuthDto{
 				AccessToken:  token,
 				RefreshToken: refreshTokenNew,
@@ -134,12 +124,13 @@ func (authC *AuthController) RefreshToken() gin.HandlerFunc {
 
 // Logout godoc
 // @Summary Logout / revoke refresh family
-// @Description Revokes the refresh token family. Idempotent.
+// @Description Revokes the refresh token family. Idempotent for invalid tokens.
 // @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param refreshToken body auth.RefreshTokenRequestDto true "Refresh token"
 // @Success 204 "Revoked"
+// @Failure 422 {object} httpapi.Problem "Validation failed"
 // @Router /v1/auth/logout [post]
 func (authC *AuthController) Logout() gin.HandlerFunc {
 	return func(c *gin.Context) {

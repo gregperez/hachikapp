@@ -2,56 +2,22 @@ package controller
 
 import (
 	"github.com/WilsonSayago/base-golang/internal/infra/config"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
+	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
-	"io"
-	"net/http"
-	"strconv"
 )
 
-func handleBind(t config.ITranslate, c *gin.Context, data interface{}) bool {
-	if err := c.ShouldBindJSON(&data); err != nil {
-		if err == io.EOF {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: t.TranslateByLang(c.GetHeader("lang"), "errors.no-data-form", nil),
-				Data:    nil,
-			})
-			return false
-		}
-
-		var fieldErrors []string
-		for _, fieldErr := range err.(validator.ValidationErrors) {
-			if fieldErr.Field() == "Email" && fieldErr.Tag() == "email" {
-				fieldErrors = append(fieldErrors, t.TranslateByLang(c.GetHeader("lang"), "errors.invalid-email", nil))
-			} else {
-				fieldErrors = append(fieldErrors, t.TranslateByLang(c.GetHeader("lang"), "errors.invalid-field-required", map[string]interface{}{"Field": fieldErr.Field()}))
-			}
-		}
-		c.JSON(http.StatusBadRequest, dto.ResponseDto{
-			Status:  http.StatusBadRequest,
-			Message: "Error",
-			Data:    fieldErrors,
-		})
-		return false
-	}
-	return true
+// handleBind decodes and validates JSON without panicking.
+// On failure it writes application/problem+json and returns false.
+func handleBind(_ config.ITranslate, c *gin.Context, data interface{}) bool {
+	return httpapi.BindAndWrite(c, data)
 }
 
-func handlePagination(c *gin.Context) (int, int, int) {
-	page := c.DefaultQuery("page", "1")
-	pageSize := c.DefaultQuery("pageSize", "10")
-	pageInt, _ := strconv.Atoi(page)
-	pageSizeInt, _ := strconv.Atoi(pageSize)
-
-	if pageInt < 1 {
-		pageInt = 1
+// handlePagination parses page/pageSize or writes a problem response.
+// ok=false means the response was already written.
+func handlePagination(c *gin.Context) (page, pageSize, offset int, ok bool) {
+	p, ok := httpapi.ParsePaginationOrWrite(c)
+	if !ok {
+		return 0, 0, 0, false
 	}
-	if pageSizeInt < 1 {
-		pageSizeInt = 10
-	}
-
-	offset := (pageInt - 1) * pageSizeInt
-	return pageInt, pageSizeInt, offset
+	return p.Page, p.PageSize, p.Offset, true
 }

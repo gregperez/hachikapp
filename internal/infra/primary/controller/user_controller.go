@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/WilsonSayago/base-golang/internal/core"
@@ -9,9 +8,10 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/infra/config"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/inputs/users"
-	usersOutputs "github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/outputs/users"
+	users "github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/inputs/users"
+	userout "github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/outputs/users"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/ginadapter"
+	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
 
 	authBaseCore "github.com/WilsonSayago/authBase/v3/core"
 	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
@@ -70,40 +70,71 @@ func (userC *UserController) RunController() {
 	}
 }
 
+// GetAll godoc
+// @Summary List users
+// @Description Retrieves a paginated list of users (stable order by repository)
+// @Tags Users
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number (>=1)" default(1)
+// @Param pageSize query int false "Page size (1-100)" default(10) maximum(100)
+// @Success 200 {object} dto.ResponseDto{data=userout.UsersPageResponse}
+// @Failure 400 {object} httpapi.Problem
+// @Failure 401 {object} httpapi.Problem
+// @Failure 403 {object} httpapi.Problem
+// @Router /v1/users [get]
 func (userC *UserController) GetAll() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		page, pageSize, offset := handlePagination(c)
+		page, pageSize, offset, ok := handlePagination(c)
+		if !ok {
+			return
+		}
 		usersDb, total, err := userC.userService.FindAll(c.Request.Context(), pageSize, offset)
 		if err != nil {
-			writeTranslatedError(userC.t, c, http.StatusBadRequest, err)
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 
-		list := make([]usersOutputs.UserResponse, 0)
+		list := make([]userout.UserResponse, 0, len(usersDb))
 		for _, user := range usersDb {
-			list = append(list, usersOutputs.UserResponse{
+			list = append(list, userout.UserResponse{
 				BaseDto: dto.BaseDto{
 					Id:     user.GetId(),
 					Active: user.Active,
 				},
 				Name:    user.GetName(),
 				Email:   user.GetEmail(),
-				IsAdmin: user.GetIsAdmin()})
+				IsAdmin: user.GetIsAdmin(),
+			})
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
 			Message: "Ok",
-			Data: usersOutputs.UsersPageResponse{
+			Data: userout.UsersPageResponse{
 				Page:       page,
 				PageSize:   pageSize,
 				TotalItems: total,
-				TotalPages: (total + pageSize - 1) / pageSize,
+				TotalPages: httpapi.TotalPages(total, pageSize),
 				Data:       list,
 			},
 		})
 	}
 }
 
+// Create godoc
+// @Summary Create user
+// @Tags Users
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param body body users.CreateUserRequest true "User"
+// @Success 201 {object} dto.ResponseDto
+// @Failure 400 {object} httpapi.Problem
+// @Failure 401 {object} httpapi.Problem
+// @Failure 403 {object} httpapi.Problem
+// @Failure 422 {object} httpapi.Problem
+// @Router /v1/users [post]
 func (userC *UserController) Create() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		var req users.CreateUserRequest
@@ -121,7 +152,7 @@ func (userC *UserController) Create() func(c *gin.Context) {
 			),
 		}, req.Password)
 		if err := userC.userService.Create(c.Request.Context(), user); err != nil {
-			writeUseCaseError(userC.t, c, err)
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 		c.JSON(http.StatusCreated, dto.ResponseDto{
@@ -132,39 +163,53 @@ func (userC *UserController) Create() func(c *gin.Context) {
 	}
 }
 
+// GetById godoc
+// @Summary Get user by ID
+// @Tags Users
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} dto.ResponseDto{data=userout.UserResponse}
+// @Failure 401 {object} httpapi.Problem
+// @Failure 403 {object} httpapi.Problem
+// @Failure 404 {object} httpapi.Problem
+// @Router /v1/users/{id} [get]
 func (userC *UserController) GetById() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id := c.Param("id")
 		user, err := userC.userService.FindById(c.Request.Context(), id)
 		if err != nil {
-			writeTranslatedError(userC.t, c, http.StatusBadRequest, err)
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
 			Message: "Ok",
-			Data:    usersOutputs.MapDomainToUserResponse(user),
+			Data:    userout.MapDomainToUserResponse(user),
 		})
 	}
 }
 
+// FindFullById godoc
+// @Summary Get current user profile
+// @Tags Users
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} dto.ResponseDto{data=userout.UserResponse}
+// @Failure 401 {object} httpapi.Problem
+// @Router /v1/users/me [get]
 func (userC *UserController) FindFullById() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		userToken, ok := userC.authorizationService.GetUserToken(ginadapter.Wrap(c))
+		userToken, ok := requireIdentity(userC.authorizationService, c)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, dto.ResponseDto{
-				Status:  http.StatusUnauthorized,
-				Message: "unauthorized",
-				Data:    nil,
-			})
 			return
 		}
 		user, err := userC.userService.FindFullById(c.Request.Context(), userToken.GetId())
 		if err != nil {
-			writeTranslatedError(userC.t, c, http.StatusBadRequest, err)
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
-		response := usersOutputs.UserResponse{}
+		response := userout.UserResponse{}
 		response.MapDomainToResponse(user)
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
@@ -174,15 +219,21 @@ func (userC *UserController) FindFullById() func(c *gin.Context) {
 	}
 }
 
+// UpdateOwnProfile godoc
+// @Summary Update own profile
+// @Tags Users
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param body body users.UpdateOwnProfileRequest true "Profile"
+// @Success 200 {object} dto.ResponseDto
+// @Failure 401 {object} httpapi.Problem
+// @Failure 422 {object} httpapi.Problem
+// @Router /v1/users/me [put]
 func (userC *UserController) UpdateOwnProfile() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		userToken, ok := userC.authorizationService.GetUserToken(ginadapter.Wrap(c))
+		userToken, ok := requireIdentity(userC.authorizationService, c)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, dto.ResponseDto{
-				Status:  http.StatusUnauthorized,
-				Message: "unauthorized",
-				Data:    nil,
-			})
 			return
 		}
 		var req users.UpdateOwnProfileRequest
@@ -190,22 +241,28 @@ func (userC *UserController) UpdateOwnProfile() func(c *gin.Context) {
 			return
 		}
 		if err := userC.userService.UpdateOwnProfile(c.Request.Context(), userToken.GetId(), userToken.GetId(), req.Name); err != nil {
-			writeUseCaseError(userC.t, c, err)
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{Status: http.StatusOK, Message: "Ok", Data: nil})
 	}
 }
 
+// ChangePassword godoc
+// @Summary Change own password
+// @Tags Users
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param body body users.ChangePasswordRequest true "Passwords"
+// @Success 200 {object} dto.ResponseDto
+// @Failure 401 {object} httpapi.Problem
+// @Failure 422 {object} httpapi.Problem
+// @Router /v1/users/me/password [put]
 func (userC *UserController) ChangePassword() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		userToken, ok := userC.authorizationService.GetUserToken(ginadapter.Wrap(c))
+		userToken, ok := requireIdentity(userC.authorizationService, c)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, dto.ResponseDto{
-				Status:  http.StatusUnauthorized,
-				Message: "unauthorized",
-				Data:    nil,
-			})
 			return
 		}
 		var req users.ChangePasswordRequest
@@ -213,13 +270,27 @@ func (userC *UserController) ChangePassword() func(c *gin.Context) {
 			return
 		}
 		if err := userC.userService.ChangePassword(c.Request.Context(), userToken.GetId(), req.CurrentPassword, req.NewPassword); err != nil {
-			writeUseCaseError(userC.t, c, err)
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{Status: http.StatusOK, Message: "Ok", Data: nil})
 	}
 }
 
+// AdminUpdate godoc
+// @Summary Admin update user
+// @Tags Users
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param body body users.AdminUpdateUserRequest true "User"
+// @Success 200 {object} dto.ResponseDto
+// @Failure 401 {object} httpapi.Problem
+// @Failure 403 {object} httpapi.Problem
+// @Failure 404 {object} httpapi.Problem
+// @Failure 422 {object} httpapi.Problem
+// @Router /v1/users/{id} [put]
 func (userC *UserController) AdminUpdate() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		var req users.AdminUpdateUserRequest
@@ -228,22 +299,29 @@ func (userC *UserController) AdminUpdate() func(c *gin.Context) {
 			return
 		}
 		if err := userC.userService.AdminUpdateUser(c.Request.Context(), id, req.Name, req.Email); err != nil {
-			writeUseCaseError(userC.t, c, err)
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{Status: http.StatusOK, Message: "Ok", Data: nil})
 	}
 }
 
+// AssignRoles godoc
+// @Summary Assign roles to user
+// @Tags Users
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param body body users.AssignUserRolesRequest true "Roles"
+// @Success 200 {object} dto.ResponseDto
+// @Failure 401 {object} httpapi.Problem
+// @Failure 403 {object} httpapi.Problem
+// @Router /v1/users/{id}/roles [put]
 func (userC *UserController) AssignRoles() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		actor, ok := userC.authorizationService.GetUserToken(ginadapter.Wrap(c))
+		actor, ok := requireIdentity(userC.authorizationService, c)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, dto.ResponseDto{
-				Status:  http.StatusUnauthorized,
-				Message: "unauthorized",
-				Data:    nil,
-			})
 			return
 		}
 		var req users.AssignUserRolesRequest
@@ -251,22 +329,30 @@ func (userC *UserController) AssignRoles() func(c *gin.Context) {
 			return
 		}
 		if err := userC.userService.AssignRoles(c.Request.Context(), actor.GetId(), c.Param("id"), req.RoleIDs); err != nil {
-			writeUseCaseError(userC.t, c, err)
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{Status: http.StatusOK, Message: "Ok", Data: nil})
 	}
 }
 
+// SetAdminFlag godoc
+// @Summary Set admin flag
+// @Tags Users
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param body body users.SetAdminFlagRequest true "Flag"
+// @Success 200 {object} dto.ResponseDto
+// @Failure 401 {object} httpapi.Problem
+// @Failure 403 {object} httpapi.Problem
+// @Failure 409 {object} httpapi.Problem
+// @Router /v1/users/{id}/admin [put]
 func (userC *UserController) SetAdminFlag() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		actor, ok := userC.authorizationService.GetUserToken(ginadapter.Wrap(c))
+		actor, ok := requireIdentity(userC.authorizationService, c)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, dto.ResponseDto{
-				Status:  http.StatusUnauthorized,
-				Message: "unauthorized",
-				Data:    nil,
-			})
 			return
 		}
 		var req users.SetAdminFlagRequest
@@ -274,22 +360,30 @@ func (userC *UserController) SetAdminFlag() func(c *gin.Context) {
 			return
 		}
 		if err := userC.userService.SetAdminFlag(c.Request.Context(), actor.GetId(), c.Param("id"), req.IsAdmin); err != nil {
-			writeUseCaseError(userC.t, c, err)
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{Status: http.StatusOK, Message: "Ok", Data: nil})
 	}
 }
 
+// ChangeStatus godoc
+// @Summary Change user active status
+// @Tags Users
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param body body users.SetActiveRequest true "Active flag"
+// @Success 200 {object} dto.ResponseDto
+// @Failure 401 {object} httpapi.Problem
+// @Failure 403 {object} httpapi.Problem
+// @Failure 409 {object} httpapi.Problem
+// @Router /v1/users/{id}/change-status [put]
 func (userC *UserController) ChangeStatus() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		actor, ok := userC.authorizationService.GetUserToken(ginadapter.Wrap(c))
+		actor, ok := requireIdentity(userC.authorizationService, c)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, dto.ResponseDto{
-				Status:  http.StatusUnauthorized,
-				Message: "unauthorized",
-				Data:    nil,
-			})
 			return
 		}
 		var req users.SetActiveRequest
@@ -297,48 +391,18 @@ func (userC *UserController) ChangeStatus() func(c *gin.Context) {
 			return
 		}
 		if err := userC.userService.SetActive(c.Request.Context(), actor.GetId(), c.Param("id"), req.Active); err != nil {
-			writeUseCaseError(userC.t, c, err)
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{Status: http.StatusOK, Message: "Ok", Data: nil})
 	}
 }
 
-func writeUseCaseError(t config.ITranslate, c *gin.Context, err error) {
-	switch {
-	case errors.Is(err, domain.ErrForbidden):
-		c.JSON(http.StatusForbidden, dto.ResponseDto{
-			Status:  http.StatusForbidden,
-			Message: "forbidden",
-			Data:    nil,
-		})
-	case errors.Is(err, domain.ErrNotFound):
-		c.JSON(http.StatusNotFound, dto.ResponseDto{
-			Status:  http.StatusNotFound,
-			Message: "not found",
-			Data:    nil,
-		})
-	case errors.Is(err, domain.ErrLastAdmin):
-		c.JSON(http.StatusConflict, dto.ResponseDto{
-			Status:  http.StatusConflict,
-			Message: t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
-			Data:    nil,
-		})
-	case errors.Is(err, domain.ErrWeakPassword):
-		c.JSON(http.StatusBadRequest, dto.ResponseDto{
-			Status:  http.StatusBadRequest,
-			Message: "weak password",
-			Data:    nil,
-		})
-	default:
-		writeTranslatedError(t, c, http.StatusBadRequest, err)
+func requireIdentity(authz authBaseCore.AuthorizationUseCase[domain.User, *ginadapter.Context], c *gin.Context) (domain.User, bool) {
+	userToken, ok := authz.GetUserToken(ginadapter.Wrap(c))
+	if !ok {
+		httpapi.WriteProblem(c, httpapi.Unauthorized("Authentication required", httpapi.RequestID(c)))
+		return domain.User{}, false
 	}
-}
-
-func writeTranslatedError(t config.ITranslate, c *gin.Context, status int, err error) {
-	c.JSON(status, dto.ResponseDto{
-		Status:  status,
-		Message: t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
-		Data:    nil,
-	})
+	return userToken, true
 }

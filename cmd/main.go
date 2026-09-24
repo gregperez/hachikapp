@@ -23,9 +23,13 @@ const propertiesFile = "internal/resources/properties.yml"
 
 // @title Mi API en Golang
 // @version 1.0
-// @description API de Autenticación con JWT en Go con Arquitectura Hexagonal
+// @description API de Autenticación con JWT en Go con Arquitectura Hexagonal. Private routes require Authorization: Bearer <access_token>.
 // @host localhost:8080
-// @BasePath /v1/auth
+// @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description JWT access token. Value must be: Bearer <token>
 func main() {
 	if err := run(); err != nil {
 		log.Errorf("application stopped: %v", err)

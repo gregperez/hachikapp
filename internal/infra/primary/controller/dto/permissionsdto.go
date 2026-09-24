@@ -1,12 +1,11 @@
 package dto
 
-// PermissionDto represents the permissions for a specific entity
-// @swagger:model
+// PermissionDto represents the permissions for a specific entity.
 // @Description PermissionDto defines the CRUD permissions for a specific entity
 type PermissionDto struct {
-	Entity string `bson:"entity,omitempty"`
-	Create bool   `bson:"create,omitempty"`
-	Read   bool   `bson:"read,omitempty"`
-	Update bool   `bson:"update,omitempty"`
-	Delete bool   `bson:"delete,omitempty"`
+	Entity string `json:"entity,omitempty"`
+	Create bool   `json:"create,omitempty"`
+	Read   bool   `json:"read,omitempty"`
+	Update bool   `json:"update,omitempty"`
+	Delete bool   `json:"delete,omitempty"`
 }

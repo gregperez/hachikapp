@@ -8,7 +8,7 @@ BIN_DIR := $(CURDIR)/.tmp/bin
 export PATH := $(BIN_DIR):$(PATH)
 
 .PHONY: help fmt-check lint test test-race test-db vuln secrets verify tools \
-	check-secrets migrate-verify migrations-test coverage
+	check-secrets migrate-verify migrations-test coverage openapi-generate openapi-lint
 
 help:
 	@echo "Targets:"
@@ -19,6 +19,8 @@ help:
 	@echo "  migrate-verify    migrations up/down/up against DATABASE_TEST_URL"
 	@echo "  migrations-test   alias for migrate-verify"
 	@echo "  test-db           migrate-verify + DB integration tests"
+	@echo "  openapi-generate  regenerate docs/ from swag annotations"
+	@echo "  openapi-lint      contract checks + fail on OpenAPI drift"
 	@echo "  vuln              govulncheck"
 	@echo "  secrets           gitleaks (redacted)"
 	@echo "  coverage          unit coverage profile (informational)"
@@ -39,7 +41,7 @@ $(BIN_DIR)/staticcheck:
 	GOBIN=$(BIN_DIR) $(GO) install honnef.co/go/tools/cmd/staticcheck@$(STATICCHECK_VERSION)
 
 fmt-check:
-	@out="$$(gofmt -l cmd internal)"; \
+	@out="$$(gofmt -l cmd internal docs)"; \
 	if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi
 
 lint:
@@ -71,7 +73,15 @@ coverage:
 	$(GO) test -count=1 -coverprofile=.tmp/coverage.out ./internal/...
 	$(GO) tool cover -func=.tmp/coverage.out | tail -n 1
 
-verify: fmt-check lint test test-race secrets vuln
+openapi-generate:
+	@chmod +x scripts/openapi-generate.sh
+	./scripts/openapi-generate.sh
+
+openapi-lint:
+	@chmod +x scripts/openapi-lint.sh
+	./scripts/openapi-lint.sh
+
+verify: fmt-check lint test test-race secrets vuln openapi-lint
 	@if [ -z "$${DATABASE_TEST_URL:-}" ]; then \
 		echo "DATABASE_TEST_URL is required for verify (use docker-compose.test.yml)"; \
 		exit 1; \

@@ -2,10 +2,11 @@ package config
 
 import (
 	"encoding/json"
-	"github.com/WilsonSayago/initModules/v2"
 	"log"
 
+	"github.com/WilsonSayago/initModules/v2"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	logrus "github.com/sirupsen/logrus"
 	"golang.org/x/text/language"
 )
 
@@ -30,10 +31,9 @@ func (t *Translate) Start() {
 }
 
 func (t *Translate) LoadTranslations() {
-	b := i18n.NewBundle(language.English) // Idioma por defecto
+	b := i18n.NewBundle(language.English)
 	b.RegisterUnmarshalFunc("json", json.Unmarshal)
 
-	// Cargar archivos de traducción
 	_, err := b.LoadMessageFile("internal/resources/locales/en.json")
 	if err != nil {
 		log.Fatal(err)
@@ -46,11 +46,23 @@ func (t *Translate) LoadTranslations() {
 	t.bundle = b
 }
 
+// TranslateByLang looks up a message without panicking.
+// Missing translation IDs log the technical ID and return a generic message.
 func (t *Translate) TranslateByLang(lang string, messageID string, data map[string]interface{}) string {
+	if t == nil || t.bundle == nil || messageID == "" {
+		return "An error occurred"
+	}
 	localize := i18n.NewLocalizer(t.bundle, lang)
-
-	return localize.MustLocalize(&i18n.LocalizeConfig{
+	msg, err := localize.Localize(&i18n.LocalizeConfig{
 		MessageID:    messageID,
 		TemplateData: data,
 	})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"message_id": messageID,
+			"lang":       lang,
+		}).Warn("missing translation")
+		return "An error occurred"
+	}
+	return msg
 }

@@ -7,8 +7,10 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/infra/config"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
+	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/inputs/users"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/outputs/roles"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/ginadapter"
+	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
 
 	authBaseCore "github.com/WilsonSayago/authBase/v3/core"
 	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
@@ -60,29 +62,31 @@ func (roleC *RoleController) RunController() {
 // @Summary Get all roles
 // @Description Retrieves a paginated list of roles
 // @Tags Roles
+// @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param page query int false "Page number" default(1)
-// @Param pageSize query int false "Page size" default(10)
+// @Param page query int false "Page number (>=1)" default(1)
+// @Param pageSize query int false "Page size (1-100)" default(10) maximum(100)
 // @Success 200 {object} dto.ResponseDto{data=roles.RolesPageResponse} "List of roles"
-// @Failure 400 {object} dto.ResponseDto "Error retrieving roles"
+// @Failure 400 {object} httpapi.Problem
+// @Failure 401 {object} httpapi.Problem
+// @Failure 403 {object} httpapi.Problem
 // @Router /v1/roles [get]
 func (roleC *RoleController) GetAll() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		page, pageSize, offset := handlePagination(c)
+		page, pageSize, offset, ok := handlePagination(c)
+		if !ok {
+			return
+		}
 		rolesDb, total, err := roleC.roleService.GetRoles(c.Request.Context(), pageSize, offset)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
-				Data:    nil,
-			})
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 
-		list := make([]roles.RoleResponse, 0)
+		list := make([]roles.RoleResponse, 0, len(rolesDb))
 		for _, role := range rolesDb {
-			var r = roles.RoleResponse{
+			list = append(list, roles.RoleResponse{
 				BaseDto: dto.BaseDto{
 					Id:     role.GetId(),
 					Active: role.GetActive(),
@@ -90,8 +94,7 @@ func (roleC *RoleController) GetAll() func(c *gin.Context) {
 				Name:        role.GetName(),
 				Routes:      roles.ConvertRoutesToDto(role.GetRoutes()),
 				Permissions: convertPermissionsToDto(role.GetPermissions()),
-			}
-			list = append(list, r)
+			})
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
@@ -100,7 +103,7 @@ func (roleC *RoleController) GetAll() func(c *gin.Context) {
 				Page:       page,
 				PageSize:   pageSize,
 				TotalItems: total,
-				TotalPages: (total + pageSize - 1) / pageSize,
+				TotalPages: httpapi.TotalPages(total, pageSize),
 				Data:       list,
 			},
 		})
@@ -111,22 +114,21 @@ func (roleC *RoleController) GetAll() func(c *gin.Context) {
 // @Summary Get role by ID
 // @Description Retrieves a role by its ID
 // @Tags Roles
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path string true "Role ID"
 // @Success 200 {object} dto.ResponseDto{data=roles.RoleResponse} "Role details"
-// @Failure 400 {object} dto.ResponseDto "Error retrieving role"
+// @Failure 401 {object} httpapi.Problem
+// @Failure 403 {object} httpapi.Problem
+// @Failure 404 {object} httpapi.Problem
 // @Router /v1/roles/{id} [get]
 func (roleC *RoleController) GetById() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id := c.Param("id")
 		role, err := roleC.roleService.GetRoleById(c.Request.Context(), id)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
-				Data:    nil,
-			})
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 
@@ -151,11 +153,15 @@ func (roleC *RoleController) GetById() func(c *gin.Context) {
 // @Summary Create new role
 // @Description Creates a new role with the provided details
 // @Tags Roles
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param role body dto.RoleDto true "Role details"
 // @Success 201 {object} dto.ResponseDto "Role created successfully"
-// @Failure 400 {object} dto.ResponseDto "Error creating role"
+// @Failure 400 {object} httpapi.Problem
+// @Failure 401 {object} httpapi.Problem
+// @Failure 403 {object} httpapi.Problem
+// @Failure 422 {object} httpapi.Problem
 // @Router /v1/roles [post]
 func (roleC *RoleController) Save() func(c *gin.Context) {
 	return func(c *gin.Context) {
@@ -172,11 +178,7 @@ func (roleC *RoleController) Save() func(c *gin.Context) {
 
 		_, err := roleC.roleService.CreateRole(c.Request.Context(), role)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
-				Data:    nil,
-			})
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 
@@ -192,12 +194,16 @@ func (roleC *RoleController) Save() func(c *gin.Context) {
 // @Summary Update role
 // @Description Updates an existing role with the provided details
 // @Tags Roles
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path string true "Role ID"
 // @Param role body dto.RoleDto true "Role details"
 // @Success 200 {object} dto.ResponseDto "Role updated successfully"
-// @Failure 400 {object} dto.ResponseDto "Error updating role"
+// @Failure 400 {object} httpapi.Problem
+// @Failure 401 {object} httpapi.Problem
+// @Failure 403 {object} httpapi.Problem
+// @Failure 422 {object} httpapi.Problem
 // @Router /v1/roles/{id} [put]
 func (roleC *RoleController) Update() func(c *gin.Context) {
 	return func(c *gin.Context) {
@@ -216,11 +222,7 @@ func (roleC *RoleController) Update() func(c *gin.Context) {
 
 		err := roleC.roleService.UpdateRole(c.Request.Context(), role)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
-				Data:    nil,
-			})
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 
@@ -236,28 +238,26 @@ func (roleC *RoleController) Update() func(c *gin.Context) {
 // @Summary Change role status
 // @Description Changes the active status of a role
 // @Tags Roles
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path string true "Role ID"
+// @Param body body users.SetActiveRequest true "Active flag"
 // @Success 200 {object} dto.ResponseDto "Status changed successfully"
-// @Failure 400 {object} dto.ResponseDto "Error changing status"
-// @Router /v1/roles/change-status/{id} [put]
+// @Failure 400 {object} httpapi.Problem
+// @Failure 401 {object} httpapi.Problem
+// @Failure 403 {object} httpapi.Problem
+// @Router /v1/roles/{id}/change-status [put]
 func (roleC *RoleController) ChangeStatus() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id := c.Param("id")
-		var req struct {
-			Active bool `json:"active"`
-		}
+		var req users.SetActiveRequest
 		if !handleBind(roleC.t, c, &req) {
 			return
 		}
 		err := roleC.roleService.SetActive(c.Request.Context(), id, req.Active)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ResponseDto{
-				Status:  http.StatusBadRequest,
-				Message: roleC.t.TranslateByLang(c.GetHeader("lang"), err.Error(), nil),
-				Data:    nil,
-			})
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 

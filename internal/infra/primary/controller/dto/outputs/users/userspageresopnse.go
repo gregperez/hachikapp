@@ -1,4 +1,4 @@
-package users
+package userout
 
 // UsersPageResponse UserResponse represents a user response.
 // @swagger:model

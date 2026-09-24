@@ -1,6 +1,71 @@
-basePath: /v1/auth
+basePath: /
 definitions:
-  auth.LoginRequestDto:
+  domain.RoutePathEnum:
+    description: RoutePathEnum
+    enum:
+    - USERS
+    - ROLES
+    type: string
+    x-enum-varnames:
+    - USERS
+    - ROLES
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.AuthDto:
+    description: Authentication response model containing JWT tokens for user authentication
+    properties:
+      accessToken:
+        description: "\U0001F539 Token JWT de acceso"
+        example: eyJhbGciOiJIUzI1...
+        type: string
+      refreshToken:
+        example: eyJhbGciOiJIUzI1...
+        type: string
+    type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.PermissionDto:
+    description: PermissionDto defines the CRUD permissions for a specific entity
+    properties:
+      create:
+        type: boolean
+      delete:
+        type: boolean
+      entity:
+        type: string
+      read:
+        type: boolean
+      update:
+        type: boolean
+    type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto:
+    description: Standard response model used across all API endpoints
+    properties:
+      data:
+        description: "\U0001F539 Datos dinámicos según el endpoint"
+      message:
+        description: "\U0001F539 Mensaje descriptivo de la respuesta"
+        example: Ok
+        type: string
+      status:
+        description: "\U0001F539 Código HTTP de respuesta"
+        example: 200
+        type: integer
+    type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.RoleDto:
+    description: RoleDto contains the information about a role including its name,
+      routes, and permissions
+    properties:
+      name:
+        type: string
+      permissions:
+        items:
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.PermissionDto'
+        type: array
+      routes:
+        items:
+          $ref: '#/definitions/domain.RoutePathEnum'
+        type: array
+    required:
+    - name
+    type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.LoginRequestDto:
     description: Estructura esperada para autenticación de usuario
     properties:
       email:
@@ -15,7 +80,7 @@ definitions:
     - email
     - password
     type: object
-  auth.RefreshTokenRequestDto:
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto:
     description: Estructura esperada para refrescar un token JWT
     properties:
       refreshToken:
@@ -25,34 +90,69 @@ definitions:
     required:
     - refreshToken
     type: object
-  dto.AuthDto:
-    description: Authentication response model containing JWT tokens for user authentication
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.AdminUpdateUserRequest:
     properties:
-      accessToken:
-        description: "\U0001F539 Token JWT de acceso"
-        example: eyJhbGciOiJIUzI1...
+      email:
         type: string
-      refreshToken:
-        example: eyJhbGciOiJIUzI1...
+      name:
         type: string
+    required:
+    - email
+    - name
     type: object
-  dto.ResponseDto:
-    description: Standard response model used across all API endpoints
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.AssignUserRolesRequest:
     properties:
-      data:
-        description: "\U0001F539 Datos dinámicos según el endpoint"
-      message:
-        description: "\U0001F539 Mensaje descriptivo de la respuesta"
-        example: Ok
+      roleIds:
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - roleIds
+    type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.ChangePasswordRequest:
+    properties:
+      currentPassword:
         type: string
-      status:
-        description: "\U0001F539 Código HTTP de respuesta"
-        example: 200
-        type: integer
+      newPassword:
+        minLength: 12
+        type: string
+    required:
+    - currentPassword
+    - newPassword
     type: object
-  dto.RoleDto:
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 12
+        type: string
+    required:
+    - email
+    - name
+    - password
     type: object
-  roles.PermissionResponse:
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest:
+    properties:
+      active:
+        type: boolean
+    type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetAdminFlagRequest:
+    properties:
+      isAdmin:
+        type: boolean
+    type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.UpdateOwnProfileRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse:
     description: PermissionResponse represents a permission response.
     properties:
       create:
@@ -66,7 +166,7 @@ definitions:
       update:
         type: boolean
     type: object
-  roles.RoleResponse:
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse:
     description: RoleResponse represents a role response.
     properties:
       active:
@@ -83,7 +183,7 @@ definitions:
         type: string
       permissions:
         items:
-          $ref: '#/definitions/roles.PermissionResponse'
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse'
         type: array
       routes:
         items:
@@ -95,12 +195,12 @@ definitions:
       updatedBy:
         type: string
     type: object
-  roles.RolesPageResponse:
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RolesPageResponse:
     description: RolesPageResponse represents a paginated response of roles.
     properties:
       data:
         items:
-          $ref: '#/definitions/roles.RoleResponse'
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse'
         type: array
       page:
         type: integer
@@ -111,38 +211,7 @@ definitions:
       totalPages:
         type: integer
     type: object
-  users.UseDto:
-    description: UseDto represents a user dto.
-    properties:
-      active:
-        type: boolean
-      createdAt:
-        type: string
-      createdBy:
-        type: string
-      email:
-        type: string
-      id:
-        type: string
-      isAdmin:
-        type: boolean
-      messagesDefault:
-        type: string
-      name:
-        type: string
-      password:
-        type: string
-      updatedAt:
-        type: string
-      updatedBy:
-        type: string
-    required:
-    - email
-    - isAdmin
-    - name
-    - password
-    type: object
-  users.UserResponse:
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse:
     description: UserResponse represents a user response.
     properties:
       active:
@@ -161,37 +230,25 @@ definitions:
         type: string
       name:
         type: string
-      password:
-        type: string
       permissions:
         items:
-          $ref: '#/definitions/roles.PermissionResponse'
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse'
+        type: array
+      roles:
+        items:
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse'
         type: array
       updatedAt:
         type: string
       updatedBy:
         type: string
     type: object
-  users.UserUpdateDto:
-    description: UserUpdateDto represents a user update dto.
-    properties:
-      email:
-        type: string
-      isAdmin:
-        type: boolean
-      name:
-        type: string
-    required:
-    - email
-    - isAdmin
-    - name
-    type: object
-  users.UsersPageResponse:
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UsersPageResponse:
     description: UserResponse represents a user response.
     properties:
       data:
         items:
-          $ref: '#/definitions/users.UserResponse'
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse'
         type: array
       page:
         type: integer
@@ -202,10 +259,37 @@ definitions:
       totalPages:
         type: integer
     type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.FieldError:
+    properties:
+      code:
+        type: string
+      field:
+        type: string
+    type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem:
+    properties:
+      code:
+        type: string
+      detail:
+        type: string
+      errors:
+        items:
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.FieldError'
+        type: array
+      requestId:
+        type: string
+      status:
+        type: integer
+      title:
+        type: string
+      type:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
-  description: API de Autenticación con JWT en Go con Arquitectura Hexagonal
+  description: 'API de Autenticación con JWT en Go con Arquitectura Hexagonal. Private
+    routes require Authorization: Bearer <access_token>.'
   title: Mi API en Golang
   version: "1.0"
 paths:
@@ -213,55 +297,97 @@ paths:
     post:
       consumes:
       - application/json
-      description: Autentica a un usuario y devuelve tokens JWT
+      description: Authenticates a user and returns JWT access and refresh tokens
       parameters:
-      - description: Credenciales de inicio de sesión
+      - description: Login credentials
         in: body
         name: loginData
         required: true
         schema:
-          $ref: '#/definitions/auth.LoginRequestDto'
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.LoginRequestDto'
       produces:
       - application/json
       responses:
         "200":
-          description: Tokens de acceso y refresh
+          description: Tokens
           schema:
-            $ref: '#/definitions/dto.AuthDto'
+            allOf:
+            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.AuthDto'
+              type: object
         "400":
-          description: Error en la petición
+          description: Malformed JSON or empty body
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
         "401":
-          description: Credenciales incorrectas
+          description: Invalid credentials
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "422":
+          description: Validation failed
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
       summary: User login
       tags:
       - Authentication
-  /v1/auth/refresh-token:
+  /v1/auth/logout:
     post:
       consumes:
       - application/json
-      description: Refreshes an expired access token using a refresh token
+      description: Revokes the refresh token family. Idempotent for invalid tokens.
       parameters:
       - description: Refresh token
         in: body
         name: refreshToken
         required: true
         schema:
-          $ref: '#/definitions/auth.RefreshTokenRequestDto'
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Revoked
+        "422":
+          description: Validation failed
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      summary: Logout / revoke refresh family
+      tags:
+      - Authentication
+  /v1/auth/refresh-token:
+    post:
+      consumes:
+      - application/json
+      description: Refreshes tokens using a refresh token (single-use rotation)
+      parameters:
+      - description: Refresh token
+        in: body
+        name: refreshToken
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto'
       produces:
       - application/json
       responses:
         "200":
           description: New tokens
           schema:
-            $ref: '#/definitions/dto.AuthDto'
-        "400":
-          description: Invalid request
+            allOf:
+            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.AuthDto'
+              type: object
+        "401":
+          description: Invalid refresh
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "422":
+          description: Validation failed
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
       summary: Refresh JWT token
       tags:
       - Authentication
@@ -272,13 +398,14 @@ paths:
       description: Retrieves a paginated list of roles
       parameters:
       - default: 1
-        description: Page number
+        description: Page number (>=1)
         in: query
         name: page
         type: integer
       - default: 10
-        description: Page size
+        description: Page size (1-100)
         in: query
+        maximum: 100
         name: pageSize
         type: integer
       produces:
@@ -288,15 +415,25 @@ paths:
           description: List of roles
           schema:
             allOf:
-            - $ref: '#/definitions/dto.ResponseDto'
+            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/roles.RolesPageResponse'
+                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RolesPageResponse'
               type: object
         "400":
-          description: Error retrieving roles
+          description: Bad Request
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
       summary: Get all roles
       tags:
       - Roles
@@ -310,18 +447,32 @@ paths:
         name: role
         required: true
         schema:
-          $ref: '#/definitions/dto.RoleDto'
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.RoleDto'
       produces:
       - application/json
       responses:
         "201":
           description: Role created successfully
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
         "400":
-          description: Error creating role
+          description: Bad Request
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
       summary: Create new role
       tags:
       - Roles
@@ -343,15 +494,25 @@ paths:
           description: Role details
           schema:
             allOf:
-            - $ref: '#/definitions/dto.ResponseDto'
+            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/roles.RoleResponse'
+                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse'
               type: object
-        "400":
-          description: Error retrieving role
+        "401":
+          description: Unauthorized
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
       summary: Get role by ID
       tags:
       - Roles
@@ -370,22 +531,36 @@ paths:
         name: role
         required: true
         schema:
-          $ref: '#/definitions/dto.RoleDto'
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.RoleDto'
       produces:
       - application/json
       responses:
         "200":
           description: Role updated successfully
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
         "400":
-          description: Error updating role
+          description: Bad Request
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
       summary: Update role
       tags:
       - Roles
-  /v1/roles/change-status/{id}:
+  /v1/roles/{id}/change-status:
     put:
       consumes:
       - application/json
@@ -396,17 +571,33 @@ paths:
         name: id
         required: true
         type: string
+      - description: Active flag
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Status changed successfully
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
         "400":
-          description: Error changing status
+          description: Bad Request
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
       summary: Change role status
       tags:
       - Roles
@@ -414,71 +605,88 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieves a paginated list of users
+      description: Retrieves a paginated list of users (stable order by repository)
       parameters:
       - default: 1
-        description: Page number
+        description: Page number (>=1)
         in: query
         name: page
         type: integer
       - default: 10
-        description: Page size
+        description: Page size (1-100)
         in: query
+        maximum: 100
         name: pageSize
         type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: List of users
+          description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/dto.ResponseDto'
+            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/users.UsersPageResponse'
+                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UsersPageResponse'
               type: object
         "400":
-          description: Error retrieving users
+          description: Bad Request
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
       security:
-      - ApiKeyAuth: []
-      summary: Get all users
+      - BearerAuth: []
+      summary: List users
       tags:
       - Users
     post:
       consumes:
       - application/json
-      description: Creates a new user with the provided details
       parameters:
-      - description: User details
+      - description: User
         in: body
-        name: user
+        name: body
         required: true
         schema:
-          $ref: '#/definitions/users.UseDto'
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.CreateUserRequest'
       produces:
       - application/json
       responses:
-        "200":
-          description: User created successfully
+        "201":
+          description: Created
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
         "400":
-          description: Error creating user
+          description: Bad Request
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
       security:
-      - ApiKeyAuth: []
-      summary: Create new user
+      - BearerAuth: []
+      summary: Create user
       tags:
       - Users
   /v1/users/{id}:
     get:
-      consumes:
-      - application/json
-      description: Retrieves a user by their ID
       parameters:
       - description: User ID
         in: path
@@ -489,106 +697,278 @@ paths:
       - application/json
       responses:
         "200":
-          description: User details
+          description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/dto.ResponseDto'
+            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/users.UseDto'
+                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse'
               type: object
-        "400":
-          description: Error retrieving user
+        "401":
+          description: Unauthorized
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
       security:
-      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get user by ID
       tags:
       - Users
     put:
       consumes:
       - application/json
-      description: Updates an existing user with the provided details
       parameters:
       - description: User ID
         in: path
         name: id
         required: true
         type: string
-      - description: User update details
+      - description: User
         in: body
-        name: user
+        name: body
         required: true
         schema:
-          $ref: '#/definitions/users.UserUpdateDto'
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.AdminUpdateUserRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: User updated successfully
+          description: OK
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
-        "400":
-          description: Error updating user
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+        "401":
+          description: Unauthorized
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
       security:
-      - ApiKeyAuth: []
-      summary: Update user
+      - BearerAuth: []
+      summary: Admin update user
       tags:
       - Users
-  /v1/users/change-status/{id}:
+  /v1/users/{id}/admin:
     put:
       consumes:
       - application/json
-      description: Changes the active status of a user
       parameters:
       - description: User ID
         in: path
         name: id
         required: true
         type: string
+      - description: Flag
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetAdminFlagRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Status changed successfully
+          description: OK
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
-        "400":
-          description: Error changing status
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+        "401":
+          description: Unauthorized
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
       security:
-      - ApiKeyAuth: []
-      summary: Change user status
+      - BearerAuth: []
+      summary: Set admin flag
       tags:
       - Users
-  /v1/users/full-info:
-    get:
+  /v1/users/{id}/change-status:
+    put:
       consumes:
       - application/json
-      description: Retrieves complete user information including roles and permissions
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Active flag
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Full user details
+          description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/dto.ResponseDto'
-            - properties:
-                data:
-                  $ref: '#/definitions/users.UserResponse'
-              type: object
-        "400":
-          description: Error retrieving user info
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+        "401":
+          description: Unauthorized
           schema:
-            $ref: '#/definitions/dto.ResponseDto'
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
       security:
-      - ApiKeyAuth: []
-      summary: Get full user info
+      - BearerAuth: []
+      summary: Change user active status
       tags:
       - Users
+  /v1/users/{id}/roles:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Roles
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.AssignUserRolesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Assign roles to user
+      tags:
+      - Users
+  /v1/users/me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Get current user profile
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Profile
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.UpdateOwnProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Update own profile
+      tags:
+      - Users
+  /v1/users/me/password:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Passwords
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Change own password
+      tags:
+      - Users
+securityDefinitions:
+  BearerAuth:
+    description: 'JWT access token. Value must be: Bearer <token>'
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

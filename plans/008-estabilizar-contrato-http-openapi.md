@@ -141,13 +141,13 @@ La primera no debe devolver usos productivos; la segunda no debe mostrar passwor
 
 ## Criterios de aceptación
 
-- [ ] Ningún input inválido conocido provoca panic.
-- [ ] Existe un mapper único con status/códigos estables y 500 redactado.
-- [ ] Requests y responses usan DTOs distintos; credenciales nunca aparecen en responses/spec.
-- [ ] Paginación es acotada, validada y determinista.
-- [ ] OpenAPI coincide con el router y declara Bearer en todas las rutas privadas.
-- [ ] La generación/lint de OpenAPI bloquea drift en CI.
-- [ ] Swagger respeta configuración y ambiente.
+- [x] Ningún input inválido conocido provoca panic.
+- [x] Existe un mapper único con status/códigos estables y 500 redactado.
+- [x] Requests y responses usan DTOs distintos; credenciales nunca aparecen en responses/spec.
+- [x] Paginación es acotada, validada y determinista.
+- [x] OpenAPI coincide con el router y declara Bearer en todas las rutas privadas.
+- [x] La generación/lint de OpenAPI bloquea drift en CI.
+- [x] Swagger respeta configuración y ambiente.
 
 ## Condiciones de parada
 
@@ -157,6 +157,9 @@ La primera no debe devolver usos productivos; la segunda no debe mostrar passwor
 
 ## Notas de mantenimiento
 
+- **Breaking change (errores):** las fallas HTTP pasan a `application/problem+json` con códigos estables (`VALIDATION_ERROR`, `UNAUTHORIZED`, …). Las respuestas 2xx conservan `dto.ResponseDto`.
+- Paginación: default `page=1`, `pageSize=10`, máximo `pageSize=100` (rechazo 400 si se excede).
+- OpenAPI: usar siempre `make openapi-generate` (swag pinneado en `tools/versions.env`); un `swag` global más nuevo puede generar `docs.go` incompatible con `github.com/swaggo/swag` del módulo.
 - Todo error público nuevo necesita código estable, status, test y traducción opcional.
 - Todo endpoint nuevo debe quedar en router, OpenAPI y test de autorización.
 - Tratar el spec generado como artefacto verificable, no como fuente manual.

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
+	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -31,8 +32,9 @@ type HTTPDeps struct {
 func NewEngine(deps HTTPDeps) *gin.Engine {
 	gin.SetMode(deps.Config.EffectiveGinMode())
 	r := gin.New()
-	r.Use(gin.Recovery())
+	r.Use(httpapi.Recovery())
 	r.Use(requestIDMiddleware())
+	r.Use(httpapi.LimitRequestBody(httpapi.DefaultMaxBodyBytes))
 	r.Use(accessLogMiddleware())
 
 	corsCfg := cors.Config{

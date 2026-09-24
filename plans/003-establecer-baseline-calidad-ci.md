@@ -105,12 +105,12 @@ El workflow debe:
 
 ## Criterios de aceptación
 
-- [ ] Existe una sola orden local (`make verify`) equivalente a la puerta de CI.
-- [ ] CI usa PostgreSQL efímero y verifica migraciones up/down/up.
-- [ ] Unitarios pueden ejecutarse sin DB; integración nunca apunta accidentalmente a desarrollo/producción.
-- [ ] Los tests existentes fueron reparados o reemplazados, sin cuerpos comentados.
-- [ ] Lint, race, vulnerabilidades y secretos bloquean el workflow.
-- [ ] Herramientas y acciones están fijadas a versiones/SHA reproducibles.
+- [x] Existe una sola orden local (`make verify`) equivalente a la puerta de CI.
+- [x] CI usa PostgreSQL efímero y verifica migraciones up/down/up.
+- [x] Unitarios pueden ejecutarse sin DB; integración nunca apunta accidentalmente a desarrollo/producción.
+- [x] Los tests existentes fueron reparados o reemplazados, sin cuerpos comentados.
+- [x] Lint (`go vet` + `staticcheck`), race, vulnerabilidades y secretos bloquean el workflow.
+- [x] Herramientas y acciones están fijadas a versiones/SHA reproducibles (`tools/versions.env`).
 
 ## Condiciones de parada
 

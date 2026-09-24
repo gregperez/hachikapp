@@ -13,10 +13,10 @@ type Context struct {
 
 // RequestContext returns the request-scoped context.
 func (c *Context) RequestContext() context.Context {
-	if c == nil || c.Context == nil || c.Request == nil {
+	if c == nil || c.Context == nil || c.Context.Request == nil {
 		return context.Background()
 	}
-	return c.Request.Context()
+	return c.Context.Request.Context()
 }
 
 // Wrap returns an authBase-compatible context for an existing Gin context.

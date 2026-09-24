@@ -20,10 +20,9 @@ type Translate struct {
 }
 
 func GetTranslateInstance() ITranslate {
-	instance := initModules.GetInstance("Translate", func() interface{} {
+	return initModules.Once(func() *Translate {
 		return &Translate{}
 	})
-	return instance.(*Translate)
 }
 
 func (t *Translate) Start() {

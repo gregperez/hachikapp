@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"os"
 	"sync"
 	"testing"
 	"time"
@@ -13,14 +12,15 @@ import (
 	"github.com/WilsonSayago/authBase/v3/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/refreshstore"
+	"github.com/WilsonSayago/base-golang/internal/test/testdb"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func testPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
-	dsn := os.Getenv("DATABASE_TEST_URL")
-	if dsn == "" {
-		t.Skip("DATABASE_TEST_URL not set; ephemeral Postgres required for refresh store atomicity tests")
+	dsn, err := testdb.RequireURL()
+	if err != nil {
+		t.Skip(err.Error())
 	}
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, dsn)

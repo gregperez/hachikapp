@@ -13,12 +13,9 @@ type PermissionRepository struct {
 }
 
 func NewPermissionInstance(permissionDao dao.IPermissionDao) ports.PermissionPort {
-	instance := initModules.GetInstance("PermissionRepository", func() interface{} {
-		return &PermissionRepository{
-			permissionDao: permissionDao,
-		}
+	return initModules.Once(func() *PermissionRepository {
+		return &PermissionRepository{permissionDao: permissionDao}
 	})
-	return instance.(*PermissionRepository)
 }
 
 func (r *PermissionRepository) FindAllByUser(userId string) ([]authBaseDomain.Permission, error) {

@@ -19,8 +19,8 @@ Estos documentos son instrucciones autocontenidas para que otro agente pueda eje
 | ID | Plan | Prioridad | Esfuerzo | Depende de | Estado |
 |---|---|---:|---:|---|---|
 | 001 | [Contener secretos y datos de arranque](./001-contener-secretos-y-datos-bootstrap.md) | P0 | M | — | Hecho (`codex/001-contener-secretos`) |
-| 002 | [Recuperar compilación y migrar authBase/initModules](./002-recuperar-compilacion-y-migrar-auth.md) | P0 | L | 001 | Implementado — cierre diferido a 010; pendiente commit y prueba PostgreSQL |
-| 003 | [Establecer baseline de calidad y CI](./003-establecer-baseline-calidad-ci.md) | P1 | M | 002 | Pendiente |
+| 002 | [Recuperar compilación y migrar authBase/initModules](./002-recuperar-compilacion-y-migrar-auth.md) | P0 | L | 001 | Hecho (`codex/002-migrar-auth`) |
+| 003 | [Establecer baseline de calidad y CI](./003-establecer-baseline-calidad-ci.md) | P1 | M | 002 | Hecho (`codex/003-baseline-ci`) |
 | 004 | [Corregir límites de autorización](./004-corregir-limites-autorizacion.md) | P0 | M | 002, 003 | Pendiente |
 | 005 | [Reconstruir configuración, bootstrap y lifecycle](./005-reconstruir-bootstrap-lifecycle.md) | P1 | L | 002, 003 | Pendiente |
 | 006 | [Corregir límites de persistencia PostgreSQL](./006-corregir-persistencia-postgresql.md) | P1 | L | 003, 005 | Pendiente |

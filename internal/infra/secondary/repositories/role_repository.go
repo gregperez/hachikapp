@@ -15,12 +15,9 @@ type RoleRepository struct {
 }
 
 func NewRoleInstance(roleDao dao.IRoleDao) authBasePorts.RolePort {
-	instance := initModules.GetInstance("RoleRepository", func() interface{} {
-		return &RoleRepository{
-			roleDao: roleDao,
-		}
+	return initModules.Once(func() *RoleRepository {
+		return &RoleRepository{roleDao: roleDao}
 	})
-	return instance.(*RoleRepository)
 }
 
 func (r RoleRepository) FindById(id string) (domain.Role, error) {
@@ -34,6 +31,9 @@ func (r RoleRepository) FindById(id string) (domain.Role, error) {
 
 func (r RoleRepository) FindAll(pageSize, offset int) ([]domain.Role, int, error) {
 	total, err := (r.roleDao).Count()
+	if err != nil {
+		return nil, 0, fmt.Errorf("errors.roles.get-all")
+	}
 	roles, err := (r.roleDao).FindAll(pageSize, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("errors.roles.get-all")

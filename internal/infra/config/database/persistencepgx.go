@@ -123,6 +123,9 @@ func NewConnectionPostgresPgx(prop *prop.DatabaseProperty) *PostgresPgx {
 
 		psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable", prop.Host, prop.Port, prop.User, prop.Password, prop.Name)
 		cnxCfg, err := pgxpool.ParseConfig(psqlInfo)
+		if err != nil {
+			log.Fatalf("could not parse database config: %v", err)
+		}
 		cnxCfg.MaxConns = prop.DbMaxConns
 		pool, err := pgxpool.NewWithConfig(context.Background(), cnxCfg)
 		if err != nil {

@@ -29,12 +29,9 @@ type RoleDao struct {
 }
 
 func NewRoleDaoInstance(db *database.Database) IRoleDao {
-	instance := initModules.GetInstance("RoleDao", func() interface{} {
-		return &RoleDao{
-			DbPgx4: db,
-		}
+	return initModules.Once(func() *RoleDao {
+		return &RoleDao{DbPgx4: db}
 	})
-	return instance.(*RoleDao)
 }
 
 func (r *RoleDao) FindAllByUserId(userId string) ([]dto.RoleDTO, error) {

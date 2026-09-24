@@ -19,12 +19,9 @@ type PermissionDao struct {
 }
 
 func NewPermissionDaoInstance(db *database.Database) IPermissionDao {
-	instance := initModules.GetInstance("PermissionDao", func() interface{} {
-		return &PermissionDao{
-			DbPgx4: db,
-		}
+	return initModules.Once(func() *PermissionDao {
+		return &PermissionDao{DbPgx4: db}
 	})
-	return instance.(*PermissionDao)
 }
 
 func (c *PermissionDao) FindAllByUserId(id string) ([]dto.PermissionDTO, error) {

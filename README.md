@@ -57,6 +57,16 @@ Security operations (rotation, bootstrap contract, exposure response, secret sca
 
 **Auth note:** after upgrading to authBase v3, all prior JWTs are invalid; users must sign in again. Refresh tokens rotate atomically and are never stored in plaintext.
 
+## Development quality gate
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Short version:
+
+```sh
+docker compose -f docker-compose.test.yml up -d
+export DATABASE_TEST_URL='postgres://postgres:test@localhost:54329/base_golang_test?sslmode=disable'
+make verify
+```
+
 ## Usage
 To run the project, ensure you have Go installed and set up your PostgreSQL database. Then, use the following commands:
 

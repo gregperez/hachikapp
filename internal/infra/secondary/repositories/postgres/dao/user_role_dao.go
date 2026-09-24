@@ -25,12 +25,9 @@ type UserRoleDao struct {
 }
 
 func NewUserRoleDaoInstance(db *database.PostgresPgx) IUserRoleDao {
-	instance := initModules.GetInstance("UserRoleDao", func() interface{} {
-		return &UserRoleDao{
-			DbPgx4: db,
-		}
+	return initModules.Once(func() *UserRoleDao {
+		return &UserRoleDao{DbPgx4: db}
 	})
-	return instance.(*UserRoleDao)
 }
 
 func (userRoleDao *UserRoleDao) Save(userId, roleId string) error {

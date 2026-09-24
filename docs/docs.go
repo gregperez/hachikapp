@@ -1292,6 +1292,9 @@ const docTemplate = `{
         },
         "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest": {
             "type": "object",
+            "required": [
+                "active"
+            ],
             "properties": {
                 "active": {
                     "type": "boolean"
@@ -1300,6 +1303,9 @@ const docTemplate = `{
         },
         "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetAdminFlagRequest": {
             "type": "object",
+            "required": [
+                "isAdmin"
+            ],
             "properties": {
                 "isAdmin": {
                     "type": "boolean"

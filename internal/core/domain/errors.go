@@ -18,4 +18,8 @@ var (
 
 	// ErrNotFound is returned when a mutation or lookup targets a missing row.
 	ErrNotFound = errors.New("not found")
+
+	// ErrConflict is returned when a unique/natural-key constraint would be violated
+	// (maps to HTTP 409).
+	ErrConflict = errors.New("conflict")
 )

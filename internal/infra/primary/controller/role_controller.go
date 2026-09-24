@@ -255,7 +255,7 @@ func (roleC *RoleController) ChangeStatus() func(c *gin.Context) {
 		if !handleBind(roleC.t, c, &req) {
 			return
 		}
-		err := roleC.roleService.SetActive(c.Request.Context(), id, req.Active)
+		err := roleC.roleService.SetActive(c.Request.Context(), id, *req.Active)
 		if err != nil {
 			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return

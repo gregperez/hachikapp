@@ -359,7 +359,7 @@ func (userC *UserController) SetAdminFlag() func(c *gin.Context) {
 		if !handleBind(userC.t, c, &req) {
 			return
 		}
-		if err := userC.userService.SetAdminFlag(c.Request.Context(), actor.GetId(), c.Param("id"), req.IsAdmin); err != nil {
+		if err := userC.userService.SetAdminFlag(c.Request.Context(), actor.GetId(), c.Param("id"), *req.IsAdmin); err != nil {
 			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
@@ -390,7 +390,7 @@ func (userC *UserController) ChangeStatus() func(c *gin.Context) {
 		if !handleBind(userC.t, c, &req) {
 			return
 		}
-		if err := userC.userService.SetActive(c.Request.Context(), actor.GetId(), c.Param("id"), req.Active); err != nil {
+		if err := userC.userService.SetActive(c.Request.Context(), actor.GetId(), c.Param("id"), *req.Active); err != nil {
 			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}

@@ -98,4 +98,53 @@ func TestDATABASE_URLOverrides(t *testing.T) {
 	if cfg.MustDSN() != "postgres://u:p@localhost:5432/base_golang_test?sslmode=disable" {
 		t.Fatalf("dsn=%s", cfg.MustDSN())
 	}
+	if cfg.Database.SSLMode != "disable" {
+		t.Fatalf("sslMode=%s want disable from URL", cfg.Database.SSLMode)
+	}
+}
+
+func TestProductionRejectsInsecureDATABASE_URL(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://u:change-me-local@localhost:5432/db?sslmode=disable")
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("CORS_ALLOWED_ORIGINS", "https://app.example.com")
+	_, err := appconfig.Load(appconfig.DatabaseConfig{})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if strings.Contains(err.Error(), "change-me") || strings.Contains(err.Error(), "password=") {
+		t.Fatalf("must not leak secret material: %v", err)
+	}
+	if !strings.Contains(err.Error(), "database.sslMode") && !strings.Contains(err.Error(), "database.password") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestLoadRejectsInvalidIntEnv(t *testing.T) {
+	t.Setenv("DB_HOST", "localhost")
+	t.Setenv("DB_PORT", "5432")
+	t.Setenv("DB_NAME", "base_golang_test")
+	t.Setenv("DB_USER", "postgres")
+	t.Setenv("DB_PASSWORD", "secret-password-value")
+	t.Setenv("DB_SSLMODE", "disable")
+	t.Setenv("APP_ENV", "development")
+	t.Setenv("DB_MAX_CONNS", "not-a-number")
+	_, err := appconfig.Load(appconfig.DatabaseConfig{})
+	if err == nil || !strings.Contains(err.Error(), "database.maxConns") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestLoadRejectsInvalidBoolEnv(t *testing.T) {
+	t.Setenv("DB_HOST", "localhost")
+	t.Setenv("DB_PORT", "5432")
+	t.Setenv("DB_NAME", "base_golang_test")
+	t.Setenv("DB_USER", "postgres")
+	t.Setenv("DB_PASSWORD", "secret-password-value")
+	t.Setenv("DB_SSLMODE", "disable")
+	t.Setenv("APP_ENV", "development")
+	t.Setenv("SWAGGER_ENABLED", "maybe")
+	_, err := appconfig.Load(appconfig.DatabaseConfig{})
+	if err == nil || !strings.Contains(err.Error(), "docs.swaggerEnabled") {
+		t.Fatalf("err=%v", err)
+	}
 }

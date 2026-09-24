@@ -26,6 +26,9 @@ func TestJwtRejectsInvalidStartupConfig(t *testing.T) {
 		{"short access", func(j *properties.Jwt) { j.SecretKey = "short" }},
 		{"equal secrets", func(j *properties.Jwt) { j.RefreshSecret = j.SecretKey }},
 		{"empty issuer", func(j *properties.Jwt) { j.Issuer = "" }},
+		{"empty audience", func(j *properties.Jwt) { j.Audience = "" }},
+		{"negative leeway", func(j *properties.Jwt) { j.LeewaySeconds = -1 }},
+		{"leeway above max", func(j *properties.Jwt) { j.LeewaySeconds = properties.MaxLeewaySeconds + 1 }},
 		{"refresh ttl <= access", func(j *properties.Jwt) { j.RefreshTokenTime = 1 }},
 	}
 	for _, tc := range cases {

@@ -144,7 +144,10 @@ func (authC *AuthController) Logout() gin.HandlerFunc {
 			c.Status(http.StatusNoContent)
 			return
 		}
-		_ = authC.authenticationService.RevokeRefreshFamily(c.Request.Context(), claims.FamilyID)
+		if err := authC.authenticationService.RevokeRefreshFamily(c.Request.Context(), claims.FamilyID); err != nil {
+			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
+			return
+		}
 		c.Status(http.StatusNoContent)
 	}
 }

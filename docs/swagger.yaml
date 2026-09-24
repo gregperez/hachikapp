@@ -139,11 +139,15 @@ definitions:
     properties:
       active:
         type: boolean
+    required:
+    - active
     type: object
   github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetAdminFlagRequest:
     properties:
       isAdmin:
         type: boolean
+    required:
+    - isAdmin
     type: object
   github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.UpdateOwnProfileRequest:
     properties:

@@ -100,6 +100,8 @@ func TestMapError_Table(t *testing.T) {
 		{domain.ErrNotFound, 404, httpapi.CodeNotFound},
 		{authBaseCore.ErrNotFound, 404, httpapi.CodeNotFound},
 		{domain.ErrLastAdmin, 409, httpapi.CodeConflict},
+		{domain.ErrConflict, 409, httpapi.CodeConflict},
+		{domain.ErrAdminExists, 409, httpapi.CodeConflict},
 		{domain.ErrWeakPassword, 422, httpapi.CodeValidation},
 		{authBaseCore.ErrInvalidCredentials, 401, httpapi.CodeUnauthorized},
 		{authBaseCore.ErrInvalidRefresh, 401, httpapi.CodeUnauthorized},

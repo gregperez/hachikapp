@@ -40,13 +40,22 @@ Database migrations are managed using SQL files under `internal/resources/sql/mi
 ```
 
 ## Configuration
-Runtime configuration is loaded from `internal/resources/properties.yml` (gitignored). Start from the tracked template:
+Runtime configuration is loaded from `internal/resources/properties.yml` (gitignored)
+plus environment overrides. Start from the tracked template:
 
 ```sh
 cp internal/resources/properties.example.yml internal/resources/properties.yml
 cp .env.example .env
 # set DB_PASSWORD, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET (see .env.example)
 ```
+
+Process lifecycle (shared DSN for migrate + pool, health probes, graceful shutdown):
+see [docs/adr/001-initmodules-lifecycle.md](docs/adr/001-initmodules-lifecycle.md).
+
+Health (unversioned):
+
+- `GET /health/live` — process up
+- `GET /health/ready` — startup complete and DB reachable
 
 Instance wiring (repositories, validation, controllers) lives in `internal/infra/config/instance/port.go`.
 

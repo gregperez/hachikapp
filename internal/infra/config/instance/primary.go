@@ -1,6 +1,8 @@
 package instance
 
 import (
+	"fmt"
+
 	"github.com/WilsonSayago/base-golang/internal/infra/config"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/prop"
@@ -12,7 +14,11 @@ import (
 
 func OpenDatabase() *database.PostgresPgx {
 	dbProp := initModules.OnceValue(prop.NewDatabaseProperty)
-	return database.NewConnectionPostgresPgx(dbProp)
+	db := database.NewConnectionPostgresPgx(dbProp)
+	if db == nil {
+		panic(fmt.Errorf("open database: %w", database.OpenError()))
+	}
+	return db
 }
 
 func RegisterControllers(r *gin.Engine) {
@@ -40,8 +46,8 @@ func RegisterControllers(r *gin.Engine) {
 	).RunController()
 }
 
-func ExecuteMigration() {
-	sql.Migrate("internal/resources/sql/migrations")
+func ExecuteMigration(dsn string) error {
+	return sql.Migrate("internal/resources/sql/migrations", dsn)
 }
 
 func TranslateInstance() config.ITranslate {

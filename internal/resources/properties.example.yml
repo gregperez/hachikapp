@@ -11,8 +11,13 @@
 #
 # Optional environment variables (override the non-secret defaults below):
 #   DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_SSLMODE, DB_MAX_CONNS
+#   DATABASE_URL (when set, replaces host/port/name/user/password/sslmode for pool + migrations)
 #   JWT_ISSUER, JWT_AUDIENCE, JWT_ACCESS_HOURS, JWT_REFRESH_HOURS, JWT_LEEWAY_SECONDS
-#   LOG_LEVEL
+#   APP_ENV (development|test|production), LOG_LEVEL, GIN_MODE
+#   SERVER_ADDR, SERVER_READ_HEADER_TIMEOUT, SERVER_READ_TIMEOUT, SERVER_WRITE_TIMEOUT,
+#   SERVER_IDLE_TIMEOUT, SERVER_SHUTDOWN_TIMEOUT
+#   CORS_ALLOWED_ORIGINS (comma-separated), CORS_ALLOW_CREDENTIALS
+#   SWAGGER_ENABLED (default false; must stay false in production)
 #
 # Generate secrets, for example:
 #   export DB_PASSWORD="$(openssl rand -base64 24)"
@@ -31,7 +36,7 @@ datasource:
   database: base_golang
   user: postgres
   password: ${DB_PASSWORD}
-  # Documented for operators; sslmode wiring is completed in plan 005.
+  # Local docker often uses disable; production validation rejects disable/allow/prefer.
   sslmode: disable
   dbMaxConns: 10
 

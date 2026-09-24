@@ -124,12 +124,12 @@ Enviar `SIGTERM` al PID exacto y comprobar salida limpia y puerto liberado. No u
 
 ## Criterios de aceptación
 
-- [ ] Migraciones y runtime usan exactamente la misma configuración de DB.
-- [ ] Todo error de parseo, ping, migración o servidor se comprueba y propaga.
-- [ ] Las rutas se registran antes de escuchar y no hay carrera en `go test -race`.
-- [ ] Servidor/pool tienen startup y shutdown deterministas con deadlines.
-- [ ] Liveness/readiness, CORS y Swagger tienen semántica probada y segura.
-- [ ] La decisión sobre `initModules/v2` está documentada y no queda API v1.
+- [x] Migraciones y runtime usan exactamente la misma configuración de DB.
+- [x] Todo error de parseo, ping, migración o servidor se comprueba y propaga.
+- [x] Las rutas se registran antes de escuchar y no hay carrera en `go test -race`.
+- [x] Servidor/pool tienen startup y shutdown deterministas con deadlines.
+- [x] Liveness/readiness, CORS y Swagger tienen semántica probada y segura.
+- [x] La decisión sobre `initModules/v2` está documentada y no queda API v1.
 
 ## Condiciones de parada
 

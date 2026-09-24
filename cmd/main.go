@@ -3,19 +3,20 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"time"
+	"os"
 
 	_ "github.com/WilsonSayago/base-golang/docs"
+	"github.com/WilsonSayago/base-golang/internal/infra/bootstrap"
+	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
+	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/instance"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/prop"
+	"github.com/WilsonSayago/base-golang/internal/infra/config/sql"
 
 	"github.com/WilsonSayago/authBase/v3/infra/config/properties"
 	initModules "github.com/WilsonSayago/initModules/v2"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
+	log "github.com/sirupsen/logrus"
 )
 
 const propertiesFile = "internal/resources/properties.yml"
@@ -26,88 +27,98 @@ const propertiesFile = "internal/resources/properties.yml"
 // @host localhost:8080
 // @BasePath /v1/auth
 func main() {
+	if err := run(); err != nil {
+		log.Errorf("application stopped: %v", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	dbProp := initModules.OnceValue(prop.NewDatabaseProperty)
 	jwtProp := initModules.OnceValue(properties.NewJwtProp)
 
 	if err := initModules.AddPropE(dbProp); err != nil {
-		panic(fmt.Errorf("register database properties: %w", err))
+		return fmt.Errorf("register database properties: %w", err)
 	}
 	if err := initModules.AddPropE(jwtProp); err != nil {
-		panic(fmt.Errorf("register jwt properties: %w", err))
+		return fmt.Errorf("register jwt properties: %w", err)
 	}
 	if err := initModules.LoadProperties(
 		initModules.WithFilePath(propertiesFile),
 		initModules.WithFormat(initModules.YML),
 	); err != nil {
-		panic(fmt.Errorf("load properties: %w", err))
+		return fmt.Errorf("load properties: %w", err)
 	}
 	if err := jwtProp.Validate(); err != nil {
-		panic(fmt.Errorf("invalid jwt configuration: %w", err))
+		return fmt.Errorf("invalid jwt configuration: %w", err)
 	}
 
-	db := instance.OpenDatabase()
-	instance.ExecuteMigration()
+	ssl := dbProp.SSLMode
+	if ssl == "" {
+		ssl = "disable"
+	}
+	cfg, err := appconfig.Load(appconfig.DatabaseConfig{
+		Host:     dbProp.Host,
+		Port:     dbProp.Port,
+		Name:     dbProp.Name,
+		User:     dbProp.User,
+		Password: dbProp.Password,
+		SSLMode:  ssl,
+		MaxConns: dbProp.DbMaxConns,
+	})
+	if err != nil {
+		return fmt.Errorf("invalid configuration: %w", err)
+	}
+	applyLogLevel(cfg.Runtime.LogLevel)
 
-	r := gin.Default()
-	corsCfg := cors.DefaultConfig()
-	corsCfg.AllowOrigins = []string{"http://localhost:3000", "http://localhost:5173"}
-	corsCfg.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
-	corsCfg.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization", "lang", "Accept"}
-	corsCfg.ExposeHeaders = []string{"Content-Length", "Content-Type", "Authorization"}
-	corsCfg.AllowCredentials = true
-	corsCfg.MaxAge = 12 * time.Hour
-	r.Use(cors.New(corsCfg))
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	dsn, err := cfg.Database.DSN()
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	db, err := database.OpenPool(ctx, cfg.Database)
+	if err != nil {
+		return fmt.Errorf("open database: %w", err)
+	}
+	database.SetSingleton(db)
+	defer db.Close()
+
+	if err := sql.Migrate(cfg.Database.MigrationsPath, dsn); err != nil {
+		return fmt.Errorf("migrate: %w", err)
+	}
 
 	tr := instance.TranslateInstance()
 	tr.Start()
-	instance.RegisterControllers(r)
 
-	srv := &http.Server{Addr: ":8080", Handler: r}
-	app := initModules.NewApp()
-	app.Register(dbLifecycle{db: db})
-	app.Register(httpLifecycle{server: srv})
-	if err := app.RunWithSignals(context.Background(), initModules.RunOptions{
-		LoadProperties: false,
-		RunLifecycles:  true,
-	}); err != nil {
-		panic(err)
-	}
-}
+	gate := bootstrap.NewReadyGate(db)
+	engine := bootstrap.NewEngine(bootstrap.HTTPDeps{
+		Config: cfg,
+		Gate:   gate,
+		Register: func(r *gin.Engine) {
+			instance.RegisterControllers(r)
+		},
+	})
 
-type dbLifecycle struct {
-	db interface{ Start() }
-}
+	srv := bootstrap.NewHTTPServer(cfg.Server, engine)
+	gate.SetReady(true)
 
-func (d dbLifecycle) Start(ctx context.Context) error {
-	d.db.Start()
-	return nil
-}
+	runCtx, stop := bootstrap.SignalContext(ctx)
+	defer stop()
 
-func (d dbLifecycle) Stop(ctx context.Context) error {
-	return nil
-}
-
-type httpLifecycle struct {
-	server *http.Server
-}
-
-func (h httpLifecycle) Start(ctx context.Context) error {
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- h.server.ListenAndServe()
-	}()
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case err := <-errCh:
-		if err == http.ErrServerClosed {
-			return nil
-		}
+	log.WithField("addr", cfg.Server.Address).Info("http listening")
+	if err := bootstrap.RunServer(runCtx, srv, gate, cfg.Server.ShutdownTimeout); err != nil {
 		return err
 	}
+	log.Info("shutdown complete")
+	return nil
 }
 
-func (h httpLifecycle) Stop(ctx context.Context) error {
-	return h.server.Shutdown(ctx)
+func applyLogLevel(level string) {
+	parsed, err := log.ParseLevel(level)
+	if err != nil {
+		parsed = log.InfoLevel
+	}
+	log.SetLevel(parsed)
+	log.SetFormatter(&log.JSONFormatter{})
 }

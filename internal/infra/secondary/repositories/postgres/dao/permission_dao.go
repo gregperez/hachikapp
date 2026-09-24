@@ -2,7 +2,7 @@ package dao
 
 import (
 	"context"
-	"database/sql"
+	"encoding/json"
 	"fmt"
 
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
@@ -24,35 +24,51 @@ func NewPermissionDaoInstance(db database.DBTX) IPermissionDao {
 	})
 }
 
+// FindAllByUserId aggregates permissions from the JSONB on roles linked via users_roles.
+// There is no separate permissions / users_permissions table in the migration baseline.
 func (c *PermissionDao) FindAllByUserId(ctx context.Context, id string) ([]dto.PermissionDTO, error) {
-	const q = `SELECT p.entity, p.create, p.read, p.update, p.delete
-FROM public.permissions p
-INNER JOIN public.users_permissions up ON up.permission_id = p.id
-WHERE up.user_id = $1
-ORDER BY p.entity`
+	const q = `
+SELECT r.permissions
+FROM public.roles r
+INNER JOIN public.users_roles ur ON ur.role_id = r.id
+WHERE ur.user_id = $1
+  AND COALESCE(r.active, true) = true
+ORDER BY r.name`
 	rows, err := c.db.Query(ctx, q, id)
 	if err != nil {
-		return nil, fmt.Errorf("query permissions: %w", err)
+		return nil, fmt.Errorf("query role permissions: %w", err)
 	}
 	defer rows.Close()
 
-	list := make([]dto.PermissionDTO, 0)
+	byEntity := make(map[string]dto.PermissionDTO)
 	for rows.Next() {
-		var entity string
-		var create, read, update, deleteattr sql.NullBool
-		if err := rows.Scan(&entity, &create, &read, &update, &deleteattr); err != nil {
-			return nil, fmt.Errorf("scan permission: %w", err)
+		var raw []byte
+		if err := rows.Scan(&raw); err != nil {
+			return nil, fmt.Errorf("scan role permissions: %w", err)
 		}
-		list = append(list, dto.PermissionDTO{
-			Entity: entity,
-			Create: create.Bool,
-			Read:   read.Bool,
-			Update: update.Bool,
-			Delete: deleteattr.Bool,
-		})
+		if len(raw) == 0 {
+			continue
+		}
+		var perms []dto.PermissionDTO
+		if err := json.Unmarshal(raw, &perms); err != nil {
+			return nil, fmt.Errorf("decode role permissions: %w", err)
+		}
+		for _, p := range perms {
+			cur := byEntity[p.Entity]
+			cur.Entity = p.Entity
+			cur.Create = cur.Create || p.Create
+			cur.Read = cur.Read || p.Read
+			cur.Update = cur.Update || p.Update
+			cur.Delete = cur.Delete || p.Delete
+			byEntity[p.Entity] = cur
+		}
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate permissions: %w", err)
+		return nil, fmt.Errorf("iterate role permissions: %w", err)
+	}
+	list := make([]dto.PermissionDTO, 0, len(byEntity))
+	for _, p := range byEntity {
+		list = append(list, p)
 	}
 	return list, nil
 }

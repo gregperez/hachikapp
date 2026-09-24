@@ -107,7 +107,84 @@ func (m *memUsers) SetActive(ctx context.Context, id string, active bool) error 
 func (m *memUsers) CountAdmins(ctx context.Context) (int, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return m.admins, nil
+	n := 0
+	for _, u := range m.byID {
+		if u.GetIsAdmin() && u.GetActive() {
+			n++
+		}
+	}
+	return n, nil
+}
+func (m *memUsers) SaveFirstAdmin(ctx context.Context, u domain.User) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	n := 0
+	for _, existing := range m.byID {
+		if existing.GetIsAdmin() && existing.GetActive() {
+			n++
+		}
+	}
+	if n > 0 {
+		return domain.ErrAdminExists
+	}
+	if u.GetId() == "" {
+		u = domain.WithPlainPassword(domain.User{UserGeneric: authBaseDomain.NewUserGeneric(
+			"new-id", u.GetName(), u.GetEmail(), u.GetRole(), true, true,
+		)}, u.PlainPassword())
+	}
+	m.byID[u.GetId()] = u
+	m.saved = append(m.saved, u)
+	return nil
+}
+func (m *memUsers) DemoteAdminIfNotLast(ctx context.Context, id string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	u, ok := m.byID[id]
+	if !ok {
+		return domain.ErrNotFound
+	}
+	if !u.GetIsAdmin() {
+		return nil
+	}
+	n := 0
+	for _, other := range m.byID {
+		if other.GetId() != id && other.GetIsAdmin() && other.GetActive() {
+			n++
+		}
+	}
+	if n < 1 {
+		return domain.ErrLastAdmin
+	}
+	m.byID[id] = domain.User{UserGeneric: authBaseDomain.NewUserGeneric(
+		u.GetId(), u.GetName(), u.GetEmail(), u.GetRole(), false, u.GetActive(),
+	)}
+	return nil
+}
+func (m *memUsers) DeactivateAdminIfNotLast(ctx context.Context, id string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	u, ok := m.byID[id]
+	if !ok {
+		return domain.ErrNotFound
+	}
+	if !u.GetActive() {
+		return nil
+	}
+	if u.GetIsAdmin() {
+		n := 0
+		for _, other := range m.byID {
+			if other.GetId() != id && other.GetIsAdmin() && other.GetActive() {
+				n++
+			}
+		}
+		if n < 1 {
+			return domain.ErrLastAdmin
+		}
+	}
+	m.byID[id] = domain.User{UserGeneric: authBaseDomain.NewUserGeneric(
+		u.GetId(), u.GetName(), u.GetEmail(), u.GetRole(), u.GetIsAdmin(), false,
+	)}
+	return nil
 }
 func (m *memUsers) UpdatePassword(ctx context.Context, id, passwordHash string) error {
 	return nil

@@ -20,19 +20,13 @@ func NewAdminBootstrap(users ports.UserPort) *AdminBootstrap {
 }
 
 // Run creates an administrator with the admin role. Fails if any admin exists.
+// Persistence must serialize concurrent bootstraps (advisory lock inside SaveFirstAdmin).
 func (b *AdminBootstrap) Run(ctx context.Context, name, email, password string) error {
 	if name == "" || email == "" {
 		return domain.ErrWeakPassword
 	}
 	if err := domain.ValidatePassword(password); err != nil {
 		return err
-	}
-	n, err := b.users.CountAdmins(ctx)
-	if err != nil {
-		return err
-	}
-	if n > 0 {
-		return domain.ErrAdminExists
 	}
 	roleID, err := b.users.FindRoleIDByName(ctx, adminRoleName)
 	if err != nil {
@@ -48,5 +42,5 @@ func (b *AdminBootstrap) Run(ctx context.Context, name, email, password string) 
 			true,
 		),
 	}, password)
-	return b.users.Save(ctx, user)
+	return b.users.SaveFirstAdmin(ctx, user)
 }

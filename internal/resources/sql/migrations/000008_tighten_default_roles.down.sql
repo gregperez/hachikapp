@@ -1,10 +1,4 @@
--- Restore pre-004 overly permissive defaults (only for local rollback / tests).
--- WARNING: do not apply in production to re-open privilege escalation.
-
-UPDATE public.roles
-SET routes = ARRAY['USERS', 'ROLES']::text[],
-    permissions = '[
-      {"entity":"USERS","create":true,"read":true,"update":true,"delete":true},
-      {"entity":"ROLES","create":true,"read":true,"update":true,"delete":true}
-    ]'::jsonb
-WHERE name IN ('admin', 'user', 'guest');
+-- Intentionally does NOT restore the pre-004 overly permissive role grants.
+-- Rolling back privilege hardening must not re-open escalation paths in any environment.
+-- To revert locally for experiments, recreate the database from migrations or seed explicitly.
+SELECT 1;

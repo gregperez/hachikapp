@@ -20,6 +20,9 @@ type UserPort interface {
 	Update(ctx context.Context, u domain.User) error
 	SetActive(ctx context.Context, id string, active bool) error
 	CountAdmins(ctx context.Context) (int, error)
+	SaveFirstAdmin(ctx context.Context, u domain.User) error
+	DemoteAdminIfNotLast(ctx context.Context, id string) error
+	DeactivateAdminIfNotLast(ctx context.Context, id string) error
 	UpdatePassword(ctx context.Context, id, passwordHash string) error
 	FindRoleIDByName(ctx context.Context, name string) (string, error)
 }

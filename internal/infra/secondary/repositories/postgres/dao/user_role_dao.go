@@ -25,6 +25,11 @@ func NewUserRoleDaoInstance(db *database.PostgresPgx) IUserRoleDao {
 	})
 }
 
+// NewUserRoleDaoForTest builds a DAO without process-wide Once (tests only).
+func NewUserRoleDaoForTest(db *database.PostgresPgx) IUserRoleDao {
+	return &UserRoleDao{db: db}
+}
+
 func (d *UserRoleDao) Save(ctx context.Context, userId, roleId string) error {
 	return d.SaveWithTx(ctx, nil, userId, roleId)
 }

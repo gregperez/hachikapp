@@ -3,7 +3,6 @@ package repositories
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
@@ -54,7 +53,7 @@ func (r RoleRepository) Save(ctx context.Context, role authBaseDomain.Role) (aut
 		return authBaseDomain.Role{}, err
 	}
 	if roleFound.Id != "" {
-		return authBaseDomain.Role{}, fmt.Errorf("errors.roles.already-exists")
+		return authBaseDomain.Role{}, domain.ErrConflict
 	}
 	saved, err := r.roleDao.Save(ctx, ToRoleDTO(role))
 	if err != nil {

@@ -112,6 +112,9 @@ func (r *RoleDao) Save(ctx context.Context, role dto.RoleDTO) (dto.RoleDTO, erro
 	var id string
 	err := r.db.QueryRow(ctx, q, role.Name, role.Routes, role.Permissions).Scan(&id)
 	if err != nil {
+		if mapped := mapUniqueViolation(err); errors.Is(mapped, domain.ErrConflict) {
+			return dto.RoleDTO{}, domain.ErrConflict
+		}
 		return dto.RoleDTO{}, fmt.Errorf("save role: %w", err)
 	}
 	role.Id = id

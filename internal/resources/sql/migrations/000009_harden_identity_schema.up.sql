@@ -25,7 +25,28 @@ WHERE a.id IN (
     WHERE d.rn > 1
 );
 
--- --- roles: collapse duplicate names ---
+-- --- roles: collapse duplicate names only when copies are identical ---
+-- Divergent duplicates (different routes/permissions) abort the migration.
+DO $$
+DECLARE
+    divergent int;
+BEGIN
+    SELECT COUNT(*) INTO divergent
+    FROM (
+             SELECT name
+             FROM public.roles
+             GROUP BY name
+             HAVING COUNT(*) > 1
+                AND (
+                     COUNT(DISTINCT COALESCE(routes::text, '')) > 1
+                         OR COUNT(DISTINCT COALESCE(permissions::text, '')) > 1
+                     )
+         ) d;
+    IF divergent > 0 THEN
+        RAISE EXCEPTION '000009: duplicate role names with divergent routes/permissions; resolve manually before hardening';
+    END IF;
+END $$;
+
 CREATE TEMP TABLE _007_role_keep AS
 SELECT DISTINCT ON (name) id AS keep_id, name
 FROM public.roles

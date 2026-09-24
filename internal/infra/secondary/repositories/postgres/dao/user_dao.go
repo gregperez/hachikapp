@@ -22,7 +22,12 @@ type IUserDao interface {
 	SetActive(ctx context.Context, id string, active bool) error
 	Count(ctx context.Context) (int, error)
 	CountAdmins(ctx context.Context) (int, error)
+	CountAdminsWithTx(ctx context.Context, tx database.Transaction) (int, error)
 	UpdatePassword(ctx context.Context, id, passwordHash string) error
+	// DemoteAdminIfNotLast clears is_admin only when another active admin remains.
+	DemoteAdminIfNotLast(ctx context.Context, id string) error
+	// DeactivateAdminIfNotLast sets active=false only when another active admin remains.
+	DeactivateAdminIfNotLast(ctx context.Context, id string) error
 
 	SaveWithTx(ctx context.Context, tx database.Transaction, user *dto.UserDTO) error
 	UpdateWithTx(ctx context.Context, tx database.Transaction, user dto.UserDTO) error
@@ -64,6 +69,9 @@ func (c *UserDao) SaveWithTx(ctx context.Context, tx database.Transaction, user 
 		err = c.db.QueryRow(ctx, q, user.Name, user.Email, user.Password, user.IsAdmin).Scan(&id)
 	}
 	if err != nil {
+		if mapped := mapUniqueViolation(err); errors.Is(mapped, domain.ErrConflict) {
+			return domain.ErrConflict
+		}
 		return fmt.Errorf("save user: %w", err)
 	}
 	user.Id = id
@@ -207,6 +215,122 @@ func (c *UserDao) CountAdmins(ctx context.Context) (int, error) {
 		return 0, fmt.Errorf("count admins: %w", err)
 	}
 	return total, nil
+}
+
+func (c *UserDao) CountAdminsWithTx(ctx context.Context, tx database.Transaction) (int, error) {
+	var total int
+	err := tx.QueryRow(ctx, `SELECT COUNT(*) FROM public.users WHERE is_admin IS TRUE AND active IS TRUE`).Scan(&total)
+	if err != nil {
+		return 0, fmt.Errorf("count admins: %w", err)
+	}
+	return total, nil
+}
+
+func (c *UserDao) DemoteAdminIfNotLast(ctx context.Context, id string) error {
+	tx, err := c.db.BeginTx(ctx)
+	if err != nil {
+		return fmt.Errorf("begin demote admin: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(87420011)`); err != nil {
+		return fmt.Errorf("lock demote admin: %w", err)
+	}
+	// Serialize against concurrent demote/deactivate of other admins.
+	if _, err := tx.Exec(ctx, `
+SELECT id FROM public.users
+WHERE is_admin IS TRUE AND active IS TRUE
+FOR UPDATE`); err != nil {
+		return fmt.Errorf("lock admin rows: %w", err)
+	}
+
+	const q = `
+UPDATE public.users
+SET is_admin = false
+WHERE id = $1
+  AND is_admin IS TRUE
+  AND (
+        SELECT COUNT(*) FROM public.users
+        WHERE is_admin IS TRUE AND active IS TRUE AND id <> $1
+      ) > 0`
+	tag, err := tx.Exec(ctx, q, id)
+	if err != nil {
+		return fmt.Errorf("demote admin: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		var isAdmin, active bool
+		err := tx.QueryRow(ctx, `SELECT is_admin, active FROM public.users WHERE id = $1`, id).Scan(&isAdmin, &active)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.ErrNotFound
+		}
+		if err != nil {
+			return fmt.Errorf("load user after demote: %w", err)
+		}
+		if isAdmin && active {
+			return domain.ErrLastAdmin
+		}
+		return nil
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit demote admin: %w", err)
+	}
+	return nil
+}
+
+func (c *UserDao) DeactivateAdminIfNotLast(ctx context.Context, id string) error {
+	tx, err := c.db.BeginTx(ctx)
+	if err != nil {
+		return fmt.Errorf("begin deactivate admin: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(87420011)`); err != nil {
+		return fmt.Errorf("lock deactivate admin: %w", err)
+	}
+	if _, err := tx.Exec(ctx, `
+SELECT id FROM public.users
+WHERE is_admin IS TRUE AND active IS TRUE
+FOR UPDATE`); err != nil {
+		return fmt.Errorf("lock admin rows: %w", err)
+	}
+
+	const q = `
+UPDATE public.users
+SET active = false
+WHERE id = $1
+  AND active IS TRUE
+  AND (
+        is_admin IS NOT TRUE
+        OR (
+             SELECT COUNT(*) FROM public.users
+             WHERE is_admin IS TRUE AND active IS TRUE AND id <> $1
+           ) > 0
+      )`
+	tag, err := tx.Exec(ctx, q, id)
+	if err != nil {
+		return fmt.Errorf("deactivate user: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		var isAdmin, active bool
+		err := tx.QueryRow(ctx, `SELECT is_admin, COALESCE(active,true) FROM public.users WHERE id = $1`, id).Scan(&isAdmin, &active)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.ErrNotFound
+		}
+		if err != nil {
+			return fmt.Errorf("load user after deactivate: %w", err)
+		}
+		if !active {
+			return nil
+		}
+		if isAdmin {
+			return domain.ErrLastAdmin
+		}
+		return domain.ErrNotFound
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit deactivate admin: %w", err)
+	}
+	return nil
 }
 
 func (c *UserDao) UpdatePassword(ctx context.Context, id, passwordHash string) error {

@@ -161,10 +161,16 @@ func (s *UserService) SetAdminFlag(ctx context.Context, actorID, userID string, 
 	if err != nil {
 		return err
 	}
+	if existing.GetIsAdmin() == isAdmin {
+		return nil
+	}
 	if existing.GetIsAdmin() && !isAdmin {
-		if err := s.guardLastAdmin(ctx); err != nil {
+		if err := s.userRepository.DemoteAdminIfNotLast(ctx, userID); err != nil {
 			return err
 		}
+		flag := false
+		s.audit.PrivilegeChange("set_admin_flag", actorID, userID, nil, &flag)
+		return nil
 	}
 	updated := domain.User{
 		UserGeneric: authBaseDomain.NewUserGeneric(
@@ -172,14 +178,14 @@ func (s *UserService) SetAdminFlag(ctx context.Context, actorID, userID string, 
 			existing.GetName(),
 			existing.GetEmail(),
 			existing.GetRole(),
-			isAdmin,
+			true,
 			existing.GetActive(),
 		),
 	}
 	if err := s.userRepository.Update(ctx, updated); err != nil {
 		return err
 	}
-	flag := isAdmin
+	flag := true
 	s.audit.PrivilegeChange("set_admin_flag", actorID, userID, nil, &flag)
 	return nil
 }
@@ -214,25 +220,19 @@ func (s *UserService) SetActive(ctx context.Context, actorID, userID string, act
 	if err != nil {
 		return err
 	}
+	if existing.GetActive() == active {
+		return nil
+	}
 	if existing.GetIsAdmin() && existing.GetActive() && !active {
-		if err := s.guardLastAdmin(ctx); err != nil {
+		if err := s.userRepository.DeactivateAdminIfNotLast(ctx, userID); err != nil {
 			return err
 		}
+		s.audit.PrivilegeChange("set_active", actorID, userID, nil, nil)
+		return nil
 	}
 	if err := s.userRepository.SetActive(ctx, userID, active); err != nil {
 		return err
 	}
 	s.audit.PrivilegeChange("set_active", actorID, userID, nil, nil)
-	return nil
-}
-
-func (s *UserService) guardLastAdmin(ctx context.Context) error {
-	n, err := s.userRepository.CountAdmins(ctx)
-	if err != nil {
-		return err
-	}
-	if n <= 1 {
-		return domain.ErrLastAdmin
-	}
 	return nil
 }

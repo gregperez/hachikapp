@@ -34,6 +34,16 @@ func NewUserInstance(userDao dao.IUserDao, roleDao dao.IRoleDao, userRoleDao dao
 	})
 }
 
+// NewUserRepositoryForTest builds a repository without process-wide Once (tests only).
+func NewUserRepositoryForTest(userDao dao.IUserDao, roleDao dao.IRoleDao, userRoleDao dao.IUserRoleDao, validationService authBasePorts.ValidationPort) *UserRepository {
+	return &UserRepository{
+		userDao:           userDao,
+		roleDao:           roleDao,
+		userRoleDao:       userRoleDao,
+		validationService: validationService,
+	}
+}
+
 func (repository *UserRepository) FindByID(ctx context.Context, id string) (domain.User, error) {
 	if err := ctx.Err(); err != nil {
 		return domain.User{}, err
@@ -96,7 +106,7 @@ func (repository *UserRepository) Save(ctx context.Context, user domain.User) er
 		return fmt.Errorf("check user exists: %w", err)
 	}
 	if userFound.Id != "" {
-		return fmt.Errorf("errors.users.already-exists")
+		return domain.ErrConflict
 	}
 
 	plain := user.PlainPassword()
@@ -130,6 +140,63 @@ func (repository *UserRepository) Save(ctx context.Context, user domain.User) er
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit user save: %w", err)
+	}
+	return nil
+}
+
+// SaveFirstAdmin creates the first administrator under a transaction advisory lock.
+func (repository *UserRepository) SaveFirstAdmin(ctx context.Context, user domain.User) error {
+	plain := user.PlainPassword()
+	if plain == "" {
+		return fmt.Errorf("errors.users.hash-password")
+	}
+	hashedPassword, err := repository.validationService.HashPassword(plain)
+	if err != nil {
+		return fmt.Errorf("errors.users.hash-password")
+	}
+
+	tx, err := repository.userDao.BeginTx(ctx)
+	if err != nil {
+		return fmt.Errorf("begin first-admin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	// Serialize concurrent bootstraps across connections.
+	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(87420010)`); err != nil {
+		return fmt.Errorf("lock first-admin: %w", err)
+	}
+	n, err := repository.userDao.CountAdminsWithTx(ctx, tx)
+	if err != nil {
+		return err
+	}
+	if n > 0 {
+		return domain.ErrAdminExists
+	}
+
+	userFound, err := repository.userDao.FindByEmail(ctx, user.GetEmail())
+	if err != nil {
+		return fmt.Errorf("check user exists: %w", err)
+	}
+	if userFound.Id != "" {
+		return domain.ErrConflict
+	}
+
+	userDTO := dto.UserDTO{
+		Name:     user.GetName(),
+		Email:    user.GetEmail(),
+		Password: hashedPassword,
+		IsAdmin:  true,
+	}
+	if err := repository.userDao.SaveWithTx(ctx, tx, &userDTO); err != nil {
+		return err
+	}
+	for _, role := range user.GetRole() {
+		if err := repository.userRoleDao.SaveWithTx(ctx, tx, userDTO.Id, role.Id); err != nil {
+			return err
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit first-admin: %w", err)
 	}
 	return nil
 }
@@ -186,6 +253,14 @@ func (repository *UserRepository) Update(ctx context.Context, user domain.User) 
 
 func (repository *UserRepository) SetActive(ctx context.Context, id string, active bool) error {
 	return repository.userDao.SetActive(ctx, id, active)
+}
+
+func (repository *UserRepository) DemoteAdminIfNotLast(ctx context.Context, id string) error {
+	return repository.userDao.DemoteAdminIfNotLast(ctx, id)
+}
+
+func (repository *UserRepository) DeactivateAdminIfNotLast(ctx context.Context, id string) error {
+	return repository.userDao.DeactivateAdminIfNotLast(ctx, id)
 }
 
 func (repository *UserRepository) CountAdmins(ctx context.Context) (int, error) {

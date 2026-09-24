@@ -27,6 +27,20 @@ func TestContext_RequestContext(t *testing.T) {
 	}
 }
 
+func TestContext_GetSetStringKeys(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
+
+	ac := Wrap(c)
+	ac.Set("user", "alice")
+	got, ok := ac.Get("user")
+	if !ok || got != "alice" {
+		t.Fatalf("Get = (%v, %v)", got, ok)
+	}
+}
+
 func TestMiddlewareAndHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

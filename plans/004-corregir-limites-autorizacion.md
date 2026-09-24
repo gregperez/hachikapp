@@ -78,7 +78,7 @@ Si el producto necesita delegación adicional, crear permisos específicos (`USE
    - cambio de password separado, con verificación apropiada.
 4. No mapear `IsAdmin` ni `Roles` desde requests ordinarios. La capa de caso de uso también debe imponer la regla; no confiar sólo en routing.
 5. Preferir derivar capacidad administrativa de roles/permisos. Si `is_admin` se conserva por compatibilidad, sólo un flujo administrativo explícito puede modificarlo y cada cambio debe ser auditable.
-6. Añadir `internal/resources/sql/migrations/000007_tighten_default_roles.{up,down}.sql` para retirar permisos amplios de `user`/`guest` y asegurar permisos administrativos sólo al rol de administración. Si el número ya está ocupado, usar el siguiente par libre y actualizar el plan 007. La migración debe ser idempotente por claves naturales y tener down documentado.
+6. Añadir `internal/resources/sql/migrations/000008_tighten_default_roles.{up,down}.sql` para retirar permisos amplios de `user`/`guest` y asegurar permisos administrativos sólo al rol de administración. Si el número ya está ocupado, usar el siguiente par libre y actualizar el plan 007. La migración debe ser idempotente por claves naturales y tener down documentado.
 7. Implementar la utilidad de bootstrap de un solo uso: falla si existe admin, exige password robusto, no registra entrada y ejecuta todo en una transacción.
 8. Registrar eventos de asignación/revocación con actor, sujeto y IDs, sin PII innecesaria ni tokens.
 

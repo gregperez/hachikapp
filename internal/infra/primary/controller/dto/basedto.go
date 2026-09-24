@@ -3,7 +3,7 @@ package dto
 import (
 	"time"
 
-	"github.com/WilsonSayago/authBase/core/domain"
+	"github.com/WilsonSayago/authBase/v3/core/domain"
 )
 
 // BaseDto represents a base dto with common fields for all entities

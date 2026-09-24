@@ -1,18 +1,16 @@
 package instance
 
 import (
-	"jwt/base/internal/core/ports"
-	database2 "jwt/base/internal/infra/config/database"
-	"jwt/base/internal/infra/secondary/repositories"
-	pg "jwt/base/internal/infra/secondary/repositories/postgres/dao"
+	"github.com/WilsonSayago/base-golang/internal/core/ports"
+	database2 "github.com/WilsonSayago/base-golang/internal/infra/config/database"
+	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories"
+	pg "github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/dao"
 
-	portsAuthBase "github.com/WilsonSayago/authBase/core/port"
-	"github.com/WilsonSayago/authBase/infra/secundary"
+	portsAuthBase "github.com/WilsonSayago/authBase/v3/core/port"
+	"github.com/WilsonSayago/authBase/v3/infra/secundary"
 )
 
 func GetUserRepositoryInstance() ports.UserPort {
-	// ToDo: Postgresql return repositories.NewUserInstance(GetUserDaoInstance())
-	//return repositories.NewUserInstance(GetUserMongoDaoInstance())
 	return repositories.NewUserInstance(GetUserDaoInstance(), GetRoleDaoInstance(), GetUserRoleDaoInstance(), GetValidationService())
 }
 
@@ -21,8 +19,7 @@ func GetRoleRepositoryInstance() portsAuthBase.RolePort {
 }
 
 func GetUserDaoInstance() pg.IUserDao {
-	var dbPgx *database2.PostgresPgx = database2.GetDatabasePostgresPgx()
-	return pg.NewUserDaoInstance(dbPgx)
+	return pg.NewUserDaoInstance(database2.GetDatabasePostgresPgx())
 }
 
 func GetPermissionDaoInstance() pg.IPermissionDao {
@@ -40,6 +37,5 @@ func GetValidationService() portsAuthBase.ValidationPort {
 }
 
 func GetUserRoleDaoInstance() pg.IUserRoleDao {
-	var dbPgx *database2.PostgresPgx = database2.GetDatabasePostgresPgx()
-	return pg.NewUserRoleDaoInstance(dbPgx)
+	return pg.NewUserRoleDaoInstance(database2.GetDatabasePostgresPgx())
 }

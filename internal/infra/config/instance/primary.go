@@ -1,45 +1,43 @@
 package instance
 
 import (
-	"jwt/base/internal/infra/config"
-	"jwt/base/internal/infra/config/database"
-	"jwt/base/internal/infra/config/prop"
-	"jwt/base/internal/infra/config/sql"
-	"jwt/base/internal/infra/primary/controller"
-
-	"github.com/WilsonSayago/initModules"
+	"github.com/WilsonSayago/base-golang/internal/infra/config"
+	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
+	"github.com/WilsonSayago/base-golang/internal/infra/config/prop"
+	"github.com/WilsonSayago/base-golang/internal/infra/config/sql"
+	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller"
+	initModules "github.com/WilsonSayago/initModules/v2"
 	"github.com/gin-gonic/gin"
 )
 
-func GetDatabasePersistencePgxInstance() initModules.IProcess {
-	//return database.NewConnectionPostgresPgx(prop.GetDatabaseProperty())
-	return database.NewConnectionPostgresPgx(initModules.NewInstance[prop.DatabaseProperty]().GetInstance(prop.NewDatabaseProperty))
+func OpenDatabase() *database.PostgresPgx {
+	dbProp := initModules.OnceValue(prop.NewDatabaseProperty)
+	return database.NewConnectionPostgresPgx(dbProp)
 }
 
-func AuthControllerInstance(r *gin.Engine) initModules.IProcess {
-	return controller.GetAuthControllerInstance(
+func RegisterControllers(r *gin.Engine) {
+	controller.GetAuthControllerInstance(
 		AuthenticationUseCaseInstance(),
 		AuthorizationUseCaseInstance(),
 		UserUseCaseInstance(),
+		TokenManagerInstance(),
 		r,
-		TranslateInstance())
-}
+		TranslateInstance(),
+	).RunController()
 
-func UserControllerInstance(r *gin.Engine) initModules.IProcess {
-	return controller.GetUserControllerInstance(
-		AuthenticationUseCaseInstance(),
+	controller.GetUserControllerInstance(
 		AuthorizationUseCaseInstance(),
 		UserUseCaseInstance(),
 		r,
-		TranslateInstance())
-}
+		TranslateInstance(),
+	).RunController()
 
-func RoleControllerInstance(r *gin.Engine) initModules.IProcess {
-	return controller.GetRoleControllerInstance(
+	controller.GetRoleControllerInstance(
 		AuthorizationUseCaseInstance(),
 		RoleUseCaseInstance(),
 		r,
-		TranslateInstance())
+		TranslateInstance(),
+	).RunController()
 }
 
 func ExecuteMigration() {

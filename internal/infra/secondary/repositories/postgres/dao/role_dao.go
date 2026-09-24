@@ -3,13 +3,13 @@ package dao
 import (
 	"database/sql"
 	"fmt"
-	"jwt/base/internal/infra/config/database"
-	"jwt/base/internal/infra/secondary/repositories/dto"
+	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
+	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
 
 	"github.com/pkg/errors"
 
-	domain "github.com/WilsonSayago/authBase/core/domain"
-	"github.com/WilsonSayago/initModules"
+	domain "github.com/WilsonSayago/authBase/v3/core/domain"
+	"github.com/WilsonSayago/initModules/v2"
 	log "github.com/sirupsen/logrus"
 )
 

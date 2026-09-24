@@ -1,6 +1,6 @@
 package users
 
-import "jwt/base/internal/infra/primary/controller/dto"
+import "github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
 
 // UseDto represents a user dto.
 // @swagger:model

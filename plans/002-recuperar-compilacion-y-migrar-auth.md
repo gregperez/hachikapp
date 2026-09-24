@@ -119,7 +119,7 @@ Nunca almacenar el token plano. Indexar `family_id`, `user_id` y `expires_at`.
 1. Actualizar module path, versión Go y dependencias; ejecutar `go mod tidy` una vez adaptados los imports.
 2. Actualizar tipos de dominio para satisfacer `authBase/v3/core.UserData` sin exponer password.
 3. Implementar readers de usuario y credenciales con `context.Context`.
-4. Añadir `internal/resources/sql/migrations/000006_create_refresh_sessions.{up,down}.sql` y el store pgx. Si ya existe el número por deriva, usar el siguiente par libre y actualizar los planes 004/007 antes de continuar.
+4. Añadir `internal/resources/sql/migrations/000007_create_refresh_sessions.{up,down}.sql` y el store pgx. (`000006` ya está ocupada por revoke del seed admin del plan 001.) Actualizar planes 004/007: roles→`000008`, harden→`000009`.
 5. Crear el adaptador Gin y tests unitarios del wrapper.
 6. Reemplazar constructores y middleware antiguos en controladores/rutas.
 7. Sustituir accesos crudos a `c.Get("user")` por el helper v3 después de adaptar el contexto.
@@ -155,13 +155,13 @@ Para tests de DB, usar `DATABASE_TEST_URL` de una instancia efímera. No usar la
 
 ## Criterios de aceptación
 
-- [ ] Un clon limpio resuelve módulos, compila y ejecuta pruebas sin `replace` a rutas locales.
-- [ ] Todos los imports usan el module path público y las versiones mayores correctas.
-- [ ] Gin se integra mediante un adaptador local probado, sin cambios en la librería externa.
-- [ ] No se almacena refresh token plano y la rotación/replay son atómicos y probados.
-- [ ] Usuario inactivo, issuer/audience incorrectos y secrets inválidos son rechazados.
-- [ ] Tokens antiguos quedan explícitamente invalidados y documentados.
-- [ ] No quedan constructores/singletons de la API antigua.
+- [x] Un clon limpio resuelve módulos, compila y ejecuta pruebas sin `replace` a rutas locales.
+- [x] Todos los imports usan el module path público y las versiones mayores correctas.
+- [x] Gin se integra mediante un adaptador local probado, sin cambios en la librería externa.
+- [x] No se almacena refresh token plano y la rotación/replay son atómicos y probados (`DATABASE_TEST_URL` + `-race`).
+- [x] Usuario inactivo, issuer/audience incorrectos y secrets inválidos son rechazados.
+- [x] Tokens antiguos quedan explícitamente invalidados y documentados.
+- [x] No quedan constructores/singletons de la API antigua de auth (`NewAuthenticationService` / `NewAuthorization`); quedan `GetInstance` legacy sólo en DAOs/translate (API aún presente en initModules v2).
 
 ## Condiciones de parada
 

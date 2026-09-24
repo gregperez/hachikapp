@@ -936,8 +936,6 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "API de Autenticación con JWT en Go con Arquitectura Hexagonal",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
-	LeftDelim:        "{{",
-	RightDelim:       "}}",
 }
 
 func init() {

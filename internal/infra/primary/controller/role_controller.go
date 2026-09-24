@@ -1,31 +1,34 @@
 package controller
 
 import (
-	"jwt/base/internal/core/domain"
-	"jwt/base/internal/infra/config"
-	"jwt/base/internal/infra/primary/controller/dto"
-	"jwt/base/internal/infra/primary/controller/dto/outputs/roles"
 	"net/http"
 
-	authBaseCore "github.com/WilsonSayago/authBase/core"
-	authBaseDomain "github.com/WilsonSayago/authBase/core/domain"
-	"github.com/WilsonSayago/initModules"
+	"github.com/WilsonSayago/base-golang/internal/core/domain"
+	"github.com/WilsonSayago/base-golang/internal/infra/config"
+	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
+	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/outputs/roles"
+	"github.com/WilsonSayago/base-golang/internal/infra/primary/ginadapter"
+
+	authBaseCore "github.com/WilsonSayago/authBase/v3/core"
+	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
+	initModules "github.com/WilsonSayago/initModules/v2"
 	"github.com/gin-gonic/gin"
 )
 
 type RoleController struct {
-	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *gin.Context]
+	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *ginadapter.Context]
 	roleService          authBaseCore.RoleUseCase
 	r                    *gin.Engine
 	t                    config.ITranslate
 }
 
 func GetRoleControllerInstance(
-	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *gin.Context],
+	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *ginadapter.Context],
 	roleService authBaseCore.RoleUseCase,
 	r *gin.Engine,
-	t config.ITranslate) *RoleController {
-	instance := initModules.GetInstance("RoleController", func() interface{} {
+	t config.ITranslate,
+) *RoleController {
+	return initModules.Once(func() *RoleController {
 		return &RoleController{
 			authorizationService: authorizationService,
 			roleService:          roleService,
@@ -33,29 +36,22 @@ func GetRoleControllerInstance(
 			t:                    t,
 		}
 	})
-	return instance.(*RoleController)
-}
-
-func (roleC *RoleController) Start() {
-	roleC.RunController()
 }
 
 func (roleC *RoleController) RunController() {
-	protected := (*roleC.r).Group("/v1/roles")
-	protected.Use(roleC.authorizationService.AuthorizeJWT())
+	protected := roleC.r.Group("/v1/roles")
+	protected.Use(ginadapter.Middleware(roleC.authorizationService.AuthorizeJWT()))
 	{
-		protected.GET("/",
-			roleC.authorizationService.PoliciesGuard(roleC.GetAll(), nil,
-				"USERS", authBaseDomain.READ))
-		protected.GET("/:id",
-			roleC.authorizationService.PoliciesGuard(roleC.GetById(), nil,
-				"USERS", authBaseDomain.READ))
-		protected.POST("/", roleC.authorizationService.PoliciesGuard(roleC.Save(), nil,
-			"USERS", authBaseDomain.CREATE))
-		protected.PUT("/:id/change-status", roleC.authorizationService.PoliciesGuard(roleC.ChangeStatus(), nil,
-			"USERS", authBaseDomain.UPDATE))
-		protected.PUT("/:id", roleC.authorizationService.PoliciesGuard(roleC.Update(), nil,
-			"USERS", authBaseDomain.UPDATE))
+		protected.GET("/", ginadapter.Middleware(roleC.authorizationService.PoliciesGuard(
+			ginadapter.Handler(roleC.GetAll()), nil, "USERS", authBaseDomain.READ)))
+		protected.GET("/:id", ginadapter.Middleware(roleC.authorizationService.PoliciesGuard(
+			ginadapter.Handler(roleC.GetById()), nil, "USERS", authBaseDomain.READ)))
+		protected.POST("/", ginadapter.Middleware(roleC.authorizationService.PoliciesGuard(
+			ginadapter.Handler(roleC.Save()), nil, "USERS", authBaseDomain.CREATE)))
+		protected.PUT("/:id/change-status", ginadapter.Middleware(roleC.authorizationService.PoliciesGuard(
+			ginadapter.Handler(roleC.ChangeStatus()), nil, "USERS", authBaseDomain.UPDATE)))
+		protected.PUT("/:id", ginadapter.Middleware(roleC.authorizationService.PoliciesGuard(
+			ginadapter.Handler(roleC.Update()), nil, "USERS", authBaseDomain.UPDATE)))
 	}
 }
 

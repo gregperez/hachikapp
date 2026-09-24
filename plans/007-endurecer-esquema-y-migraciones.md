@@ -68,7 +68,7 @@ Antes de modificar migraciones existentes, determinar si han sido publicadas/apl
 
 1. Inventariar datos que violan los nuevos constraints con queries de sólo lectura en una copia/DB efímera: nulls, duplicados, nombres duplicados por case y FKs huérfanas.
 2. Definir política de saneamiento determinista. En producción, emitir un reporte y parar si eliminar/combinar datos requiere decisión humana.
-3. Añadir `internal/resources/sql/migrations/000008_harden_identity_schema.{up,down}.sql`, no editar una aplicada, que (si el número quedó ocupado, seleccionar el siguiente par libre y documentarlo):
+3. Añadir `internal/resources/sql/migrations/000009_harden_identity_schema.{up,down}.sql`, no editar una aplicada, que (si el número quedó ocupado, seleccionar el siguiente par libre y documentarlo):
    - limpie sólo casos inequívocos autorizados;
    - aplique `NOT NULL` y FKs explícitas;
    - añada unique constraints;

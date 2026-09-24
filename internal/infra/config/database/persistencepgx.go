@@ -3,10 +3,12 @@ package database
 import (
 	"context"
 	"fmt"
-	"jwt/base/internal/infra/config/prop"
 	"sync"
 
+	"github.com/WilsonSayago/base-golang/internal/infra/config/prop"
+
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
 )
@@ -21,6 +23,7 @@ type Transaction interface {
 	QueryRow(sql string, args ...interface{}) pgx.Row
 	QueryRows(sql string, args ...interface{}) (pgx.Rows, error)
 	Exec(sql string, args ...interface{}) error
+	ExecResult(sql string, args ...interface{}) (pgconn.CommandTag, error)
 	Commit() error
 	Rollback() error
 }
@@ -42,6 +45,10 @@ func (t *pgxTransaction) QueryRows(sql string, args ...interface{}) (pgx.Rows, e
 func (t *pgxTransaction) Exec(sql string, args ...interface{}) error {
 	_, err := t.tx.Exec(t.ctx, sql, args...)
 	return err
+}
+
+func (t *pgxTransaction) ExecResult(sql string, args ...interface{}) (pgconn.CommandTag, error) {
+	return t.tx.Exec(t.ctx, sql, args...)
 }
 
 func (t *pgxTransaction) Commit() error {
@@ -79,13 +86,34 @@ func (db *PostgresPgx) Exec(sql string, args ...interface{}) error {
 	return err
 }
 
+// ExecContext executes a statement with the caller's context.
+func (db *PostgresPgx) ExecContext(ctx context.Context, sql string, args ...interface{}) error {
+	_, err := db.pool.Exec(ctx, sql, args...)
+	return err
+}
+
 // BeginTx inicia una nueva transacción
 func (db *PostgresPgx) BeginTx() (Transaction, error) {
-	tx, err := db.pool.Begin(db.ctx)
+	return db.BeginTxContext(db.ctx)
+}
+
+// BeginTxContext starts a transaction bound to ctx.
+func (db *PostgresPgx) BeginTxContext(ctx context.Context) (Transaction, error) {
+	tx, err := db.pool.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &pgxTransaction{tx: tx, ctx: db.ctx}, nil
+	return &pgxTransaction{tx: tx, ctx: ctx}, nil
+}
+
+// Pool exposes the underlying pool for tests and advanced adapters.
+func (db *PostgresPgx) Pool() *pgxpool.Pool {
+	return db.pool
+}
+
+// NewPostgresPgxForTest constructs a non-singleton pool wrapper (tests only).
+func NewPostgresPgxForTest(pool *pgxpool.Pool) *PostgresPgx {
+	return &PostgresPgx{pool: pool, ctx: context.Background()}
 }
 
 func NewConnectionPostgresPgx(prop *prop.DatabaseProperty) *PostgresPgx {

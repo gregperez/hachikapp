@@ -1,10 +1,12 @@
 package services
 
 import (
-	"github.com/WilsonSayago/initModules"
-	"jwt/base/internal/core"
-	"jwt/base/internal/core/domain"
-	"jwt/base/internal/core/ports"
+	"context"
+
+	"github.com/WilsonSayago/base-golang/internal/core"
+	"github.com/WilsonSayago/base-golang/internal/core/domain"
+	"github.com/WilsonSayago/base-golang/internal/core/ports"
+	initModules "github.com/WilsonSayago/initModules/v2"
 )
 
 type UserService struct {
@@ -12,12 +14,13 @@ type UserService struct {
 }
 
 func GetUserServiceInstance(userRepository ports.UserPort) core.UserUseCase {
-	instance := initModules.GetInstance("UserService", func() interface{} {
-		return &UserService{
-			userRepository: userRepository,
-		}
+	return initModules.Once(func() *UserService {
+		return &UserService{userRepository: userRepository}
 	})
-	return instance.(*UserService)
+}
+
+func (s *UserService) FindByID(ctx context.Context, id string) (domain.User, error) {
+	return s.userRepository.FindByID(ctx, id)
 }
 
 func (s *UserService) FindAll(pageSize, offset int) ([]domain.User, int, error) {
@@ -29,11 +32,7 @@ func (s *UserService) FindByEmail(email string) (domain.User, error) {
 }
 
 func (s *UserService) FindFullById(id string) (domain.User, error) {
-	user, err := s.userRepository.FindFullById(id)
-	if err != nil {
-		return domain.User{}, err
-	}
-	return user, nil
+	return s.userRepository.FindFullById(id)
 }
 
 func (s *UserService) Create(user domain.User) error {

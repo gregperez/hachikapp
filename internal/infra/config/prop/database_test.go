@@ -1,22 +1,11 @@
 package prop
 
-import (
-	"reflect"
-	"testing"
-)
+import "testing"
 
-func TestGetDatabaseProperty(t *testing.T) {
-	tests := []struct {
-		name string
-		want *DatabaseProperty
-	}{
-		{name: "#1 GetDatabaseProperty", want: &DatabaseProperty{}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetPostgresProp(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetDatabaseProperty() = %v, want %v", got, tt.want)
-			}
-		})
+func TestNewDatabaseProperty(t *testing.T) {
+	t.Parallel()
+	got := NewDatabaseProperty()
+	if got.Host != "" || got.Password != "" {
+		t.Fatalf("expected empty defaults, got %+v", got)
 	}
 }

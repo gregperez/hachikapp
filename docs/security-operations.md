@@ -121,6 +121,13 @@ gitleaks detect --source . --config .gitleaks.toml \
 
 The same command is intended for CI once the quality baseline (plan 003) wires it into the pipeline.
 
+## Token invalidation (authBase v3)
+
+Deploying the authBase v3 integration **invalidates all previously issued access and refresh tokens**.
+Clients must log in again. Refresh tokens are single-use (atomic rotation); reuse of a
+consumed refresh token revokes the whole family. Prefer `POST /v1/auth/logout` with the
+current refresh token to revoke a family explicitly (idempotent even if already revoked).
+
 ## Adding a new sensitive setting
 
 1. Add the key to `properties.example.yml` and `.env.example` with a placeholder or `${ENV_VAR}`.

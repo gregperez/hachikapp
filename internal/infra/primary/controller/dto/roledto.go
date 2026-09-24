@@ -1,6 +1,6 @@
 package dto
 
-import "github.com/WilsonSayago/authBase/core/domain"
+import "github.com/WilsonSayago/authBase/v3/core/domain"
 
 // RoleDto represents a role with its associated permissions and routes
 // @swagger:model

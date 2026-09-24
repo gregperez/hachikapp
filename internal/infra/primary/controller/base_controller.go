@@ -1,11 +1,11 @@
 package controller
 
 import (
+	"github.com/WilsonSayago/base-golang/internal/infra/config"
+	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"io"
-	"jwt/base/internal/infra/config"
-	"jwt/base/internal/infra/primary/controller/dto"
 	"net/http"
 	"strconv"
 )

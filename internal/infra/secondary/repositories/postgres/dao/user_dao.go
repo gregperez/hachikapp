@@ -2,10 +2,10 @@ package dao
 
 import (
 	"database/sql"
-	"jwt/base/internal/infra/config/database"
-	"jwt/base/internal/infra/secondary/repositories/dto"
+	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
+	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
 
-	"github.com/WilsonSayago/initModules"
+	"github.com/WilsonSayago/initModules/v2"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -17,6 +17,7 @@ type IUserDao interface {
 	FindByUserId(userId string) ([]interface{}, error)
 	FindAll(page, offset int) ([]dto.UserDTO, error)
 	FindByEmail(email string) (dto.UserDTO, error)
+	FindCredentialsByEmail(email string) (dto.UserDTO, error)
 	Update(user dto.UserDTO) error
 	ChangeStatus(id string) error
 	Count() (int, error)
@@ -35,12 +36,9 @@ type UserDao struct {
 }
 
 func NewUserDaoInstance(db *database.PostgresPgx) IUserDao {
-	instance := initModules.GetInstance("UserDao", func() interface{} {
-		return &UserDao{
-			DbPgx4: db,
-		}
+	return initModules.Once(func() *UserDao {
+		return &UserDao{DbPgx4: db}
 	})
-	return instance.(*UserDao)
 }
 
 func (c *UserDao) FindByUserId(userId string) ([]interface{}, error) {
@@ -149,18 +147,30 @@ func (c *UserDao) FindByEmail(email string) (dto.UserDTO, error) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return dto.UserDTO{}, nil
-		} else {
-			log.Errorf("error in FindByEmail User, error: %s", err.Error())
-			return dto.UserDTO{}, err
 		}
+		log.Errorf("error in FindByEmail User, error: %s", err.Error())
+		return dto.UserDTO{}, err
 	}
 
-	user := dto.UserDTO{
+	return dto.UserDTO{
 		BaseDTO:  dto.BaseDTO{Id: id},
 		Password: password,
-	}
+	}, nil
+}
 
-	return user, nil
+func (c *UserDao) FindCredentialsByEmail(email string) (dto.UserDTO, error) {
+	var id, password, foundEmail string
+	var active bool
+	query := "SELECT id, email, password, active FROM public.users WHERE email = $1;"
+	err := (*c.DbPgx4).QueryRow(query, email).Scan(&id, &foundEmail, &password, &active)
+	if err != nil {
+		return dto.UserDTO{}, err
+	}
+	return dto.UserDTO{
+		BaseDTO:  dto.BaseDTO{Id: id, Active: active},
+		Email:    foundEmail,
+		Password: password,
+	}, nil
 }
 
 func (c *UserDao) Update(user dto.UserDTO) error {

@@ -3,10 +3,10 @@ package dao
 import (
 	"database/sql"
 	"fmt"
-	"jwt/base/internal/infra/config/database"
-	"jwt/base/internal/infra/secondary/repositories/dto"
+	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
+	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
 
-	"github.com/WilsonSayago/initModules"
+	"github.com/WilsonSayago/initModules/v2"
 	log "github.com/sirupsen/logrus"
 )
 

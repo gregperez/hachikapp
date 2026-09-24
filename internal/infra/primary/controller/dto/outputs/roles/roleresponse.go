@@ -1,9 +1,9 @@
 package roles
 
 import (
-	"jwt/base/internal/infra/primary/controller/dto"
+	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
 
-	"github.com/WilsonSayago/authBase/core/domain"
+	"github.com/WilsonSayago/authBase/v3/core/domain"
 )
 
 // RoutePathEnumDto extiende domain.RoutePathEnum para Swagger

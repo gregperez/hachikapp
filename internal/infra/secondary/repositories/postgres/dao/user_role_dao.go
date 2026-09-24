@@ -1,9 +1,9 @@
 package dao
 
 import (
-	"jwt/base/internal/infra/config/database"
+	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 
-	"github.com/WilsonSayago/initModules"
+	"github.com/WilsonSayago/initModules/v2"
 	log "github.com/sirupsen/logrus"
 )
 

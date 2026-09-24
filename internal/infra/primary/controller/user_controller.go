@@ -1,74 +1,61 @@
 package controller
 
 import (
-	"jwt/base/internal/core"
-	"jwt/base/internal/core/domain"
-	"jwt/base/internal/infra/config"
-	"jwt/base/internal/infra/primary/controller/dto"
-	"jwt/base/internal/infra/primary/controller/dto/inputs/users"
-	usersOutputs "jwt/base/internal/infra/primary/controller/dto/outputs/users"
 	"net/http"
 
-	authBaseCore "github.com/WilsonSayago/authBase/core"
-	authBaseDomain "github.com/WilsonSayago/authBase/core/domain"
-	"github.com/WilsonSayago/initModules"
+	"github.com/WilsonSayago/base-golang/internal/core"
+	"github.com/WilsonSayago/base-golang/internal/core/domain"
+	"github.com/WilsonSayago/base-golang/internal/infra/config"
+	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
+	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/inputs/users"
+	usersOutputs "github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/outputs/users"
+	"github.com/WilsonSayago/base-golang/internal/infra/primary/ginadapter"
+
+	authBaseCore "github.com/WilsonSayago/authBase/v3/core"
+	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
+	initModules "github.com/WilsonSayago/initModules/v2"
 	"github.com/gin-gonic/gin"
 )
 
 type UserController struct {
-	authenticationService authBaseCore.AuthenticationUseCase
-	authorizationService  authBaseCore.AuthorizationUseCase[domain.User, *gin.Context]
-	userService           core.UserUseCase
-	roleService           authBaseCore.RoleUseCase
-	r                     *gin.Engine
-	t                     config.ITranslate
+	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *ginadapter.Context]
+	userService          core.UserUseCase
+	r                    *gin.Engine
+	t                    config.ITranslate
 }
 
 func GetUserControllerInstance(
-	authenticationService authBaseCore.AuthenticationUseCase,
-	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *gin.Context],
+	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *ginadapter.Context],
 	userService core.UserUseCase,
 	r *gin.Engine,
-	t config.ITranslate) *UserController {
-	instance := initModules.GetInstance("UserController", func() interface{} {
+	t config.ITranslate,
+) *UserController {
+	return initModules.Once(func() *UserController {
 		return &UserController{
-			authenticationService: authenticationService,
-			authorizationService:  authorizationService,
-			userService:           userService,
-			r:                     r,
-			t:                     t,
+			authorizationService: authorizationService,
+			userService:          userService,
+			r:                    r,
+			t:                    t,
 		}
 	})
-	return instance.(*UserController)
-}
-
-func (userC *UserController) Start() {
-	userC.RunController()
 }
 
 func (userC *UserController) RunController() {
-	// Protected routes group
-	protected := (*userC.r).Group("/v1/users")
-	protected.Use(userC.authorizationService.AuthorizeJWT())
+	protected := userC.r.Group("/v1/users")
+	protected.Use(ginadapter.Middleware(userC.authorizationService.AuthorizeJWT()))
 	{
-		protected.GET("/",
-			userC.authorizationService.PoliciesGuard(userC.GetAll(), nil,
-				"USERS", authBaseDomain.READ))
-		protected.POST("/",
-			userC.authorizationService.PoliciesGuard(userC.Create(), nil,
-				"USERS", authBaseDomain.CREATE))
-		protected.GET("/:id",
-			userC.authorizationService.PoliciesGuard(userC.GetById(), nil,
-				"USERS", authBaseDomain.READ))
-		protected.GET("/full-info",
-			userC.authorizationService.PoliciesGuard(userC.FindFullById(), nil,
-				"USERS", authBaseDomain.READ))
-		protected.PUT("/:id/change-status",
-			userC.authorizationService.PoliciesGuard(userC.ChangeStatus(), nil,
-				"USERS", authBaseDomain.UPDATE))
-		protected.PUT("/:id",
-			userC.authorizationService.PoliciesGuard(userC.Update(), nil,
-				"USERS", authBaseDomain.UPDATE))
+		protected.GET("/", ginadapter.Middleware(userC.authorizationService.PoliciesGuard(
+			ginadapter.Handler(userC.GetAll()), nil, "USERS", authBaseDomain.READ)))
+		protected.POST("/", ginadapter.Middleware(userC.authorizationService.PoliciesGuard(
+			ginadapter.Handler(userC.Create()), nil, "USERS", authBaseDomain.CREATE)))
+		protected.GET("/:id", ginadapter.Middleware(userC.authorizationService.PoliciesGuard(
+			ginadapter.Handler(userC.GetById()), nil, "USERS", authBaseDomain.READ)))
+		protected.GET("/full-info", ginadapter.Middleware(userC.authorizationService.PoliciesGuard(
+			ginadapter.Handler(userC.FindFullById()), nil, "USERS", authBaseDomain.READ)))
+		protected.PUT("/:id/change-status", ginadapter.Middleware(userC.authorizationService.PoliciesGuard(
+			ginadapter.Handler(userC.ChangeStatus()), nil, "USERS", authBaseDomain.UPDATE)))
+		protected.PUT("/:id", ginadapter.Middleware(userC.authorizationService.PoliciesGuard(
+			ginadapter.Handler(userC.Update()), nil, "USERS", authBaseDomain.UPDATE)))
 	}
 }
 
@@ -139,17 +126,16 @@ func (userC *UserController) Create() func(c *gin.Context) {
 		if !handleBind(userC.t, c, &userDto) {
 			return
 		}
-		user := domain.User{
+		user := domain.WithPlainPassword(domain.User{
 			UserGeneric: authBaseDomain.NewUserGeneric(
 				"",
 				userDto.Name,
 				userDto.Email,
-				userDto.Password,
 				getRolesFromIds(userDto.Roles),
 				userDto.IsAdmin,
 				false,
 			),
-		}
+		}, userDto.Password)
 		err := userC.userService.Create(user)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
@@ -228,8 +214,16 @@ func (userC *UserController) GetById() func(c *gin.Context) {
 // @Router /v1/users/full-info [get]
 func (userC *UserController) FindFullById() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		userToken, _ := c.Get("user")
-		user, err := userC.userService.FindFullById(userToken.(domain.User).GetId())
+		userToken, ok := userC.authorizationService.GetUserToken(ginadapter.Wrap(c))
+		if !ok {
+			c.JSON(http.StatusUnauthorized, dto.ResponseDto{
+				Status:  http.StatusUnauthorized,
+				Message: "unauthorized",
+				Data:    nil,
+			})
+			return
+		}
+		user, err := userC.userService.FindFullById(userToken.GetId())
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
@@ -273,7 +267,6 @@ func (userC *UserController) Update() func(c *gin.Context) {
 				id,
 				userDto.Name,
 				userDto.Email,
-				"",
 				getRolesFromIds(userDto.Roles),
 				userDto.IsAdmin,
 				false,

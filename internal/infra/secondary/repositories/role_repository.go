@@ -2,12 +2,12 @@ package repositories
 
 import (
 	"fmt"
-	"jwt/base/internal/infra/secondary/repositories/dto"
-	"jwt/base/internal/infra/secondary/repositories/postgres/dao"
+	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
+	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/dao"
 
-	"github.com/WilsonSayago/authBase/core/domain"
-	authBasePorts "github.com/WilsonSayago/authBase/core/port"
-	"github.com/WilsonSayago/initModules"
+	"github.com/WilsonSayago/authBase/v3/core/domain"
+	authBasePorts "github.com/WilsonSayago/authBase/v3/core/port"
+	"github.com/WilsonSayago/initModules/v2"
 )
 
 type RoleRepository struct {

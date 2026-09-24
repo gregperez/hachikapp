@@ -1,9 +1,9 @@
 package users
 
 import (
-	"jwt/base/internal/core/domain"
-	"jwt/base/internal/infra/primary/controller/dto"
-	"jwt/base/internal/infra/primary/controller/dto/outputs/roles"
+	"github.com/WilsonSayago/base-golang/internal/core/domain"
+	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
+	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/outputs/roles"
 )
 
 // UserResponse represents a user response.

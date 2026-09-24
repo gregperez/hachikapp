@@ -2,7 +2,7 @@ package config
 
 import (
 	"encoding/json"
-	"github.com/WilsonSayago/initModules"
+	"github.com/WilsonSayago/initModules/v2"
 	"log"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"

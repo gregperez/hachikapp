@@ -55,6 +55,8 @@ Security operations (rotation, bootstrap contract, exposure response, secret sca
 - [docs/security-operations.md](docs/security-operations.md)
 - `./scripts/check-secrets.sh` (gitleaks)
 
+**Auth note:** after upgrading to authBase v3, all prior JWTs are invalid; users must sign in again. Refresh tokens rotate atomically and are never stored in plaintext.
+
 ## Usage
 To run the project, ensure you have Go installed and set up your PostgreSQL database. Then, use the following commands:
 

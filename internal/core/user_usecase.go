@@ -1,8 +1,8 @@
 package core
 
 import (
-	"github.com/WilsonSayago/authBase/core"
-	"jwt/base/internal/core/domain"
+	"github.com/WilsonSayago/authBase/v3/core"
+	"github.com/WilsonSayago/base-golang/internal/core/domain"
 )
 
 type UserUseCase interface {
@@ -11,6 +11,7 @@ type UserUseCase interface {
 	FindByEmail(email string) (domain.User, error)
 	Create(user domain.User) error
 	FindById(id string) (domain.User, error)
+	FindFullById(id string) (domain.User, error)
 	Update(user domain.User) error
 	ChangeStatus(id string) error
 }

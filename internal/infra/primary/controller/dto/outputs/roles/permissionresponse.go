@@ -1,6 +1,6 @@
 package roles
 
-import "github.com/WilsonSayago/authBase/core/domain"
+import "github.com/WilsonSayago/authBase/v3/core/domain"
 
 // PermissionResponse represents a permission response.
 // @swagger:model

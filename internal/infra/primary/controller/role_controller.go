@@ -70,7 +70,7 @@ func (roleC *RoleController) RunController() {
 func (roleC *RoleController) GetAll() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		page, pageSize, offset := handlePagination(c)
-		rolesDb, total, err := roleC.roleService.GetRoles(pageSize, offset)
+		rolesDb, total, err := roleC.roleService.GetRoles(c.Request.Context(), pageSize, offset)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
@@ -120,7 +120,7 @@ func (roleC *RoleController) GetAll() func(c *gin.Context) {
 func (roleC *RoleController) GetById() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id := c.Param("id")
-		role, err := roleC.roleService.GetRoleById(id)
+		role, err := roleC.roleService.GetRoleById(c.Request.Context(), id)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
@@ -170,7 +170,7 @@ func (roleC *RoleController) Save() func(c *gin.Context) {
 			Permissions: convertDtoToPermissions(roleDto.Permissions),
 		}
 
-		_, err := roleC.roleService.CreateRole(role)
+		_, err := roleC.roleService.CreateRole(c.Request.Context(), role)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
@@ -214,7 +214,7 @@ func (roleC *RoleController) Update() func(c *gin.Context) {
 			Permissions: convertDtoToPermissions(roleDto.Permissions),
 		}
 
-		err := roleC.roleService.UpdateRole(role)
+		err := roleC.roleService.UpdateRole(c.Request.Context(), role)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,
@@ -245,7 +245,13 @@ func (roleC *RoleController) Update() func(c *gin.Context) {
 func (roleC *RoleController) ChangeStatus() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id := c.Param("id")
-		err := roleC.roleService.ChangeStatus(id)
+		var req struct {
+			Active bool `json:"active"`
+		}
+		if !handleBind(roleC.t, c, &req) {
+			return
+		}
+		err := roleC.roleService.SetActive(c.Request.Context(), id, req.Active)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ResponseDto{
 				Status:  http.StatusBadRequest,

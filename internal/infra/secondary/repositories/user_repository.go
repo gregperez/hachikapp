@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 
@@ -15,7 +14,6 @@ import (
 	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
 	authBasePorts "github.com/WilsonSayago/authBase/v3/core/port"
 	initModules "github.com/WilsonSayago/initModules/v2"
-	log "github.com/sirupsen/logrus"
 )
 
 type UserRepository struct {
@@ -36,26 +34,27 @@ func NewUserInstance(userDao dao.IUserDao, roleDao dao.IRoleDao, userRoleDao dao
 	})
 }
 
-// FindByID implements authBase UserReader (identity without password).
 func (repository *UserRepository) FindByID(ctx context.Context, id string) (domain.User, error) {
 	if err := ctx.Err(); err != nil {
 		return domain.User{}, err
 	}
-	user, err := repository.FindFullById(id)
+	user, err := repository.FindFullById(ctx, id)
 	if err != nil {
-		return domain.User{}, authBaseCore.ErrNotFound
+		if errors.Is(err, domain.ErrNotFound) {
+			return domain.User{}, authBaseCore.ErrNotFound
+		}
+		return domain.User{}, err
 	}
 	return user, nil
 }
 
-// FindCredentialsByUsername implements authBase CredentialReader.
 func (repository *UserRepository) FindCredentialsByUsername(ctx context.Context, username string) (authBasePorts.CredentialRecord, error) {
 	if err := ctx.Err(); err != nil {
 		return authBasePorts.CredentialRecord{}, err
 	}
-	rec, err := repository.userDao.FindCredentialsByEmail(username)
+	rec, err := repository.userDao.FindCredentialsByEmail(ctx, username)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, domain.ErrNotFound) {
 			return authBasePorts.CredentialRecord{}, authBaseCore.ErrNotFound
 		}
 		return authBasePorts.CredentialRecord{}, err
@@ -68,10 +67,10 @@ func (repository *UserRepository) FindCredentialsByUsername(ctx context.Context,
 	}, nil
 }
 
-func (repository *UserRepository) FindByEmail(email string) (domain.User, error) {
-	userDTO, err := repository.userDao.FindByEmail(email)
+func (repository *UserRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
+	userDTO, err := repository.userDao.FindByEmail(ctx, email)
 	if err != nil {
-		return domain.User{}, fmt.Errorf("errors.users.not-found")
+		return domain.User{}, fmt.Errorf("find user by email: %w", err)
 	}
 	if userDTO.Id == "" {
 		return domain.User{}, nil
@@ -79,22 +78,22 @@ func (repository *UserRepository) FindByEmail(email string) (domain.User, error)
 	return toUserDomain(userDTO), nil
 }
 
-func (repository *UserRepository) FindFullById(id string) (domain.User, error) {
-	user, err := repository.userDao.FindById(id)
+func (repository *UserRepository) FindFullById(ctx context.Context, id string) (domain.User, error) {
+	user, err := repository.userDao.FindById(ctx, id)
 	if err != nil {
-		return domain.User{}, fmt.Errorf("errors.users.not-found")
+		return domain.User{}, err
 	}
-	user.Roles, err = repository.roleDao.FindAllByUserId(user.Id)
+	user.Roles, err = repository.roleDao.FindAllByUserId(ctx, user.Id)
 	if err != nil {
-		return domain.User{}, fmt.Errorf("errors.roles.not-found")
+		return domain.User{}, fmt.Errorf("load user roles: %w", err)
 	}
 	return toUserDomain(user), nil
 }
 
-func (repository *UserRepository) Save(user domain.User) error {
-	userFound, err := repository.userDao.FindByEmail(user.GetEmail())
+func (repository *UserRepository) Save(ctx context.Context, user domain.User) error {
+	userFound, err := repository.userDao.FindByEmail(ctx, user.GetEmail())
 	if err != nil {
-		return fmt.Errorf("errors.generals.errors")
+		return fmt.Errorf("check user exists: %w", err)
 	}
 	if userFound.Id != "" {
 		return fmt.Errorf("errors.users.already-exists")
@@ -109,20 +108,11 @@ func (repository *UserRepository) Save(user domain.User) error {
 		return fmt.Errorf("errors.users.hash-password")
 	}
 
-	tx, err := repository.userDao.BeginTx()
+	tx, err := repository.userDao.BeginTx(ctx)
 	if err != nil {
-		log.Errorf("Error al iniciar transacción: %v", err)
-		return fmt.Errorf("errors.transaction.begin")
+		return fmt.Errorf("begin user save tx: %w", err)
 	}
-
-	var txError error
-	defer func() {
-		if txError != nil {
-			if rbErr := tx.Rollback(); rbErr != nil {
-				log.Errorf("Error al hacer rollback: %v", rbErr)
-			}
-		}
-	}()
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	userDTO := dto.UserDTO{
 		Name:     user.GetName(),
@@ -130,39 +120,32 @@ func (repository *UserRepository) Save(user domain.User) error {
 		Password: hashedPassword,
 		IsAdmin:  user.GetIsAdmin(),
 	}
-
-	txError = repository.userDao.SaveWithTx(tx, &userDTO)
-	if txError != nil {
-		return fmt.Errorf("errors.users.save")
+	if err := repository.userDao.SaveWithTx(ctx, tx, &userDTO); err != nil {
+		return err
 	}
-
 	for _, role := range user.GetRole() {
-		txError = repository.userRoleDao.SaveWithTx(tx, userDTO.Id, role.Id)
-		if txError != nil {
-			return fmt.Errorf("errors.users.save-user-role")
+		if err := repository.userRoleDao.SaveWithTx(ctx, tx, userDTO.Id, role.Id); err != nil {
+			return err
 		}
 	}
-
-	txError = tx.Commit()
-	if txError != nil {
-		log.Errorf("Error al hacer commit: %v", txError)
-		return fmt.Errorf("errors.transaction.commit")
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit user save: %w", err)
 	}
 	return nil
 }
 
-func (repository *UserRepository) FindById(id string) (domain.User, error) {
-	return repository.FindFullById(id)
+func (repository *UserRepository) FindById(ctx context.Context, id string) (domain.User, error) {
+	return repository.FindFullById(ctx, id)
 }
 
-func (repository *UserRepository) FindAll(pageSize, offset int) ([]domain.User, int, error) {
-	totalRow, err := repository.userDao.Count()
+func (repository *UserRepository) FindAll(ctx context.Context, pageSize, offset int) ([]domain.User, int, error) {
+	totalRow, err := repository.userDao.Count(ctx)
 	if err != nil {
-		return nil, 0, fmt.Errorf("errors.users.get-all")
+		return nil, 0, err
 	}
-	users, err := repository.userDao.FindAll(pageSize, offset)
+	users, err := repository.userDao.FindAll(ctx, pageSize, offset)
 	if err != nil {
-		return nil, 0, fmt.Errorf("errors.users.get-all")
+		return nil, 0, err
 	}
 	list := make([]domain.User, 0, len(users))
 	for _, user := range users {
@@ -171,104 +154,58 @@ func (repository *UserRepository) FindAll(pageSize, offset int) ([]domain.User, 
 	return list, totalRow, nil
 }
 
-func (repository *UserRepository) Update(user domain.User) error {
+func (repository *UserRepository) Update(ctx context.Context, user domain.User) error {
+	tx, err := repository.userDao.BeginTx(ctx)
+	if err != nil {
+		return fmt.Errorf("begin user update tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
 	userDTO := dto.UserDTO{
 		BaseDTO: dto.BaseDTO{Id: user.GetId()},
 		Name:    user.GetName(),
 		Email:   user.GetEmail(),
 		IsAdmin: user.GetIsAdmin(),
 	}
-
-	tx, err := repository.userDao.BeginTx()
-	if err != nil {
-		log.Errorf("Error al iniciar transacción: %v", err)
-		return fmt.Errorf("errors.transaction.begin")
+	if err := repository.userDao.UpdateWithTx(ctx, tx, userDTO); err != nil {
+		return err
 	}
-
-	var txError error
-	defer func() {
-		if txError != nil {
-			if rbErr := tx.Rollback(); rbErr != nil {
-				log.Errorf("Error al hacer rollback: %v", rbErr)
-			}
-		}
-	}()
-
-	txError = repository.userDao.UpdateWithTx(tx, userDTO)
-	if txError != nil {
-		return fmt.Errorf("errors.users.update")
+	if err := repository.userRoleDao.DeleteAllByUserIdWithTx(ctx, tx, userDTO.Id); err != nil {
+		return err
 	}
-
-	txError = repository.userRoleDao.DeleteAllByUserIdWithTx(tx, userDTO.Id)
-	if txError != nil {
-		return fmt.Errorf("errors.users.delete-user-role")
-	}
-
 	for _, role := range user.GetRole() {
-		txError = repository.userRoleDao.SaveWithTx(tx, userDTO.Id, role.Id)
-		if txError != nil {
-			return fmt.Errorf("errors.users.save-user-role")
+		if err := repository.userRoleDao.SaveWithTx(ctx, tx, userDTO.Id, role.Id); err != nil {
+			return err
 		}
 	}
-
-	txError = tx.Commit()
-	if txError != nil {
-		log.Errorf("Error al hacer commit: %v", txError)
-		return fmt.Errorf("errors.transaction.commit")
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit user update: %w", err)
 	}
 	return nil
 }
 
-func (repository *UserRepository) ChangeStatus(id string) error {
-	tx, err := repository.userDao.BeginTx()
-	if err != nil {
-		log.Errorf("Error al iniciar transacción: %v", err)
-		return fmt.Errorf("errors.transaction.begin")
-	}
-
-	var txError error
-	defer func() {
-		if txError != nil {
-			if rbErr := tx.Rollback(); rbErr != nil {
-				log.Errorf("Error al hacer rollback: %v", rbErr)
-			}
-		}
-	}()
-
-	txError = repository.userDao.ChangeStatusWithTx(tx, id)
-	if txError != nil {
-		return fmt.Errorf("errors.users.change-status")
-	}
-
-	txError = tx.Commit()
-	if txError != nil {
-		log.Errorf("Error al hacer commit: %v", txError)
-		return fmt.Errorf("errors.transaction.commit")
-	}
-	return nil
+func (repository *UserRepository) SetActive(ctx context.Context, id string, active bool) error {
+	return repository.userDao.SetActive(ctx, id, active)
 }
 
-func (repository *UserRepository) CountAdmins() (int, error) {
-	return repository.userDao.CountAdmins()
+func (repository *UserRepository) CountAdmins(ctx context.Context) (int, error) {
+	return repository.userDao.CountAdmins(ctx)
 }
 
-func (repository *UserRepository) UpdatePassword(id, passwordHash string) error {
+func (repository *UserRepository) UpdatePassword(ctx context.Context, id, passwordHash string) error {
 	if id == "" || passwordHash == "" {
 		return fmt.Errorf("errors.users.update-password")
 	}
-	if err := repository.userDao.UpdatePassword(id, passwordHash); err != nil {
-		return fmt.Errorf("errors.users.update-password")
-	}
-	return nil
+	return repository.userDao.UpdatePassword(ctx, id, passwordHash)
 }
 
-func (repository *UserRepository) FindRoleIDByName(name string) (string, error) {
-	role, err := repository.roleDao.FindByName(name)
+func (repository *UserRepository) FindRoleIDByName(ctx context.Context, name string) (string, error) {
+	role, err := repository.roleDao.FindByName(ctx, name)
 	if err != nil {
-		return "", fmt.Errorf("errors.roles.not-found")
+		return "", err
 	}
 	if role.Id == "" {
-		return "", fmt.Errorf("errors.roles.not-found")
+		return "", domain.ErrNotFound
 	}
 	return role.Id, nil
 }

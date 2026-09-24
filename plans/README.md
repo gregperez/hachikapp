@@ -21,9 +21,9 @@ Estos documentos son instrucciones autocontenidas para que otro agente pueda eje
 | 001 | [Contener secretos y datos de arranque](./001-contener-secretos-y-datos-bootstrap.md) | P0 | M | — | Hecho (`codex/001-contener-secretos`) |
 | 002 | [Recuperar compilación y migrar authBase/initModules](./002-recuperar-compilacion-y-migrar-auth.md) | P0 | L | 001 | Hecho (`codex/002-migrar-auth`) |
 | 003 | [Establecer baseline de calidad y CI](./003-establecer-baseline-calidad-ci.md) | P1 | M | 002 | Verificado — observación P2 diferida a 010 |
-| 004 | [Corregir límites de autorización](./004-corregir-limites-autorizacion.md) | P0 | M | 002, 003 | Implementado — observaciones P1/P2 diferidas a 010; pendiente commit |
-| 005 | [Reconstruir configuración, bootstrap y lifecycle](./005-reconstruir-bootstrap-lifecycle.md) | P1 | L | 002, 003 | Verificado (`codex/005-bootstrap-lifecycle`) |
-| 006 | [Corregir límites de persistencia PostgreSQL](./006-corregir-persistencia-postgresql.md) | P1 | L | 003, 005 | Pendiente |
+| 004 | [Corregir límites de autorización](./004-corregir-limites-autorizacion.md) | P0 | M | 002, 003 | Verificado (`0e3cec1`) |
+| 005 | [Reconstruir configuración, bootstrap y lifecycle](./005-reconstruir-bootstrap-lifecycle.md) | P1 | L | 002, 003 | Verificado (`0771cbd`) |
+| 006 | [Corregir límites de persistencia PostgreSQL](./006-corregir-persistencia-postgresql.md) | P1 | L | 003, 005 | Verificado (`codex/006-persistencia-postgresql`) |
 | 007 | [Endurecer esquema y migraciones](./007-endurecer-esquema-y-migraciones.md) | P1 | M | 003, 004, 006 | Pendiente |
 | 008 | [Estabilizar contrato HTTP y OpenAPI](./008-estabilizar-contrato-http-openapi.md) | P1 | L | 004, 006, 007 | Pendiente |
 | 009 | [Actualizar dependencias de terceros](./009-actualizar-dependencias.md) | P2 | M | 003–008 | Pendiente |

@@ -23,13 +23,11 @@ func GetUserDaoInstance() pg.IUserDao {
 }
 
 func GetPermissionDaoInstance() pg.IPermissionDao {
-	var dbPgx database2.Database = database2.GetDatabasePostgresPgx()
-	return pg.NewPermissionDaoInstance(&dbPgx)
+	return pg.NewPermissionDaoInstance(database2.GetDatabasePostgresPgx())
 }
 
 func GetRoleDaoInstance() pg.IRoleDao {
-	var dbPgx database2.Database = database2.GetDatabasePostgresPgx()
-	return pg.NewRoleDaoInstance(&dbPgx)
+	return pg.NewRoleDaoInstance(database2.GetDatabasePostgresPgx())
 }
 
 func GetValidationService() portsAuthBase.ValidationPort {

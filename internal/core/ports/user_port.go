@@ -1,6 +1,8 @@
 package ports
 
 import (
+	"context"
+
 	"github.com/WilsonSayago/authBase/v3/core/port"
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 )
@@ -10,14 +12,14 @@ import (
 type UserPort interface {
 	port.UserReader[domain.User]
 	port.CredentialReader
-	Save(u domain.User) error
-	FindAll(pageSize, offset int) ([]domain.User, int, error)
-	FindById(id string) (domain.User, error)
-	FindByEmail(email string) (domain.User, error)
-	FindFullById(id string) (domain.User, error)
-	Update(u domain.User) error
-	ChangeStatus(id string) error
-	CountAdmins() (int, error)
-	UpdatePassword(id, passwordHash string) error
-	FindRoleIDByName(name string) (string, error)
+	Save(ctx context.Context, u domain.User) error
+	FindAll(ctx context.Context, pageSize, offset int) ([]domain.User, int, error)
+	FindById(ctx context.Context, id string) (domain.User, error)
+	FindByEmail(ctx context.Context, email string) (domain.User, error)
+	FindFullById(ctx context.Context, id string) (domain.User, error)
+	Update(ctx context.Context, u domain.User) error
+	SetActive(ctx context.Context, id string, active bool) error
+	CountAdmins(ctx context.Context) (int, error)
+	UpdatePassword(ctx context.Context, id, passwordHash string) error
+	FindRoleIDByName(ctx context.Context, name string) (string, error)
 }

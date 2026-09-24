@@ -1,84 +1,62 @@
 package dao
 
 import (
-	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
+	"context"
+	"fmt"
 
+	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	"github.com/WilsonSayago/initModules/v2"
-	log "github.com/sirupsen/logrus"
 )
 
 type IUserRoleDao interface {
-	// Operaciones estándar sin transacción
-	Save(userId, roleId string) error
-	DeleteAllByUserId(userId string) error
-
-	// Operaciones con transacciones
-	SaveWithTx(tx database.Transaction, userId, roleId string) error
-	DeleteAllByUserIdWithTx(tx database.Transaction, userId string) error
-
-	// Gestión de transacciones
-	BeginTx() (database.Transaction, error)
+	Save(ctx context.Context, userId, roleId string) error
+	DeleteAllByUserId(ctx context.Context, userId string) error
+	SaveWithTx(ctx context.Context, tx database.Transaction, userId, roleId string) error
+	DeleteAllByUserIdWithTx(ctx context.Context, tx database.Transaction, userId string) error
 }
 
 type UserRoleDao struct {
-	DbPgx4 *database.PostgresPgx
+	db *database.PostgresPgx
 }
 
 func NewUserRoleDaoInstance(db *database.PostgresPgx) IUserRoleDao {
 	return initModules.Once(func() *UserRoleDao {
-		return &UserRoleDao{DbPgx4: db}
+		return &UserRoleDao{db: db}
 	})
 }
 
-func (userRoleDao *UserRoleDao) Save(userId, roleId string) error {
-	query := "insert into public.users_roles (user_id, role_id) values ($1, $2);"
-	err := (*userRoleDao.DbPgx4).Exec(query, userId, roleId)
-	if err != nil {
-		log.Errorf("error in Save User Role, error: %s", err.Error())
-		return err
-	}
+func (d *UserRoleDao) Save(ctx context.Context, userId, roleId string) error {
+	return d.SaveWithTx(ctx, nil, userId, roleId)
+}
 
+func (d *UserRoleDao) SaveWithTx(ctx context.Context, tx database.Transaction, userId, roleId string) error {
+	const q = `INSERT INTO public.users_roles (user_id, role_id) VALUES ($1, $2)`
+	var err error
+	if tx != nil {
+		_, err = tx.Exec(ctx, q, userId, roleId)
+	} else {
+		_, err = d.db.Exec(ctx, q, userId, roleId)
+	}
+	if err != nil {
+		return fmt.Errorf("save user role: %w", err)
+	}
 	return nil
 }
 
-func (userRoleDao *UserRoleDao) DeleteAllByUserId(userId string) error {
-	query := "delete from public.users_roles where user_id = $1;"
-	err := (*userRoleDao.DbPgx4).Exec(query, userId)
-	if err != nil {
-		log.Errorf("error in DeleteAllByUserId, error: %s", err.Error())
-		return err
-	}
-
-	return nil
+func (d *UserRoleDao) DeleteAllByUserId(ctx context.Context, userId string) error {
+	return d.DeleteAllByUserIdWithTx(ctx, nil, userId)
 }
 
-func (userRoleDao *UserRoleDao) SaveWithTx(tx database.Transaction, userId, roleId string) error {
-	query := "insert into public.users_roles (user_id, role_id) values ($1, $2);"
-	err := tx.Exec(query, userId, roleId)
-	if err != nil {
-		log.Errorf("error in Save User Role with Tx, error: %s", err.Error())
-		return err
+func (d *UserRoleDao) DeleteAllByUserIdWithTx(ctx context.Context, tx database.Transaction, userId string) error {
+	const q = `DELETE FROM public.users_roles WHERE user_id = $1`
+	var err error
+	if tx != nil {
+		_, err = tx.Exec(ctx, q, userId)
+	} else {
+		_, err = d.db.Exec(ctx, q, userId)
 	}
-
+	if err != nil {
+		return fmt.Errorf("delete user roles: %w", err)
+	}
 	return nil
-}
-
-func (userRoleDao *UserRoleDao) DeleteAllByUserIdWithTx(tx database.Transaction, userId string) error {
-	query := "delete from public.users_roles where user_id = $1;"
-	err := tx.Exec(query, userId)
-	if err != nil {
-		log.Errorf("error in DeleteAllByUserId with Tx, error: %s", err.Error())
-		return err
-	}
-
-	return nil
-}
-
-func (userRoleDao *UserRoleDao) BeginTx() (database.Transaction, error) {
-	tx, err := userRoleDao.DbPgx4.BeginTx()
-	if err != nil {
-		log.Errorf("error in BeginTx, error: %s", err.Error())
-		return nil, err
-	}
-	return tx, nil
 }

@@ -55,23 +55,22 @@ func (s *UserService) FindByID(ctx context.Context, id string) (domain.User, err
 	return s.userRepository.FindByID(ctx, id)
 }
 
-func (s *UserService) FindAll(pageSize, offset int) ([]domain.User, int, error) {
-	return s.userRepository.FindAll(pageSize, offset)
+func (s *UserService) FindAll(ctx context.Context, pageSize, offset int) ([]domain.User, int, error) {
+	return s.userRepository.FindAll(ctx, pageSize, offset)
 }
 
-func (s *UserService) FindByEmail(email string) (domain.User, error) {
-	return s.userRepository.FindByEmail(email)
+func (s *UserService) FindByEmail(ctx context.Context, email string) (domain.User, error) {
+	return s.userRepository.FindByEmail(ctx, email)
 }
 
-func (s *UserService) FindFullById(id string) (domain.User, error) {
-	return s.userRepository.FindFullById(id)
+func (s *UserService) FindFullById(ctx context.Context, id string) (domain.User, error) {
+	return s.userRepository.FindFullById(ctx, id)
 }
 
-func (s *UserService) Create(user domain.User) error {
+func (s *UserService) Create(ctx context.Context, user domain.User) error {
 	if err := domain.ValidatePassword(user.PlainPassword()); err != nil {
 		return err
 	}
-	// Strip privileges: mass-assignment of isAdmin/roles is never accepted here.
 	clean := domain.WithPlainPassword(domain.User{
 		UserGeneric: authBaseDomain.NewUserGeneric(
 			"",
@@ -82,18 +81,18 @@ func (s *UserService) Create(user domain.User) error {
 			true,
 		),
 	}, user.PlainPassword())
-	return s.userRepository.Save(clean)
+	return s.userRepository.Save(ctx, clean)
 }
 
-func (s *UserService) FindById(id string) (domain.User, error) {
-	return s.userRepository.FindById(id)
+func (s *UserService) FindById(ctx context.Context, id string) (domain.User, error) {
+	return s.userRepository.FindById(ctx, id)
 }
 
-func (s *UserService) UpdateOwnProfile(actorID, userID, name string) error {
+func (s *UserService) UpdateOwnProfile(ctx context.Context, actorID, userID, name string) error {
 	if actorID == "" || userID == "" || actorID != userID {
 		return domain.ErrForbidden
 	}
-	existing, err := s.userRepository.FindFullById(userID)
+	existing, err := s.userRepository.FindFullById(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -107,11 +106,11 @@ func (s *UserService) UpdateOwnProfile(actorID, userID, name string) error {
 			existing.GetActive(),
 		),
 	}
-	return s.userRepository.Update(updated)
+	return s.userRepository.Update(ctx, updated)
 }
 
-func (s *UserService) AdminUpdateUser(userID, name, email string) error {
-	existing, err := s.userRepository.FindFullById(userID)
+func (s *UserService) AdminUpdateUser(ctx context.Context, userID, name, email string) error {
+	existing, err := s.userRepository.FindFullById(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -125,14 +124,14 @@ func (s *UserService) AdminUpdateUser(userID, name, email string) error {
 			existing.GetActive(),
 		),
 	}
-	return s.userRepository.Update(updated)
+	return s.userRepository.Update(ctx, updated)
 }
 
-func (s *UserService) AssignRoles(actorID, userID string, roleIDs []string) error {
+func (s *UserService) AssignRoles(ctx context.Context, actorID, userID string, roleIDs []string) error {
 	if len(roleIDs) == 0 {
 		return fmt.Errorf("errors.users.roles-required")
 	}
-	existing, err := s.userRepository.FindFullById(userID)
+	existing, err := s.userRepository.FindFullById(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -150,20 +149,20 @@ func (s *UserService) AssignRoles(actorID, userID string, roleIDs []string) erro
 			existing.GetActive(),
 		),
 	}
-	if err := s.userRepository.Update(updated); err != nil {
+	if err := s.userRepository.Update(ctx, updated); err != nil {
 		return err
 	}
 	s.audit.PrivilegeChange("assign_roles", actorID, userID, roleIDs, nil)
 	return nil
 }
 
-func (s *UserService) SetAdminFlag(actorID, userID string, isAdmin bool) error {
-	existing, err := s.userRepository.FindFullById(userID)
+func (s *UserService) SetAdminFlag(ctx context.Context, actorID, userID string, isAdmin bool) error {
+	existing, err := s.userRepository.FindFullById(ctx, userID)
 	if err != nil {
 		return err
 	}
 	if existing.GetIsAdmin() && !isAdmin {
-		if err := s.guardLastAdmin(); err != nil {
+		if err := s.guardLastAdmin(ctx); err != nil {
 			return err
 		}
 	}
@@ -177,7 +176,7 @@ func (s *UserService) SetAdminFlag(actorID, userID string, isAdmin bool) error {
 			existing.GetActive(),
 		),
 	}
-	if err := s.userRepository.Update(updated); err != nil {
+	if err := s.userRepository.Update(ctx, updated); err != nil {
 		return err
 	}
 	flag := isAdmin
@@ -192,7 +191,7 @@ func (s *UserService) ChangePassword(ctx context.Context, userID, currentPasswor
 	if err := domain.ValidatePassword(newPassword); err != nil {
 		return err
 	}
-	existing, err := s.userRepository.FindFullById(userID)
+	existing, err := s.userRepository.FindFullById(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -207,29 +206,28 @@ func (s *UserService) ChangePassword(ctx context.Context, userID, currentPasswor
 	if err != nil {
 		return fmt.Errorf("errors.users.hash-password")
 	}
-	return s.userRepository.UpdatePassword(userID, hash)
+	return s.userRepository.UpdatePassword(ctx, userID, hash)
 }
 
-func (s *UserService) ChangeStatus(actorID, userID string) error {
-	existing, err := s.userRepository.FindFullById(userID)
+func (s *UserService) SetActive(ctx context.Context, actorID, userID string, active bool) error {
+	existing, err := s.userRepository.FindFullById(ctx, userID)
 	if err != nil {
 		return err
 	}
-	// Toggle will deactivate an active admin — protect the last one.
-	if existing.GetIsAdmin() && existing.GetActive() {
-		if err := s.guardLastAdmin(); err != nil {
+	if existing.GetIsAdmin() && existing.GetActive() && !active {
+		if err := s.guardLastAdmin(ctx); err != nil {
 			return err
 		}
 	}
-	if err := s.userRepository.ChangeStatus(userID); err != nil {
+	if err := s.userRepository.SetActive(ctx, userID, active); err != nil {
 		return err
 	}
-	s.audit.PrivilegeChange("change_status", actorID, userID, nil, nil)
+	s.audit.PrivilegeChange("set_active", actorID, userID, nil, nil)
 	return nil
 }
 
-func (s *UserService) guardLastAdmin() error {
-	n, err := s.userRepository.CountAdmins()
+func (s *UserService) guardLastAdmin(ctx context.Context) error {
+	n, err := s.userRepository.CountAdmins(ctx)
 	if err != nil {
 		return err
 	}

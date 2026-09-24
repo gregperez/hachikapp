@@ -1,11 +1,12 @@
 package repositories
 
 import (
+	"context"
+
 	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/ports"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/dao"
 	"github.com/WilsonSayago/initModules/v2"
-	//"sync"
 )
 
 type PermissionRepository struct {
@@ -18,14 +19,13 @@ func NewPermissionInstance(permissionDao dao.IPermissionDao) ports.PermissionPor
 	})
 }
 
-func (r *PermissionRepository) FindAllByUser(userId string) ([]authBaseDomain.Permission, error) {
-	permissions, err := (r.permissionDao).FindAllByUserId(userId)
+func (r *PermissionRepository) FindAllByUser(ctx context.Context, userId string) ([]authBaseDomain.Permission, error) {
+	permissions, err := r.permissionDao.FindAllByUserId(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
 
-	list := make([]authBaseDomain.Permission, 0)
-
+	list := make([]authBaseDomain.Permission, 0, len(permissions))
 	for _, permission := range permissions {
 		list = append(list, authBaseDomain.Permission{
 			Entity: permission.Entity,
@@ -35,6 +35,5 @@ func (r *PermissionRepository) FindAllByUser(userId string) ([]authBaseDomain.Pe
 			Delete: permission.Delete,
 		})
 	}
-
 	return list, nil
 }

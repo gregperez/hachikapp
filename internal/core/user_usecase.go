@@ -9,15 +9,15 @@ import (
 
 type UserUseCase interface {
 	core.GenericUseCase[domain.User]
-	FindAll(pageSize, offset int) ([]domain.User, int, error)
-	FindByEmail(email string) (domain.User, error)
-	Create(user domain.User) error
-	FindById(id string) (domain.User, error)
-	FindFullById(id string) (domain.User, error)
-	UpdateOwnProfile(actorID, userID, name string) error
-	AdminUpdateUser(userID, name, email string) error
-	AssignRoles(actorID, userID string, roleIDs []string) error
-	SetAdminFlag(actorID, userID string, isAdmin bool) error
+	FindAll(ctx context.Context, pageSize, offset int) ([]domain.User, int, error)
+	FindByEmail(ctx context.Context, email string) (domain.User, error)
+	Create(ctx context.Context, user domain.User) error
+	FindById(ctx context.Context, id string) (domain.User, error)
+	FindFullById(ctx context.Context, id string) (domain.User, error)
+	UpdateOwnProfile(ctx context.Context, actorID, userID, name string) error
+	AdminUpdateUser(ctx context.Context, userID, name, email string) error
+	AssignRoles(ctx context.Context, actorID, userID string, roleIDs []string) error
+	SetAdminFlag(ctx context.Context, actorID, userID string, isAdmin bool) error
 	ChangePassword(ctx context.Context, userID, currentPassword, newPassword string) error
-	ChangeStatus(actorID, userID string) error
+	SetActive(ctx context.Context, actorID, userID string, active bool) error
 }

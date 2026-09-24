@@ -35,7 +35,7 @@ func (s *Store) Create(ctx context.Context, session domain.RefreshSession) error
 INSERT INTO public.refresh_sessions
   (token_hash, token_id, family_id, user_id, issued_at, expires_at)
 VALUES ($1, $2, $3, $4::uuid, $5, $6)`
-	err := s.db.ExecContext(ctx, q,
+	_, err := s.db.Exec(ctx, q,
 		session.TokenHash[:],
 		session.TokenID,
 		session.FamilyID,
@@ -60,18 +60,18 @@ func (s *Store) Rotate(ctx context.Context, currentHash [32]byte, next domain.Re
 		return fmt.Errorf("invalid refresh session")
 	}
 
-	tx, err := s.db.BeginTxContext(ctx)
+	tx, err := s.db.BeginTx(ctx)
 	if err != nil {
 		return fmt.Errorf("begin rotate tx: %w", err)
 	}
-	defer func() { _ = tx.Rollback() }()
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	var (
 		familyID              string
 		expiresAt             time.Time
 		consumedAt, revokedAt *time.Time
 	)
-	err = tx.QueryRow(`
+	err = tx.QueryRow(ctx, `
 SELECT family_id, expires_at, consumed_at, revoked_at
 FROM public.refresh_sessions
 WHERE token_hash = $1
@@ -84,7 +84,7 @@ FOR UPDATE`, currentHash[:]).Scan(&familyID, &expiresAt, &consumedAt, &revokedAt
 	}
 
 	var familyRevoked bool
-	if err := tx.QueryRow(`
+	if err := tx.QueryRow(ctx, `
 SELECT EXISTS(
   SELECT 1 FROM public.refresh_sessions
   WHERE family_id = $1 AND revoked_at IS NOT NULL
@@ -105,7 +105,7 @@ SELECT EXISTS(
 		return fmt.Errorf("refresh family mismatch")
 	}
 
-	tag, err := tx.ExecResult(`
+	tag, err := tx.Exec(ctx, `
 UPDATE public.refresh_sessions
 SET consumed_at = $2
 WHERE token_hash = $1 AND consumed_at IS NULL AND revoked_at IS NULL`,
@@ -117,7 +117,7 @@ WHERE token_hash = $1 AND consumed_at IS NULL AND revoked_at IS NULL`,
 		return core.ErrRefreshConsumed
 	}
 
-	if err := tx.Exec(`
+	if _, err := tx.Exec(ctx, `
 INSERT INTO public.refresh_sessions
   (token_hash, token_id, family_id, user_id, issued_at, expires_at)
 VALUES ($1, $2, $3, $4::uuid, $5, $6)`,
@@ -134,7 +134,7 @@ VALUES ($1, $2, $3, $4::uuid, $5, $6)`,
 		return fmt.Errorf("insert next refresh session: %w", err)
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit rotate: %w", err)
 	}
 	return nil
@@ -148,7 +148,7 @@ func (s *Store) RevokeFamily(ctx context.Context, familyID string) error {
 		return fmt.Errorf("family id must not be empty")
 	}
 	now := s.now().UTC()
-	if err := s.db.ExecContext(ctx, `
+	if _, err := s.db.Exec(ctx, `
 UPDATE public.refresh_sessions
 SET revoked_at = $2
 WHERE family_id = $1 AND revoked_at IS NULL`, familyID, now); err != nil {

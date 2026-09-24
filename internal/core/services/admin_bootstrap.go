@@ -1,6 +1,8 @@
 package services
 
 import (
+	"context"
+
 	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/ports"
@@ -18,21 +20,21 @@ func NewAdminBootstrap(users ports.UserPort) *AdminBootstrap {
 }
 
 // Run creates an administrator with the admin role. Fails if any admin exists.
-func (b *AdminBootstrap) Run(name, email, password string) error {
+func (b *AdminBootstrap) Run(ctx context.Context, name, email, password string) error {
 	if name == "" || email == "" {
 		return domain.ErrWeakPassword
 	}
 	if err := domain.ValidatePassword(password); err != nil {
 		return err
 	}
-	n, err := b.users.CountAdmins()
+	n, err := b.users.CountAdmins(ctx)
 	if err != nil {
 		return err
 	}
 	if n > 0 {
 		return domain.ErrAdminExists
 	}
-	roleID, err := b.users.FindRoleIDByName(adminRoleName)
+	roleID, err := b.users.FindRoleIDByName(ctx, adminRoleName)
 	if err != nil {
 		return err
 	}
@@ -46,5 +48,5 @@ func (b *AdminBootstrap) Run(name, email, password string) error {
 			true,
 		),
 	}, password)
-	return b.users.Save(user)
+	return b.users.Save(ctx, user)
 }

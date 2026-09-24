@@ -21,95 +21,63 @@ var (
 	databaseOpenErr              error
 )
 
-// Transaction representa una transacción de base de datos
-type Transaction interface {
-	QueryRow(sql string, args ...interface{}) pgx.Row
-	QueryRows(sql string, args ...interface{}) (pgx.Rows, error)
-	Exec(sql string, args ...interface{}) error
-	ExecResult(sql string, args ...interface{}) (pgconn.CommandTag, error)
-	Commit() error
-	Rollback() error
-}
-
 type pgxTransaction struct {
-	tx  pgx.Tx
-	ctx context.Context
+	tx pgx.Tx
 }
 
-func (t *pgxTransaction) QueryRow(sql string, args ...interface{}) pgx.Row {
-	return t.tx.QueryRow(t.ctx, sql, args...)
+func (t *pgxTransaction) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
+	return t.tx.QueryRow(ctx, sql, args...)
 }
 
-func (t *pgxTransaction) QueryRows(sql string, args ...interface{}) (pgx.Rows, error) {
-	return t.tx.Query(t.ctx, sql, args...)
+func (t *pgxTransaction) Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
+	return t.tx.Query(ctx, sql, args...)
 }
 
-func (t *pgxTransaction) Exec(sql string, args ...interface{}) error {
-	_, err := t.tx.Exec(t.ctx, sql, args...)
-	return err
+func (t *pgxTransaction) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
+	return t.tx.Exec(ctx, sql, args...)
 }
 
-func (t *pgxTransaction) ExecResult(sql string, args ...interface{}) (pgconn.CommandTag, error) {
-	return t.tx.Exec(t.ctx, sql, args...)
+func (t *pgxTransaction) Commit(ctx context.Context) error {
+	return t.tx.Commit(ctx)
 }
 
-func (t *pgxTransaction) Commit() error {
-	return t.tx.Commit(t.ctx)
-}
-
-func (t *pgxTransaction) Rollback() error {
-	return t.tx.Rollback(t.ctx)
-}
-
-// DatabaseOperations defines the interface for database operations.
-type DatabaseOperations interface {
-	QueryRow(sql string, args ...interface{}) pgx.Row
-	QueryRows(sql string, args ...interface{}) (pgx.Rows, error)
-	Exec(sql string, args ...interface{}) error
-	BeginTx() (Transaction, error)
+func (t *pgxTransaction) Rollback(ctx context.Context) error {
+	return t.tx.Rollback(ctx)
 }
 
 type PostgresPgx struct {
 	pool *pgxpool.Pool
-	ctx  context.Context
 }
 
-func (db *PostgresPgx) QueryRow(sql string, args ...interface{}) pgx.Row {
-	return db.pool.QueryRow(db.ctx, sql, args...)
+func (db *PostgresPgx) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
+	return db.pool.QueryRow(ctx, sql, args...)
 }
 
-func (db *PostgresPgx) QueryRows(sql string, args ...interface{}) (pgx.Rows, error) {
-	rows, err := db.pool.Query(db.ctx, sql, args...)
-	return rows, err
+func (db *PostgresPgx) Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
+	return db.pool.Query(ctx, sql, args...)
 }
 
-func (db *PostgresPgx) Exec(sql string, args ...interface{}) error {
-	_, err := db.pool.Exec(db.ctx, sql, args...)
-	return err
+func (db *PostgresPgx) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
+	return db.pool.Exec(ctx, sql, args...)
 }
 
-func (db *PostgresPgx) ExecContext(ctx context.Context, sql string, args ...interface{}) error {
-	_, err := db.pool.Exec(ctx, sql, args...)
-	return err
+// QueryRows is kept for transitional callers; prefer Query.
+func (db *PostgresPgx) QueryRows(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
+	return db.Query(ctx, sql, args...)
 }
 
-func (db *PostgresPgx) BeginTx() (Transaction, error) {
-	return db.BeginTxContext(db.ctx)
-}
-
-func (db *PostgresPgx) BeginTxContext(ctx context.Context) (Transaction, error) {
+func (db *PostgresPgx) BeginTx(ctx context.Context) (Transaction, error) {
 	tx, err := db.pool.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &pgxTransaction{tx: tx, ctx: ctx}, nil
+	return &pgxTransaction{tx: tx}, nil
 }
 
 func (db *PostgresPgx) Pool() *pgxpool.Pool {
 	return db.pool
 }
 
-// Ping verifies connectivity with a timeout.
 func (db *PostgresPgx) Ping(ctx context.Context) error {
 	if db == nil || db.pool == nil {
 		return fmt.Errorf("database pool is nil")
@@ -117,7 +85,6 @@ func (db *PostgresPgx) Ping(ctx context.Context) error {
 	return db.pool.Ping(ctx)
 }
 
-// Close closes the underlying pool.
 func (db *PostgresPgx) Close() {
 	if db != nil && db.pool != nil {
 		db.pool.Close()
@@ -126,7 +93,7 @@ func (db *PostgresPgx) Close() {
 
 // NewPostgresPgxForTest constructs a non-singleton pool wrapper (tests only).
 func NewPostgresPgxForTest(pool *pgxpool.Pool) *PostgresPgx {
-	return &PostgresPgx{pool: pool, ctx: context.Background()}
+	return &PostgresPgx{pool: pool}
 }
 
 // OpenPool creates a pgx pool from validated app config (same DSN as migrations).
@@ -168,7 +135,7 @@ func OpenPool(ctx context.Context, cfg appconfig.DatabaseConfig) (*PostgresPgx, 
 		return nil, fmt.Errorf("database ping: %w", err)
 	}
 
-	return &PostgresPgx{pool: pool, ctx: context.Background()}, nil
+	return &PostgresPgx{pool: pool}, nil
 }
 
 // SetSingleton installs the process-wide pool used by legacy Once wiring.
@@ -177,7 +144,6 @@ func SetSingleton(db *PostgresPgx) {
 }
 
 // NewConnectionPostgresPgx opens (once) using YAML database properties.
-// Prefer OpenPool + SetSingleton from the application bootstrap.
 func NewConnectionPostgresPgx(prop *prop.DatabaseProperty) *PostgresPgx {
 	databasePostgresSQLDBOnce.Do(func() {
 		ssl := prop.SSLMode
@@ -211,7 +177,6 @@ func GetDatabasePostgresPgx() *PostgresPgx {
 	return databasePostgresPgxSingleton
 }
 
-// OpenError returns the last singleton open error, if any.
 func OpenError() error {
 	return databaseOpenErr
 }

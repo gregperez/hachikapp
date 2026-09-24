@@ -1,49 +1,47 @@
 package dao
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
-
 	"github.com/WilsonSayago/initModules/v2"
-	log "github.com/sirupsen/logrus"
 )
 
 type IPermissionDao interface {
-	FindAllByUserId(userId string) ([]dto.PermissionDTO, error)
+	FindAllByUserId(ctx context.Context, userId string) ([]dto.PermissionDTO, error)
 }
 
 type PermissionDao struct {
-	DbPgx4 *database.Database
+	db database.DBTX
 }
 
-func NewPermissionDaoInstance(db *database.Database) IPermissionDao {
+func NewPermissionDaoInstance(db database.DBTX) IPermissionDao {
 	return initModules.Once(func() *PermissionDao {
-		return &PermissionDao{DbPgx4: db}
+		return &PermissionDao{db: db}
 	})
 }
 
-func (c *PermissionDao) FindAllByUserId(id string) ([]dto.PermissionDTO, error) {
-	var entity string
-	var create, read, update, deleteattr sql.NullBool
-
-	query := "SELECT p.entity, p.create, p.read, p.update, p.delete " +
-		" FROM public.permissions p " +
-		" inner join public.users_permissions up " +
-		" on up.permission_id = p.id " +
-		" where up.user_id = $1;"
-	rows, err := (*c.DbPgx4).QueryRows(query, id)
+func (c *PermissionDao) FindAllByUserId(ctx context.Context, id string) ([]dto.PermissionDTO, error) {
+	const q = `SELECT p.entity, p.create, p.read, p.update, p.delete
+FROM public.permissions p
+INNER JOIN public.users_permissions up ON up.permission_id = p.id
+WHERE up.user_id = $1
+ORDER BY p.entity`
+	rows, err := c.db.Query(ctx, q, id)
 	if err != nil {
-		log.Errorf("error in Save User, error: %s", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("query permissions: %w", err)
 	}
+	defer rows.Close()
 
 	list := make([]dto.PermissionDTO, 0)
 	for rows.Next() {
-		err = rows.Scan(&entity, &create, &read, &update, &deleteattr)
-		if err != nil {
-			return nil, fmt.Errorf("could not get permissions: %v", err)
+		var entity string
+		var create, read, update, deleteattr sql.NullBool
+		if err := rows.Scan(&entity, &create, &read, &update, &deleteattr); err != nil {
+			return nil, fmt.Errorf("scan permission: %w", err)
 		}
 		list = append(list, dto.PermissionDTO{
 			Entity: entity,
@@ -53,6 +51,8 @@ func (c *PermissionDao) FindAllByUserId(id string) ([]dto.PermissionDTO, error) 
 			Delete: deleteattr.Bool,
 		})
 	}
-
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate permissions: %w", err)
+	}
 	return list, nil
 }

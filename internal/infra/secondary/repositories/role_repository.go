@@ -1,13 +1,17 @@
 package repositories
 
 import (
+	"context"
+	"errors"
 	"fmt"
+
+	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/dao"
 
-	"github.com/WilsonSayago/authBase/v3/core/domain"
+	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
 	authBasePorts "github.com/WilsonSayago/authBase/v3/core/port"
-	"github.com/WilsonSayago/initModules/v2"
+	initModules "github.com/WilsonSayago/initModules/v2"
 )
 
 type RoleRepository struct {
@@ -20,80 +24,64 @@ func NewRoleInstance(roleDao dao.IRoleDao) authBasePorts.RolePort {
 	})
 }
 
-func (r RoleRepository) FindById(id string) (domain.Role, error) {
-	role, err := (r.roleDao).FindById(id)
+func (r RoleRepository) FindById(ctx context.Context, id string) (authBaseDomain.Role, error) {
+	role, err := r.roleDao.FindById(ctx, id)
 	if err != nil {
-		return domain.Role{}, err
+		return authBaseDomain.Role{}, err
 	}
-
 	return ToRoleDomain(role), nil
 }
 
-func (r RoleRepository) FindAll(pageSize, offset int) ([]domain.Role, int, error) {
-	total, err := (r.roleDao).Count()
+func (r RoleRepository) FindAll(ctx context.Context, pageSize, offset int) ([]authBaseDomain.Role, int, error) {
+	total, err := r.roleDao.Count(ctx)
 	if err != nil {
-		return nil, 0, fmt.Errorf("errors.roles.get-all")
+		return nil, 0, err
 	}
-	roles, err := (r.roleDao).FindAll(pageSize, offset)
+	roles, err := r.roleDao.FindAll(ctx, pageSize, offset)
 	if err != nil {
-		return nil, 0, fmt.Errorf("errors.roles.get-all")
+		return nil, 0, err
 	}
-
-	// convert roles to domain
-	var domainRoles []domain.Role
+	domainRoles := make([]authBaseDomain.Role, 0, len(roles))
 	for _, role := range roles {
 		domainRoles = append(domainRoles, ToRoleDomain(role))
 	}
-
 	return domainRoles, total, nil
 }
 
-func (r RoleRepository) Save(role domain.Role) (domain.Role, error) {
-	roleFound, err := (r.roleDao).FindByName(role.Name)
-	if err != nil || roleFound.Id != "" {
-		return domain.Role{}, fmt.Errorf("errors.roles.already-exists")
-	}
-	roleDto := ToRoleDTO(role)
-	roleSave, err := (r.roleDao).Save(roleDto)
+func (r RoleRepository) Save(ctx context.Context, role authBaseDomain.Role) (authBaseDomain.Role, error) {
+	roleFound, err := r.roleDao.FindByName(ctx, role.Name)
 	if err != nil {
-		return domain.Role{}, fmt.Errorf("errors.roles.save")
+		return authBaseDomain.Role{}, err
 	}
-
-	return ToRoleDomain(roleSave), nil
+	if roleFound.Id != "" {
+		return authBaseDomain.Role{}, fmt.Errorf("errors.roles.already-exists")
+	}
+	saved, err := r.roleDao.Save(ctx, ToRoleDTO(role))
+	if err != nil {
+		return authBaseDomain.Role{}, err
+	}
+	return ToRoleDomain(saved), nil
 }
 
-func (r RoleRepository) Update(role domain.Role) error {
-	roleFound, err := (r.roleDao).FindById(role.Id)
-	if err != nil || roleFound.Id == "" {
-		return fmt.Errorf("errors.roles.not-found")
-	}
-
-	roleDto := ToRoleDTO(role)
-	err = (r.roleDao).Update(roleDto)
+func (r RoleRepository) Update(ctx context.Context, role authBaseDomain.Role) error {
+	_, err := r.roleDao.FindById(ctx, role.Id)
 	if err != nil {
-		return fmt.Errorf("errors.roles.update")
+		return err
 	}
-
-	return nil
+	return r.roleDao.Update(ctx, ToRoleDTO(role))
 }
 
-func (r RoleRepository) ChangeStatus(id string) error {
-	roleFound, err := (r.roleDao).FindById(id)
-	if err != nil || roleFound.Id == "" {
-		return fmt.Errorf("errors.roles.not-found")
+func (r RoleRepository) SetActive(ctx context.Context, id string, active bool) error {
+	err := r.roleDao.SetActive(ctx, id, active)
+	if errors.Is(err, domain.ErrNotFound) {
+		return domain.ErrNotFound
 	}
-
-	err = (r.roleDao).ChangeStatus(id)
-	if err != nil {
-		return fmt.Errorf("errors.roles.change-status")
-	}
-
-	return nil
+	return err
 }
 
-func ToRoleDomain(role dto.RoleDTO) domain.Role {
-	return domain.Role{
-		Base: domain.Base{
+func ToRoleDomain(role dto.RoleDTO) authBaseDomain.Role {
+	return authBaseDomain.Role{
+		Base: authBaseDomain.Base{
 			Id:     role.Id,
 			Active: role.Active,
 		},
@@ -103,7 +91,7 @@ func ToRoleDomain(role dto.RoleDTO) domain.Role {
 	}
 }
 
-func ToRoleDTO(role domain.Role) dto.RoleDTO {
+func ToRoleDTO(role authBaseDomain.Role) dto.RoleDTO {
 	return dto.RoleDTO{
 		BaseDTO: dto.BaseDTO{
 			Id: role.Id,

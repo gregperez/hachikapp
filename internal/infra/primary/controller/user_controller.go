@@ -73,7 +73,7 @@ func (userC *UserController) RunController() {
 func (userC *UserController) GetAll() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		page, pageSize, offset := handlePagination(c)
-		usersDb, total, err := userC.userService.FindAll(pageSize, offset)
+		usersDb, total, err := userC.userService.FindAll(c.Request.Context(), pageSize, offset)
 		if err != nil {
 			writeTranslatedError(userC.t, c, http.StatusBadRequest, err)
 			return
@@ -120,7 +120,7 @@ func (userC *UserController) Create() func(c *gin.Context) {
 				true,
 			),
 		}, req.Password)
-		if err := userC.userService.Create(user); err != nil {
+		if err := userC.userService.Create(c.Request.Context(), user); err != nil {
 			writeUseCaseError(userC.t, c, err)
 			return
 		}
@@ -135,7 +135,7 @@ func (userC *UserController) Create() func(c *gin.Context) {
 func (userC *UserController) GetById() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id := c.Param("id")
-		user, err := userC.userService.FindById(id)
+		user, err := userC.userService.FindById(c.Request.Context(), id)
 		if err != nil {
 			writeTranslatedError(userC.t, c, http.StatusBadRequest, err)
 			return
@@ -159,7 +159,7 @@ func (userC *UserController) FindFullById() func(c *gin.Context) {
 			})
 			return
 		}
-		user, err := userC.userService.FindFullById(userToken.GetId())
+		user, err := userC.userService.FindFullById(c.Request.Context(), userToken.GetId())
 		if err != nil {
 			writeTranslatedError(userC.t, c, http.StatusBadRequest, err)
 			return
@@ -189,7 +189,7 @@ func (userC *UserController) UpdateOwnProfile() func(c *gin.Context) {
 		if !handleBind(userC.t, c, &req) {
 			return
 		}
-		if err := userC.userService.UpdateOwnProfile(userToken.GetId(), userToken.GetId(), req.Name); err != nil {
+		if err := userC.userService.UpdateOwnProfile(c.Request.Context(), userToken.GetId(), userToken.GetId(), req.Name); err != nil {
 			writeUseCaseError(userC.t, c, err)
 			return
 		}
@@ -227,7 +227,7 @@ func (userC *UserController) AdminUpdate() func(c *gin.Context) {
 		if !handleBind(userC.t, c, &req) {
 			return
 		}
-		if err := userC.userService.AdminUpdateUser(id, req.Name, req.Email); err != nil {
+		if err := userC.userService.AdminUpdateUser(c.Request.Context(), id, req.Name, req.Email); err != nil {
 			writeUseCaseError(userC.t, c, err)
 			return
 		}
@@ -250,7 +250,7 @@ func (userC *UserController) AssignRoles() func(c *gin.Context) {
 		if !handleBind(userC.t, c, &req) {
 			return
 		}
-		if err := userC.userService.AssignRoles(actor.GetId(), c.Param("id"), req.RoleIDs); err != nil {
+		if err := userC.userService.AssignRoles(c.Request.Context(), actor.GetId(), c.Param("id"), req.RoleIDs); err != nil {
 			writeUseCaseError(userC.t, c, err)
 			return
 		}
@@ -273,7 +273,7 @@ func (userC *UserController) SetAdminFlag() func(c *gin.Context) {
 		if !handleBind(userC.t, c, &req) {
 			return
 		}
-		if err := userC.userService.SetAdminFlag(actor.GetId(), c.Param("id"), req.IsAdmin); err != nil {
+		if err := userC.userService.SetAdminFlag(c.Request.Context(), actor.GetId(), c.Param("id"), req.IsAdmin); err != nil {
 			writeUseCaseError(userC.t, c, err)
 			return
 		}
@@ -292,7 +292,11 @@ func (userC *UserController) ChangeStatus() func(c *gin.Context) {
 			})
 			return
 		}
-		if err := userC.userService.ChangeStatus(actor.GetId(), c.Param("id")); err != nil {
+		var req users.SetActiveRequest
+		if !handleBind(userC.t, c, &req) {
+			return
+		}
+		if err := userC.userService.SetActive(c.Request.Context(), actor.GetId(), c.Param("id"), req.Active); err != nil {
 			writeUseCaseError(userC.t, c, err)
 			return
 		}
@@ -306,6 +310,12 @@ func writeUseCaseError(t config.ITranslate, c *gin.Context, err error) {
 		c.JSON(http.StatusForbidden, dto.ResponseDto{
 			Status:  http.StatusForbidden,
 			Message: "forbidden",
+			Data:    nil,
+		})
+	case errors.Is(err, domain.ErrNotFound):
+		c.JSON(http.StatusNotFound, dto.ResponseDto{
+			Status:  http.StatusNotFound,
+			Message: "not found",
 			Data:    nil,
 		})
 	case errors.Is(err, domain.ErrLastAdmin):

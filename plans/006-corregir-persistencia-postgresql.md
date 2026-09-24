@@ -113,13 +113,13 @@ Las dos búsquedas finales no deben devolver coincidencias productivas. `make ve
 
 ## Criterios de aceptación
 
-- [ ] Todas las operaciones DB reciben contexto del caller.
-- [ ] Todo `Query` cierra rows y comprueba `rows.Err()`.
-- [ ] Ningún error de DB relevante se ignora o sobrescribe.
-- [ ] Cero filas afectadas tiene semántica not-found.
-- [ ] Escrituras compuestas son atómicas y están probadas con fallo intermedio.
-- [ ] `UpdateRole` persiste todo su agregado.
-- [ ] Cambios de estado son idempotentes.
+- [x] Todas las operaciones DB reciben contexto del caller.
+- [x] Todo `Query` cierra rows y comprueba `rows.Err()`.
+- [x] Ningún error de DB relevante se ignora o sobrescribe.
+- [x] Cero filas afectadas tiene semántica not-found.
+- [x] Escrituras compuestas son atómicas y están probadas con fallo intermedio.
+- [x] `UpdateRole` persiste todo su agregado.
+- [x] Cambios de estado son idempotentes.
 
 ## Condiciones de parada
 

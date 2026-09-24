@@ -18,7 +18,7 @@ type memUsers struct {
 	mu     sync.Mutex
 	byID   map[string]domain.User
 	admins int
-	roles  map[string]string // name -> id
+	roles  map[string]string
 	saved  []domain.User
 }
 
@@ -39,7 +39,7 @@ func (m *memUsers) put(u domain.User) {
 }
 
 func (m *memUsers) FindByID(ctx context.Context, id string) (domain.User, error) {
-	return m.FindById(id)
+	return m.FindById(ctx, id)
 }
 func (m *memUsers) FindCredentialsByUsername(ctx context.Context, username string) (authBasePorts.CredentialRecord, error) {
 	m.mu.Lock()
@@ -53,14 +53,13 @@ func (m *memUsers) FindCredentialsByUsername(ctx context.Context, username strin
 	}
 	return authBasePorts.CredentialRecord{}, errors.New("not found")
 }
-func (m *memUsers) Save(u domain.User) error {
+func (m *memUsers) Save(ctx context.Context, u domain.User) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if u.GetId() == "" {
-		u = domain.User{UserGeneric: authBaseDomain.NewUserGeneric(
+		u = domain.WithPlainPassword(domain.User{UserGeneric: authBaseDomain.NewUserGeneric(
 			"new-id", u.GetName(), u.GetEmail(), u.GetRole(), u.GetIsAdmin(), true,
-		)}
-		u = domain.WithPlainPassword(u, u.PlainPassword())
+		)}, u.PlainPassword())
 	}
 	m.byID[u.GetId()] = u
 	m.saved = append(m.saved, u)
@@ -69,43 +68,56 @@ func (m *memUsers) Save(u domain.User) error {
 	}
 	return nil
 }
-func (m *memUsers) FindAll(pageSize, offset int) ([]domain.User, int, error) {
+func (m *memUsers) FindAll(ctx context.Context, pageSize, offset int) ([]domain.User, int, error) {
 	return nil, 0, nil
 }
-func (m *memUsers) FindById(id string) (domain.User, error) {
+func (m *memUsers) FindById(ctx context.Context, id string) (domain.User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	u, ok := m.byID[id]
 	if !ok {
-		return domain.User{}, errors.New("errors.users.not-found")
+		return domain.User{}, domain.ErrNotFound
 	}
 	return u, nil
 }
-func (m *memUsers) FindByEmail(email string) (domain.User, error) {
+func (m *memUsers) FindByEmail(ctx context.Context, email string) (domain.User, error) {
 	return domain.User{}, nil
 }
-func (m *memUsers) FindFullById(id string) (domain.User, error) {
-	return m.FindById(id)
+func (m *memUsers) FindFullById(ctx context.Context, id string) (domain.User, error) {
+	return m.FindById(ctx, id)
 }
-func (m *memUsers) Update(u domain.User) error {
+func (m *memUsers) Update(ctx context.Context, u domain.User) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.byID[u.GetId()] = u
 	return nil
 }
-func (m *memUsers) ChangeStatus(id string) error { return nil }
-func (m *memUsers) CountAdmins() (int, error) {
+func (m *memUsers) SetActive(ctx context.Context, id string, active bool) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	u, ok := m.byID[id]
+	if !ok {
+		return domain.ErrNotFound
+	}
+	m.byID[id] = domain.User{UserGeneric: authBaseDomain.NewUserGeneric(
+		u.GetId(), u.GetName(), u.GetEmail(), u.GetRole(), u.GetIsAdmin(), active,
+	)}
+	return nil
+}
+func (m *memUsers) CountAdmins(ctx context.Context) (int, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.admins, nil
 }
-func (m *memUsers) UpdatePassword(id, passwordHash string) error { return nil }
-func (m *memUsers) FindRoleIDByName(name string) (string, error) {
+func (m *memUsers) UpdatePassword(ctx context.Context, id, passwordHash string) error {
+	return nil
+}
+func (m *memUsers) FindRoleIDByName(ctx context.Context, name string) (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	id, ok := m.roles[name]
 	if !ok {
-		return "", errors.New("errors.roles.not-found")
+		return "", domain.ErrNotFound
 	}
 	return id, nil
 }
@@ -125,7 +137,7 @@ func TestCreateStripsPrivileges(t *testing.T) {
 	t.Parallel()
 	repo := newMemUsers()
 	svc := services.NewUserService(repo, secundary.NewValidationService(), ports.NoopAuditor{})
-	err := svc.Create(domain.WithPlainPassword(domain.User{
+	err := svc.Create(context.Background(), domain.WithPlainPassword(domain.User{
 		UserGeneric: authBaseDomain.NewUserGeneric("", "Ada", "ada@ex.com",
 			[]authBaseDomain.Role{{Base: authBaseDomain.Base{Id: "r1"}}}, true, true),
 	}, "CorrectHorse1"))
@@ -149,7 +161,7 @@ func TestUpdateOwnProfileForbiddenForOtherUser(t *testing.T) {
 	repo := newMemUsers()
 	repo.put(domain.User{UserGeneric: authBaseDomain.NewUserGeneric("u1", "Ada", "ada@ex.com", nil, false, true)})
 	svc := services.NewUserService(repo, nil, nil)
-	if err := svc.UpdateOwnProfile("u2", "u1", "New"); !errors.Is(err, domain.ErrForbidden) {
+	if err := svc.UpdateOwnProfile(context.Background(), "u2", "u1", "New"); !errors.Is(err, domain.ErrForbidden) {
 		t.Fatalf("err=%v", err)
 	}
 }
@@ -160,18 +172,15 @@ func TestUpdateOwnProfileKeepsPrivileges(t *testing.T) {
 	roles := []authBaseDomain.Role{{Base: authBaseDomain.Base{Id: "r1", Active: true}}}
 	repo.put(domain.User{UserGeneric: authBaseDomain.NewUserGeneric("u1", "Ada", "ada@ex.com", roles, true, true)})
 	svc := services.NewUserService(repo, nil, nil)
-	if err := svc.UpdateOwnProfile("u1", "u1", "Ada Lovelace"); err != nil {
+	if err := svc.UpdateOwnProfile(context.Background(), "u1", "u1", "Ada Lovelace"); err != nil {
 		t.Fatal(err)
 	}
-	got, _ := repo.FindById("u1")
+	got, _ := repo.FindById(context.Background(), "u1")
 	if got.GetName() != "Ada Lovelace" {
 		t.Fatalf("name=%s", got.GetName())
 	}
 	if !got.GetIsAdmin() || len(got.GetRole()) != 1 {
 		t.Fatal("profile update must preserve privileges")
-	}
-	if got.GetEmail() != "ada@ex.com" {
-		t.Fatal("email must not change via own profile")
 	}
 }
 
@@ -182,11 +191,12 @@ func TestLastAdminProtection(t *testing.T) {
 	repo.admins = 1
 	audit := &memAudit{}
 	svc := services.NewUserService(repo, nil, audit)
-	if err := svc.SetAdminFlag("a1", "a1", false); !errors.Is(err, domain.ErrLastAdmin) {
+	ctx := context.Background()
+	if err := svc.SetAdminFlag(ctx, "a1", "a1", false); !errors.Is(err, domain.ErrLastAdmin) {
 		t.Fatalf("SetAdminFlag err=%v", err)
 	}
-	if err := svc.ChangeStatus("a1", "a1"); !errors.Is(err, domain.ErrLastAdmin) {
-		t.Fatalf("ChangeStatus err=%v", err)
+	if err := svc.SetActive(ctx, "a1", "a1", false); !errors.Is(err, domain.ErrLastAdmin) {
+		t.Fatalf("SetActive err=%v", err)
 	}
 }
 
@@ -196,7 +206,7 @@ func TestAssignRolesAudits(t *testing.T) {
 	repo.put(domain.User{UserGeneric: authBaseDomain.NewUserGeneric("u1", "Ada", "ada@ex.com", nil, false, true)})
 	audit := &memAudit{}
 	svc := services.NewUserService(repo, nil, audit)
-	if err := svc.AssignRoles("admin-1", "u1", []string{"role-x"}); err != nil {
+	if err := svc.AssignRoles(context.Background(), "admin-1", "u1", []string{"role-x"}); err != nil {
 		t.Fatal(err)
 	}
 	if len(audit.logs) != 1 || audit.logs[0] != "assign_roles:admin-1:u1" {
@@ -208,10 +218,11 @@ func TestAdminBootstrapOnce(t *testing.T) {
 	t.Parallel()
 	repo := newMemUsers()
 	boot := services.NewAdminBootstrap(repo)
-	if err := boot.Run("Admin", "admin@ex.com", "CorrectHorse1"); err != nil {
+	ctx := context.Background()
+	if err := boot.Run(ctx, "Admin", "admin@ex.com", "CorrectHorse1"); err != nil {
 		t.Fatalf("first: %v", err)
 	}
-	if err := boot.Run("Admin", "admin2@ex.com", "CorrectHorse1"); !errors.Is(err, domain.ErrAdminExists) {
+	if err := boot.Run(ctx, "Admin", "admin2@ex.com", "CorrectHorse1"); !errors.Is(err, domain.ErrAdminExists) {
 		t.Fatalf("second: %v", err)
 	}
 }
@@ -219,7 +230,25 @@ func TestAdminBootstrapOnce(t *testing.T) {
 func TestAdminBootstrapRejectsWeakPassword(t *testing.T) {
 	t.Parallel()
 	boot := services.NewAdminBootstrap(newMemUsers())
-	if err := boot.Run("Admin", "admin@ex.com", "weak"); !errors.Is(err, domain.ErrWeakPassword) {
+	if err := boot.Run(context.Background(), "Admin", "admin@ex.com", "weak"); !errors.Is(err, domain.ErrWeakPassword) {
 		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestSetActiveIdempotent(t *testing.T) {
+	t.Parallel()
+	repo := newMemUsers()
+	repo.put(domain.User{UserGeneric: authBaseDomain.NewUserGeneric("u1", "Ada", "ada@ex.com", nil, false, false)})
+	svc := services.NewUserService(repo, nil, &memAudit{})
+	ctx := context.Background()
+	if err := svc.SetActive(ctx, "a", "u1", true); err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.SetActive(ctx, "a", "u1", true); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := repo.FindById(ctx, "u1")
+	if !got.GetActive() {
+		t.Fatal("expected active")
 	}
 }

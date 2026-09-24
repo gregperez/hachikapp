@@ -22,6 +22,8 @@ require (
 	golang.org/x/text v0.42.0
 )
 
+replace github.com/WilsonSayago/authBase/v3 => ../authBase
+
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect

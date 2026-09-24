@@ -86,7 +86,7 @@ func run() error {
 	}
 
 	boot := services.NewAdminBootstrap(instance.GetUserRepositoryInstance())
-	if err := boot.Run(name, email, password); err != nil {
+	if err := boot.Run(context.Background(), name, email, password); err != nil {
 		if errors.Is(err, domain.ErrAdminExists) {
 			return fmt.Errorf("administrator already exists")
 		}

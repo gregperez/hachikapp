@@ -35,3 +35,8 @@ type ChangePasswordRequest struct {
 	CurrentPassword string `json:"currentPassword" binding:"required"`
 	NewPassword     string `json:"newPassword" binding:"required,min=12"`
 }
+
+// SetActiveRequest sets the desired active flag (idempotent).
+type SetActiveRequest struct {
+	Active bool `json:"active"`
+}

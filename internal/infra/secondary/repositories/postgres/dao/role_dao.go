@@ -1,223 +1,165 @@
 package dao
 
 import (
-	"database/sql"
+	"context"
+	"errors"
 	"fmt"
+
+	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
+	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
-
-	"github.com/pkg/errors"
-
-	domain "github.com/WilsonSayago/authBase/v3/core/domain"
 	"github.com/WilsonSayago/initModules/v2"
-	log "github.com/sirupsen/logrus"
+	"github.com/jackc/pgx/v5"
 )
 
 type IRoleDao interface {
-	FindAllByUserId(userId string) ([]dto.RoleDTO, error)
-	FindById(userId string) (dto.RoleDTO, error)
-	FindAll(pageSize, offset int) ([]dto.RoleDTO, error)
-	Save(role dto.RoleDTO) (dto.RoleDTO, error)
-	Update(role dto.RoleDTO) error
-	FindByName(name string) (dto.RoleDTO, error)
-	ChangeStatus(id string) error
-	Count() (int, error)
+	FindAllByUserId(ctx context.Context, userId string) ([]dto.RoleDTO, error)
+	FindById(ctx context.Context, roleId string) (dto.RoleDTO, error)
+	FindAll(ctx context.Context, pageSize, offset int) ([]dto.RoleDTO, error)
+	Save(ctx context.Context, role dto.RoleDTO) (dto.RoleDTO, error)
+	Update(ctx context.Context, role dto.RoleDTO) error
+	FindByName(ctx context.Context, name string) (dto.RoleDTO, error)
+	SetActive(ctx context.Context, id string, active bool) error
+	Count(ctx context.Context) (int, error)
 }
 
 type RoleDao struct {
-	DbPgx4 *database.Database
+	db database.DBTX
 }
 
-func NewRoleDaoInstance(db *database.Database) IRoleDao {
+func NewRoleDaoInstance(db database.DBTX) IRoleDao {
 	return initModules.Once(func() *RoleDao {
-		return &RoleDao{DbPgx4: db}
+		return &RoleDao{db: db}
 	})
 }
 
-func (r *RoleDao) FindAllByUserId(userId string) ([]dto.RoleDTO, error) {
-	var id, name string
-	var routes []domain.RoutePathEnum
-	var permissions []dto.PermissionDTO
+// NewRoleDaoForTest builds a DAO without process-wide Once (tests only).
+func NewRoleDaoForTest(db database.DBTX) IRoleDao {
+	return &RoleDao{db: db}
+}
 
-	query := "select r.id, r.name, r.routes, r.permissions " +
-		" from public.roles r " +
-		" inner join users_roles ur on ur.role_id = r.id " +
-		" where ur.user_id = $1;"
-	rows, err := (*r.DbPgx4).QueryRows(query, userId)
-
+func (r *RoleDao) FindAllByUserId(ctx context.Context, userId string) ([]dto.RoleDTO, error) {
+	const q = `SELECT r.id, r.name, r.routes, r.permissions, r.active
+FROM public.roles r
+INNER JOIN public.users_roles ur ON ur.role_id = r.id
+WHERE ur.user_id = $1
+ORDER BY r.id`
+	rows, err := r.db.Query(ctx, q, userId)
 	if err != nil {
-		log.Errorf("error in FindAll Roles by userId, error: %s", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("query roles by user: %w", err)
 	}
+	defer rows.Close()
 
 	list := make([]dto.RoleDTO, 0)
 	for rows.Next() {
-		err = rows.Scan(&id, &name, &routes, &permissions)
-		if err != nil {
-			return nil, fmt.Errorf("could not get roles: %v", err)
+		var item dto.RoleDTO
+		var routes []authBaseDomain.RoutePathEnum
+		if err := rows.Scan(&item.Id, &item.Name, &routes, &item.Permissions, &item.Active); err != nil {
+			return nil, fmt.Errorf("scan role: %w", err)
 		}
-		list = append(list, dto.RoleDTO{
-			BaseDTO: dto.BaseDTO{
-				Id: id,
-			},
-			Name:        name,
-			Routes:      routes,
-			Permissions: permissions,
-		})
+		item.Routes = routes
+		list = append(list, item)
 	}
-
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate roles by user: %w", err)
+	}
 	return list, nil
 }
 
-func (r *RoleDao) FindById(roleId string) (dto.RoleDTO, error) {
-	var id, name string
-	var routes []domain.RoutePathEnum
-	var permissions []dto.PermissionDTO
-	var active bool
-
-	query := "select r.id, r.name, r.routes, r.permissions, active " +
-		" from public.roles r " +
-		" where r.id = $1;"
-	row := (*r.DbPgx4).QueryRow(query, roleId)
-
-	err := row.Scan(&id, &name, &routes, &permissions, &active)
+func (r *RoleDao) FindById(ctx context.Context, roleId string) (dto.RoleDTO, error) {
+	const q = `SELECT r.id, r.name, r.routes, r.permissions, r.active FROM public.roles r WHERE r.id = $1`
+	var item dto.RoleDTO
+	var routes []authBaseDomain.RoutePathEnum
+	err := r.db.QueryRow(ctx, q, roleId).Scan(&item.Id, &item.Name, &routes, &item.Permissions, &item.Active)
 	if err != nil {
-		log.Errorf("error in FindById Role, error: %s", err.Error())
-		return dto.RoleDTO{}, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return dto.RoleDTO{}, domain.ErrNotFound
+		}
+		return dto.RoleDTO{}, fmt.Errorf("find role by id: %w", err)
 	}
-
-	data := dto.RoleDTO{
-		BaseDTO: dto.BaseDTO{
-			Id:     id,
-			Active: active,
-		},
-		Name:        name,
-		Routes:      routes,
-		Permissions: permissions,
-	}
-
-	return data, nil
+	item.Routes = routes
+	return item, nil
 }
 
-func (r *RoleDao) FindAll(pageSize, offset int) ([]dto.RoleDTO, error) {
-	var id, name string
-	var routes []domain.RoutePathEnum
-	var permissions []dto.PermissionDTO
-	var active bool
-
-	query := "select r.id, r.name, r.routes, r.permissions, active " +
-		" from public.roles r ORDER BY r.id LIMIT $1 OFFSET $2;"
-	rows, err := (*r.DbPgx4).QueryRows(query, pageSize, offset)
-
+func (r *RoleDao) FindAll(ctx context.Context, pageSize, offset int) ([]dto.RoleDTO, error) {
+	const q = `SELECT r.id, r.name, r.routes, r.permissions, r.active
+FROM public.roles r ORDER BY r.id LIMIT $1 OFFSET $2`
+	rows, err := r.db.Query(ctx, q, pageSize, offset)
 	if err != nil {
-		log.Errorf("error in FindAll Roles, error: %s", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("query roles: %w", err)
 	}
+	defer rows.Close()
 
 	list := make([]dto.RoleDTO, 0)
 	for rows.Next() {
-		err = rows.Scan(&id, &name, &routes, &permissions, &active)
-		if err != nil {
-			return nil, fmt.Errorf("could not get roles: %v", err)
+		var item dto.RoleDTO
+		var routes []authBaseDomain.RoutePathEnum
+		if err := rows.Scan(&item.Id, &item.Name, &routes, &item.Permissions, &item.Active); err != nil {
+			return nil, fmt.Errorf("scan role: %w", err)
 		}
-
-		list = append(list, dto.RoleDTO{
-			BaseDTO: dto.BaseDTO{
-				Id:     id,
-				Active: active,
-			},
-			Name:        name,
-			Routes:      routes,
-			Permissions: permissions,
-		})
+		item.Routes = routes
+		list = append(list, item)
 	}
-
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate roles: %w", err)
+	}
 	return list, nil
 }
 
-func (r *RoleDao) Save(role dto.RoleDTO) (dto.RoleDTO, error) {
-	query := "insert into public.roles (name, routes, permissions) values ($1, $2, $3) returning id;"
-	row := (*r.DbPgx4).QueryRow(query, role.Name, role.Routes, role.Permissions)
-
+func (r *RoleDao) Save(ctx context.Context, role dto.RoleDTO) (dto.RoleDTO, error) {
+	const q = `INSERT INTO public.roles (name, routes, permissions) VALUES ($1, $2, $3) RETURNING id`
 	var id string
-	err := row.Scan(&id)
+	err := r.db.QueryRow(ctx, q, role.Name, role.Routes, role.Permissions).Scan(&id)
 	if err != nil {
-		log.Errorf("error in Save Role, error: %s", err.Error())
-		return dto.RoleDTO{}, err
+		return dto.RoleDTO{}, fmt.Errorf("save role: %w", err)
 	}
-
-	return dto.RoleDTO{
-		BaseDTO: dto.BaseDTO{
-			Id: id,
-		},
-		Name:        role.Name,
-		Routes:      role.Routes,
-		Permissions: role.Permissions,
-	}, nil
+	role.Id = id
+	return role, nil
 }
 
-func (r *RoleDao) FindByName(name string) (dto.RoleDTO, error) {
-	var id string
-	var routes []domain.RoutePathEnum
-	var permissions []dto.PermissionDTO
-	var active bool
-
-	query := "select r.id, r.name, r.routes, r.permissions, active " +
-		" from public.roles r " +
-		" where r.name = $1;"
-	row := (*r.DbPgx4).QueryRow(query, name)
-
-	err := row.Scan(&id, &name, &routes, &permissions, &active)
+func (r *RoleDao) FindByName(ctx context.Context, name string) (dto.RoleDTO, error) {
+	const q = `SELECT r.id, r.name, r.routes, r.permissions, r.active FROM public.roles r WHERE r.name = $1`
+	var item dto.RoleDTO
+	var routes []authBaseDomain.RoutePathEnum
+	err := r.db.QueryRow(ctx, q, name).Scan(&item.Id, &item.Name, &routes, &item.Permissions, &item.Active)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return dto.RoleDTO{}, nil
-		} else {
-			log.Errorf("error in FindByName Role, error: %s", err.Error())
-			return dto.RoleDTO{}, err
 		}
+		return dto.RoleDTO{}, fmt.Errorf("find role by name: %w", err)
 	}
-
-	return dto.RoleDTO{
-		BaseDTO: dto.BaseDTO{
-			Id:     id,
-			Active: active,
-		},
-		Name:        name,
-		Routes:      routes,
-		Permissions: permissions,
-	}, nil
+	item.Routes = routes
+	return item, nil
 }
 
-func (r *RoleDao) ChangeStatus(id string) error {
-	query := "UPDATE public.roles SET active = NOT active WHERE id = $1;"
-	err := (*r.DbPgx4).Exec(query, id)
+func (r *RoleDao) SetActive(ctx context.Context, id string, active bool) error {
+	tag, err := r.db.Exec(ctx, `UPDATE public.roles SET active = $2 WHERE id = $1`, id, active)
 	if err != nil {
-		log.Errorf("error in Disable Role, error: %s", err.Error())
-		return err
+		return fmt.Errorf("set role active: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
 	}
 	return nil
 }
 
-func (r *RoleDao) Count() (int, error) {
-	query := "select count(id) from public.roles;"
-	row := (*r.DbPgx4).QueryRow(query)
-
+func (r *RoleDao) Count(ctx context.Context) (int, error) {
 	var count int
-	err := row.Scan(&count)
-	if err != nil {
-		log.Errorf("error in Count Roles, error: %s", err.Error())
-		return 0, err
+	if err := r.db.QueryRow(ctx, `SELECT COUNT(id) FROM public.roles`).Scan(&count); err != nil {
+		return 0, fmt.Errorf("count roles: %w", err)
 	}
-
 	return count, nil
 }
 
-func (r *RoleDao) Update(role dto.RoleDTO) error {
-	query := "update public.roles set name = $1, permissions = $2 where id = $3;"
-	err := (*r.DbPgx4).Exec(query, role.Name, role.Permissions, role.Id)
+func (r *RoleDao) Update(ctx context.Context, role dto.RoleDTO) error {
+	const q = `UPDATE public.roles SET name = $1, routes = $2, permissions = $3 WHERE id = $4`
+	tag, err := r.db.Exec(ctx, q, role.Name, role.Routes, role.Permissions, role.Id)
 	if err != nil {
-		log.Errorf("error in Update Role, error: %s", err.Error())
-		return err
+		return fmt.Errorf("update role: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
 	}
 	return nil
 }

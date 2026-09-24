@@ -15,4 +15,7 @@ var (
 
 	// ErrAdminExists is returned by bootstrap when an administrator already exists.
 	ErrAdminExists = errors.New("administrator already exists")
+
+	// ErrNotFound is returned when a mutation or lookup targets a missing row.
+	ErrNotFound = errors.New("not found")
 )

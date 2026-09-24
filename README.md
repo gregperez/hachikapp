@@ -66,9 +66,11 @@ Security operations (rotation, bootstrap contract, exposure response, secret sca
 
 **Auth note:** after upgrading to authBase v3, all prior JWTs are invalid; users must sign in again. Refresh tokens rotate atomically and are never stored in plaintext.
 
+**Local module note:** `go.mod` currently `replace`s `authBase/v3` to `../authBase` until that module is published with the Gin adapter/`SetActive` surface used here (O-030). CI and isolated clones need that sibling checkout or a published version.
+
 ## Dependencies
 
-Go minimum **1.26** / preferred toolchain **1.27.1**. Update policy, deferred majors, and Logrus→slog decision: [docs/dependency-policy.md](docs/dependency-policy.md).
+Go minimum **1.26.6** / preferred toolchain **1.27.1**. Update policy, deferred majors, and Logrus→slog decision: [docs/dependency-policy.md](docs/dependency-policy.md).
 
 ## Development quality gate
 

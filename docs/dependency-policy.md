@@ -6,7 +6,7 @@ Last reviewed: 2026-09-23 (plan 009).
 
 | Role | Version | Notes |
 |---|---|---|
-| Minimum (`go` in `go.mod`) | 1.26.0 | CI matrix job `go-min` with `GOTOOLCHAIN=local` |
+| Minimum (`go` in `go.mod`) | 1.26.6 | CI matrix job `go-min` with `GOTOOLCHAIN=local` |
 | Preferred (`toolchain` in `go.mod`) | 1.27.1 | CI matrix job `go-preferred` |
 
 Raise the minimum only with an explicit plan; update README/CI together.

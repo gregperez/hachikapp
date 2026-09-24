@@ -3,11 +3,11 @@ package dto
 import "time"
 
 type BaseDTO struct {
-	Id        string    `bson:"id,omitempty"`
-	UpdatedAt time.Time `bson:"updatedAt,omitempty"`
-	CreatedAt time.Time `bson:"createdAt,omitempty"`
-	CreatedBy string    `bson:"createdBy,omitempty"`
-	UpdatedBy string    `bson:"updatedBy,omitempty"`
-	Active    bool      `bson:"active,omitempty"`
-	Messages  string    `bson:"messagesDefault,omitempty"`
+	Id        string    `json:"id,omitempty"`
+	UpdatedAt time.Time `json:"updatedAt,omitempty"`
+	CreatedAt time.Time `json:"createdAt,omitempty"`
+	CreatedBy string    `json:"createdBy,omitempty"`
+	UpdatedBy string    `json:"updatedBy,omitempty"`
+	Active    bool      `json:"active,omitempty"`
+	Messages  string    `json:"messagesDefault,omitempty"`
 }

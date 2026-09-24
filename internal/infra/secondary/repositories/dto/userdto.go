@@ -2,10 +2,10 @@ package dto
 
 type UserDTO struct {
 	BaseDTO
-	Name        string          `bson:"name,omitempty"`
-	Email       string          `bson:"email,omitempty"`
-	Password    string          `bson:"password,omitempty"`
-	Permissions []PermissionDTO `bson:"permissions,omitempty"`
-	Roles       []RoleDTO       `bson:"roles,omitempty"`
-	IsAdmin     bool            `bson:"isAdmin,omitempty"`
+	Name        string          `json:"name,omitempty"`
+	Email       string          `json:"email,omitempty"`
+	Password    string          `json:"password,omitempty"`
+	Permissions []PermissionDTO `json:"permissions,omitempty"`
+	Roles       []RoleDTO       `json:"roles,omitempty"`
+	IsAdmin     bool            `json:"isAdmin,omitempty"`
 }

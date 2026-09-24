@@ -107,7 +107,13 @@ durables gestionadas desde este workspace:
 | O-027 | P2 | Logrus queda en `v1.9.4`; `go list -m -u` ofrece `v1.10.2` | Se omite un minor deliberadamente (política patch-only + decisión slog). | Resuelto | Migrado a `log/slog` (plan 011); Logrus eliminado de `go.mod`. |
 | O-028 | P2 | Gin `v1.12.0` cambió `Context.Get/Set` a claves `any`; adaptador local reexpone `string` | Sin el wrapper, el código no compila contra authBase. El riesgo residual es divergencia futura de la API de Gin. | Resuelto | `ginadapter` implementa `Get/Set(string)` y assertion de interfaz; cubierta por test unitario. |
 | O-029 | P1 | `GOTOOLCHAIN=local ... make verify` con Go `1.26.3` falla en `govulncheck`: diez vulnerabilidades alcanzables de la biblioteca estándar, con fixes desde `1.26.4` a `1.26.6` | La versión mínima configurada y su job CI no cumplen la condición de no aceptar vulnerabilidades alcanzables; afecta rutas HTTP/TLS y carga de configuración. | Resuelto | `go.mod` + CI en `1.26.6`. |
-| O-030 | P1 | `go.mod:24` conserva `replace github.com/WilsonSayago/authBase/v3 => ../authBase`, mientras CI sólo hace checkout del repositorio actual | El build depende de un directorio hermano local que no existe en un checkout aislado de GitHub Actions o de consumidores; la actualización no es reproducible fuera de este workspace. | Bloqueado externo | Publicar authBase versionado; ver Decisiones. Hasta entonces `replace` es requerido. |
+| O-030 | P1 | `go.mod:24` conserva `replace github.com/WilsonSayago/authBase/v3 => ../authBase`, mientras CI sólo hace checkout del repositorio actual | El build depende de un directorio hermano local que no existe en un checkout aislado de GitHub Actions o de consumidores; la actualización no es reproducible fuera de este workspace. | Resuelto | Publicado [`authBase/v3.0.1`](https://github.com/WilsonSayago/authBase/releases/tag/v3.0.1) (API con `context`/`SetActive`) e [`initModules/v2.0.0`](https://github.com/WilsonSayago/initModules/releases/tag/v2.0.0); eliminado el `replace` local. Usar `v3.0.1` porque el proxy de Go congeló un árbol distinto bajo `v3.0.0`. |
+
+### Observaciones de la verificación del plan 011
+
+| ID | Prioridad | Evidencia | Impacto | Estado | Cierre esperado |
+|---|---:|---|---|---|---|
+| O-031 | P2 | `cmd/main.go:79` ejecuta `slog.SetDefault(logger)`; `internal/infra/config/instance/usecase.go:72` crea `audit.NewLogger(nil)`, que cae en `slog.Default()` | Aunque la migración elimina Logrus y los logs HTTP se inyectan correctamente, el proceso conserva estado global mutable. Tests paralelos, múltiples inicializaciones en proceso y consumidores embebidos pueden heredar o sustituir un logger ajeno; no se satisface el alcance declarado de logger totalmente inyectable. | Abierto | Propagar `*slog.Logger` por dependencias de bootstrap/instancias y eliminar los fallbacks productivos a `slog.Default()`/`slog.SetDefault`; añadir prueba que construya dos aplicaciones con loggers aislados. |
 
 ### Plantilla para observaciones de los planes 005–009
 
@@ -179,7 +185,7 @@ registrar el commit y la prueba que lo confirma.
 - [x] Ninguna fila P0/P1 permanece abierta o bloqueada sin decisión explícita del responsable.
 - [x] Logout diferencia un fallo de infraestructura de una revocación idempotente.
 - [x] La rotación PostgreSQL se probó realmente bajo concurrencia y detector de carreras.
-- [ ] Todas las implementaciones y pruebas requeridas están versionadas y funcionan desde un checkout limpio. *(bloqueado por O-030 / `replace` authBase)*
+- [ ] Todas las implementaciones y pruebas requeridas están versionadas y funcionan desde un checkout limpio.
 - [x] Reglas de secretos cubren variantes locales y no excluyen directorios de documentación completos.
 - [x] Los tests de auth cubren las configuraciones y entradas HTTP registradas.
 - [x] Cada observación tiene estado final, evidencia de cierre y no se eliminaron registros históricos.
@@ -196,4 +202,4 @@ registrar el commit y la prueba que lo confirma.
 - Cada revisión posterior a un plan debe añadir sus hallazgos aquí antes de cerrar la tarea.
 - Mantener la prioridad basada en impacto verificable, no en antigüedad de la observación.
 - Programar una revisión de este registro antes de cada release hasta que quede vacío de P0/P1.
-- Residual abierto: O-014 (P2 lifecycle SIGTERM), O-030 (publicar authBase).
+- Residual abierto: O-014 (P2 lifecycle SIGTERM) y O-031 (inyección completa de `slog`).

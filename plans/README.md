@@ -27,8 +27,8 @@ Estos documentos son instrucciones autocontenidas para que otro agente pueda eje
 | 007 | [Endurecer esquema y migraciones](./007-endurecer-esquema-y-migraciones.md) | P1 | M | 003, 004, 006 | Verificado (`554b123`) |
 | 008 | [Estabilizar contrato HTTP y OpenAPI](./008-estabilizar-contrato-http-openapi.md) | P1 | L | 004, 006, 007 | Verificado (`03f1c47`) — observaciones P1/P2 diferidas a 010 |
 | 009 | [Actualizar dependencias de terceros](./009-actualizar-dependencias.md) | P2 | M | 003–008 | Implementado — observaciones P1/P2 diferidas a 010 |
-| 010 | [Remediar observaciones de verificación y cierre](./010-remediar-observaciones-y-cierre.md) | P0/P1 | M | 001–009 | Implementado — residual O-014 (P2) y O-030 (`replace` authBase) |
-| 011 | [Migrar logging a log/slog](./011-migrar-logging-slog.md) | P2 | M | 009, 010 | Hecho (`codex/011-logging-slog`) |
+| 010 | [Remediar observaciones de verificación y cierre](./010-remediar-observaciones-y-cierre.md) | P0/P1 | M | 001–009 | Implementado — residual O-014 (P2); O-030 cerrado con `authBase@v3.0.1` / `initModules@v2.0.0` |
+| 011 | [Migrar logging a log/slog](./011-migrar-logging-slog.md) | P2 | M | 009, 010 | Implementado — residual O-031 (inyección completa de `slog`) |
 
 ```text
 001 -> 002 -> 003 -> 005 -> 006 -----> 007 -> 008 -> 009 -> 010

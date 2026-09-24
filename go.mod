@@ -5,7 +5,7 @@ go 1.26.6
 toolchain go1.27.1
 
 require (
-	github.com/WilsonSayago/authBase/v3 v3.0.0
+	github.com/WilsonSayago/authBase/v3 v3.0.1
 	github.com/WilsonSayago/initModules/v2 v2.0.0
 	github.com/gin-contrib/cors v1.7.9
 	github.com/gin-gonic/gin v1.12.0
@@ -19,8 +19,6 @@ require (
 	golang.org/x/term v0.46.0
 	golang.org/x/text v0.42.0
 )
-
-replace github.com/WilsonSayago/authBase/v3 => ../authBase
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect

@@ -26,4 +26,10 @@
   the same PostgreSQL transaction as the account mutation.
 - Added bounded, retention-aware expired-session cleanup prepared for lifecycle
   registration in plan 015.
+- New passwords use a length-first Unicode policy (15–128 code points), an
+  injected offline blocklist, and contextual-term rejection.
+- Login and refresh endpoints enforce bounded account, trusted-origin, and
+  verified refresh-family quotas with RFC 9457 `429` responses.
+- New credential hashes use Argon2id through authBase v4.2; bcrypt remains
+  verify-only for existing rows.
 - Process logging migrated from Logrus to `log/slog` (O-027 / plan 011).

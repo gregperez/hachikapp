@@ -50,7 +50,7 @@ Never pass the password on argv or commit it.
 | Step | Contract |
 |---|---|
 | Input | Password only via non-echoing prompt (`terminal.ReadPassword`) or a short-lived environment variable that is unset after use. Never argv, never logs, never committed files. |
-| Hashing | Generate bcrypt at runtime via the project password hasher. |
+| Hashing | Generate Argon2id PHC at runtime via authBase. Existing bcrypt hashes remain verify-only during migration. |
 | Uniqueness | Fails if any active administrator already exists. |
 | Failure | Exit non-zero without modifying data when an admin exists or the password is weak. |
 | Atomicity | Persistence runs inside the repository transaction. |
@@ -151,6 +151,38 @@ Expired-session deletion is retention-aware and batch-limited. The lifecycle
 component is constructed and tested but remains unregistered until plan 015
 owns its startup and shutdown ordering. Operators must choose a forensic
 retention window before enabling it in production.
+
+## Password and authentication abuse policy
+
+New passwords contain 15–128 Unicode code points, may contain spaces, and have
+no character-class composition rule. The service also rejects contextual terms
+(such as the user's name or email components) and entries in an offline
+blocklist. `AUTH_PASSWORD_BLOCKLIST` replaces the built-in starter list with a
+comma-separated, deployment-owned list. Never send candidate passwords or
+their hashes to a remote service from the request path.
+
+authBase creates Argon2id hashes with 19 MiB memory, 2 iterations, parallelism
+1, 16-byte salts, and 32-byte keys. bcrypt remains supported only to verify
+existing rows; this release does not claim automatic rehash-on-login. Recalibrate
+Argon2id on production hardware and review the parameters annually.
+
+Login attempts use independent fixed-window quotas for normalized-account and
+origin hashes. Refresh attempts use the origin quota first, then a signed
+refresh-family hash only after JWT verification. A successful request clears
+the account/family penalty but never the shared origin quota. Configure:
+
+- `AUTH_LOGIN_ACCOUNT_LIMIT` (default `5`)
+- `AUTH_LOGIN_ORIGIN_LIMIT` (default `20`)
+- `AUTH_REFRESH_FAMILY_LIMIT` (default `10`)
+- `AUTH_RATE_LIMIT_WINDOW` (default `15m`)
+- `AUTH_RATE_LIMIT_MAX_ENTRIES` (default `10000`)
+- `AUTH_TRUSTED_PROXY_CIDRS` (empty by default)
+
+Forwarded headers are ignored unless the immediate peer belongs to an explicitly
+trusted CIDR. Configure only proxy networks controlled by the deployment.
+The included bounded in-memory limiter is suitable for one replica. Multiple
+replicas require an adapter backed by shared storage so every instance enforces
+the same counters and windows.
 
 ## Adding a new sensitive setting
 

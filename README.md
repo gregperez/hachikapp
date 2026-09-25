@@ -82,6 +82,11 @@ Security operations (rotation, bootstrap contract, exposure response, secret sca
 - [docs/security-operations.md](docs/security-operations.md)
 - `./scripts/check-secrets.sh` (gitleaks)
 
+Authentication throttling is enabled with bounded per-account, per-origin, and
+per-refresh-family quotas. Forwarded client addresses are ignored unless
+`AUTH_TRUSTED_PROXY_CIDRS` explicitly identifies the deployment's proxies.
+Multi-replica deployments must replace the in-memory limiter with shared state.
+
 **Auth note:** the historical pre-v3 → v3 migration invalidated older JWTs. The
 current v4 upgrade changes pagination contracts and does not itself invalidate
 v3 tokens when signing configuration remains unchanged. Refresh tokens rotate

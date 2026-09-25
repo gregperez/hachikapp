@@ -3,9 +3,9 @@ package instance
 import (
 	"fmt"
 
-	authBaseCore "github.com/WilsonSayago/authBase/v3/core"
-	authBaseServices "github.com/WilsonSayago/authBase/v3/core/services"
-	"github.com/WilsonSayago/authBase/v3/infra/config/properties"
+	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
+	authBaseServices "github.com/WilsonSayago/authBase/v4/core/services"
+	"github.com/WilsonSayago/authBase/v4/infra/config/properties"
 	"github.com/WilsonSayago/base-golang/internal/core"
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/services"

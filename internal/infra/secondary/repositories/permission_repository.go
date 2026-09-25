@@ -3,7 +3,7 @@ package repositories
 import (
 	"context"
 
-	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
+	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/ports"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/dao"
 	"github.com/WilsonSayago/initModules/v2"

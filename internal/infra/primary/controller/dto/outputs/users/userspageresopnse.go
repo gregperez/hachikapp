@@ -4,9 +4,8 @@ package userout
 // @swagger:model
 // @Description UserResponse represents a user response.
 type UsersPageResponse struct {
-	Page       int            `json:"page"`
-	PageSize   int            `json:"pageSize"`
-	TotalItems int            `json:"totalItems"`
-	TotalPages int            `json:"totalPages"`
+	Limit      int            `json:"limit"`
+	HasNext    bool           `json:"hasNext"`
+	NextCursor string         `json:"nextCursor,omitempty"`
 	Data       []UserResponse `json:"data"`
 }

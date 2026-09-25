@@ -1,6 +1,6 @@
 package domain
 
-import authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
+import authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 
 // User is the local identity model. It embeds authBase UserGeneric and never
 // exposes password hashes through IUserGeneric.

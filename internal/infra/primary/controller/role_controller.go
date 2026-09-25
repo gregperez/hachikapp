@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/WilsonSayago/base-golang/internal/core/authz"
@@ -12,8 +13,8 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/ginadapter"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
 
-	authBaseCore "github.com/WilsonSayago/authBase/v3/core"
-	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
+	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
+	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	initModules "github.com/WilsonSayago/initModules/v2"
 	"github.com/gin-gonic/gin"
 )
@@ -60,13 +61,13 @@ func (roleC *RoleController) RunController() {
 
 // GetAll godoc
 // @Summary Get all roles
-// @Description Retrieves a paginated list of roles
+// @Description Retrieves roles ordered by createdAt and id descending
 // @Tags Roles
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param page query int false "Page number (>=1)" default(1)
-// @Param pageSize query int false "Page size (1-100)" default(10) maximum(100)
+// @Param limit query int false "Page size (1-100)" default(10) maximum(100)
+// @Param cursor query string false "Opaque cursor returned by the previous page"
 // @Success 200 {object} dto.ResponseDto{data=roles.RolesPageResponse} "List of roles"
 // @Failure 400 {object} httpapi.Problem
 // @Failure 401 {object} httpapi.Problem
@@ -74,36 +75,43 @@ func (roleC *RoleController) RunController() {
 // @Router /v1/roles [get]
 func (roleC *RoleController) GetAll() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		page, pageSize, offset, ok := handlePagination(c)
+		request, ok := handlePagination(c)
 		if !ok {
 			return
 		}
-		rolesDb, total, err := roleC.roleService.GetRoles(c.Request.Context(), pageSize, offset)
+		page, err := roleC.roleService.GetRoles(c.Request.Context(), request)
 		if err != nil {
 			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 
-		list := make([]roles.RoleResponse, 0, len(rolesDb))
-		for _, role := range rolesDb {
-			list = append(list, roles.RoleResponse{
-				BaseDto: dto.BaseDto{
-					Id:     role.GetId(),
-					Active: role.GetActive(),
-				},
-				Name:        role.GetName(),
-				Routes:      roles.ConvertRoutesToDto(role.GetRoutes()),
-				Permissions: convertPermissionsToDto(role.GetPermissions()),
+		list := make([]roles.RoleResponse, 0, len(page.Items))
+		for _, role := range page.Items {
+			list = append(list, roles.MapDomainToResponse(role))
+		}
+
+		nextCursor := ""
+		if page.HasNext && len(page.Items) > 0 {
+			last := page.Items[len(page.Items)-1]
+			nextCursor, err = httpapi.EncodeCursor(authBaseDomain.CursorKey{
+				CreatedAt: last.CreatedAt,
+				ID:        last.GetId(),
 			})
+			if err != nil {
+				httpapi.WriteProblem(c, httpapi.MapError(
+					fmt.Errorf("encode roles cursor: %v", err),
+					httpapi.RequestID(c),
+				))
+				return
+			}
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
 			Message: "Ok",
 			Data: roles.RolesPageResponse{
-				Page:       page,
-				PageSize:   pageSize,
-				TotalItems: total,
-				TotalPages: httpapi.TotalPages(total, pageSize),
+				Limit:      request.Limit,
+				HasNext:    page.HasNext,
+				NextCursor: nextCursor,
 				Data:       list,
 			},
 		})
@@ -132,19 +140,10 @@ func (roleC *RoleController) GetById() func(c *gin.Context) {
 			return
 		}
 
-		roleDto := roles.RoleResponse{
-			BaseDto: dto.BaseDto{
-				Id:     role.GetId(),
-				Active: role.GetActive(),
-			},
-			Name:        role.GetName(),
-			Routes:      roles.ConvertRoutesToDto(role.GetRoutes()),
-			Permissions: convertPermissionsToDto(role.GetPermissions()),
-		}
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
 			Message: "Ok",
-			Data:    roleDto,
+			Data:    roles.MapDomainToResponse(role),
 		})
 	}
 }
@@ -267,20 +266,6 @@ func (roleC *RoleController) ChangeStatus() func(c *gin.Context) {
 			Data:    nil,
 		})
 	}
-}
-
-func convertPermissionsToDto(permissions []authBaseDomain.Permission) []roles.PermissionResponse {
-	permissionDtos := make([]roles.PermissionResponse, len(permissions))
-	for i, permission := range permissions {
-		permissionDtos[i] = roles.PermissionResponse{
-			Entity: permission.Entity,
-			Create: permission.Create,
-			Read:   permission.Read,
-			Update: permission.Update,
-			Delete: permission.Delete,
-		}
-	}
-	return permissionDtos
 }
 
 func convertDtoToPermissions(permissionDtos []dto.PermissionDto) []authBaseDomain.Permission {

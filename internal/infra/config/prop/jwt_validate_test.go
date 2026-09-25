@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/WilsonSayago/authBase/v3/infra/config/properties"
+	"github.com/WilsonSayago/authBase/v4/infra/config/properties"
 )
 
 func TestJwtRejectsInvalidStartupConfig(t *testing.T) {

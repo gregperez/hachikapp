@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 
-	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
+	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/ports"
 )

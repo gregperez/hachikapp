@@ -3,7 +3,7 @@ package roles
 import (
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
 
-	"github.com/WilsonSayago/authBase/v3/core/domain"
+	"github.com/WilsonSayago/authBase/v4/core/domain"
 )
 
 // RoutePathEnumDto extiende domain.RoutePathEnum para Swagger
@@ -39,5 +39,11 @@ func MapDomainToResponse(role domain.Role) RoleResponse {
 	response.BaseDto.DomainToEntity(role.Base)
 	response.Name = role.GetName()
 	response.Routes = ConvertRoutesToDto(role.GetRoutes())
+	response.Permissions = make([]PermissionResponse, 0, len(role.GetPermissions()))
+	for _, permission := range role.GetPermissions() {
+		var item PermissionResponse
+		item.MapToEntity(permission)
+		response.Permissions = append(response.Permissions, item)
+	}
 	return response
 }

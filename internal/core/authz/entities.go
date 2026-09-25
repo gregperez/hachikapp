@@ -1,6 +1,6 @@
 package authz
 
-import authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
+import authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 
 // Resource entities used by HTTP PoliciesGuard and seeds.
 const (

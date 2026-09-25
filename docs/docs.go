@@ -181,7 +181,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieves a paginated list of roles",
+                "description": "Retrieves roles ordered by createdAt and id descending",
                 "consumes": [
                     "application/json"
                 ],
@@ -194,18 +194,17 @@ const docTemplate = `{
                 "summary": "Get all roles",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number (\u003e=1)",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
                         "maximum": 100,
                         "type": "integer",
                         "default": 10,
                         "description": "Page size (1-100)",
-                        "name": "pageSize",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Opaque cursor returned by the previous page",
+                        "name": "cursor",
                         "in": "query"
                     }
                 ],
@@ -516,7 +515,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieves a paginated list of users (stable order by repository)",
+                "description": "Retrieves users ordered by createdAt and id descending",
                 "consumes": [
                     "application/json"
                 ],
@@ -529,18 +528,17 @@ const docTemplate = `{
                 "summary": "List users",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number (\u003e=1)",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
                         "maximum": 100,
                         "type": "integer",
                         "default": 10,
                         "description": "Page size (1-100)",
-                        "name": "pageSize",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Opaque cursor returned by the previous page",
+                        "name": "cursor",
                         "in": "query"
                     }
                 ],
@@ -1396,17 +1394,14 @@ const docTemplate = `{
                         "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse"
                     }
                 },
-                "page": {
+                "hasNext": {
+                    "type": "boolean"
+                },
+                "limit": {
                     "type": "integer"
                 },
-                "pageSize": {
-                    "type": "integer"
-                },
-                "totalItems": {
-                    "type": "integer"
-                },
-                "totalPages": {
-                    "type": "integer"
+                "nextCursor": {
+                    "type": "string"
                 }
             }
         },
@@ -1487,17 +1482,14 @@ const docTemplate = `{
                         "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse"
                     }
                 },
-                "page": {
+                "hasNext": {
+                    "type": "boolean"
+                },
+                "limit": {
                     "type": "integer"
                 },
-                "pageSize": {
-                    "type": "integer"
-                },
-                "totalItems": {
-                    "type": "integer"
-                },
-                "totalPages": {
-                    "type": "integer"
+                "nextCursor": {
+                    "type": "string"
                 }
             }
         },

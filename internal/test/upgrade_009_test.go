@@ -61,7 +61,7 @@ func TestHardenUpgradeAbortsDivergentRoleDuplicates(t *testing.T) {
 		)
 		cmd.Env = append(os.Environ(), "GOWORK=off")
 		_ = cmd.Run()
-		migrateTo(t, dsn, "9")
+		migrateTo(t, dsn, "12")
 	})
 
 	pool, err := pgxpool.New(ctx, dsn)

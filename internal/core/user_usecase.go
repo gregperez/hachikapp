@@ -3,13 +3,14 @@ package core
 import (
 	"context"
 
-	"github.com/WilsonSayago/authBase/v3/core"
+	"github.com/WilsonSayago/authBase/v4/core"
+	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 )
 
 type UserUseCase interface {
 	core.GenericUseCase[domain.User]
-	FindAll(ctx context.Context, pageSize, offset int) ([]domain.User, int, error)
+	FindAll(ctx context.Context, request authBaseDomain.PageRequest) (authBaseDomain.Page[domain.User], error)
 	FindByEmail(ctx context.Context, email string) (domain.User, error)
 	Create(ctx context.Context, user domain.User) error
 	FindById(ctx context.Context, id string) (domain.User, error)

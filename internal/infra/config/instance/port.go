@@ -6,8 +6,8 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories"
 	pg "github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/dao"
 
-	portsAuthBase "github.com/WilsonSayago/authBase/v3/core/port"
-	"github.com/WilsonSayago/authBase/v3/infra/secundary"
+	portsAuthBase "github.com/WilsonSayago/authBase/v4/core/port"
+	"github.com/WilsonSayago/authBase/v4/infra/secundary"
 )
 
 func GetUserRepositoryInstance() ports.UserPort {

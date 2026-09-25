@@ -3,7 +3,7 @@ package authz_test
 import (
 	"testing"
 
-	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
+	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/authz"
 )
 

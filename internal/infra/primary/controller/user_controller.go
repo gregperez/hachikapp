@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/WilsonSayago/base-golang/internal/core"
@@ -13,8 +14,8 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/ginadapter"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
 
-	authBaseCore "github.com/WilsonSayago/authBase/v3/core"
-	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
+	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
+	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	initModules "github.com/WilsonSayago/initModules/v2"
 	"github.com/gin-gonic/gin"
 )
@@ -72,13 +73,13 @@ func (userC *UserController) RunController() {
 
 // GetAll godoc
 // @Summary List users
-// @Description Retrieves a paginated list of users (stable order by repository)
+// @Description Retrieves users ordered by createdAt and id descending
 // @Tags Users
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param page query int false "Page number (>=1)" default(1)
-// @Param pageSize query int false "Page size (1-100)" default(10) maximum(100)
+// @Param limit query int false "Page size (1-100)" default(10) maximum(100)
+// @Param cursor query string false "Opaque cursor returned by the previous page"
 // @Success 200 {object} dto.ResponseDto{data=userout.UsersPageResponse}
 // @Failure 400 {object} httpapi.Problem
 // @Failure 401 {object} httpapi.Problem
@@ -86,36 +87,43 @@ func (userC *UserController) RunController() {
 // @Router /v1/users [get]
 func (userC *UserController) GetAll() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		page, pageSize, offset, ok := handlePagination(c)
+		request, ok := handlePagination(c)
 		if !ok {
 			return
 		}
-		usersDb, total, err := userC.userService.FindAll(c.Request.Context(), pageSize, offset)
+		page, err := userC.userService.FindAll(c.Request.Context(), request)
 		if err != nil {
 			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
 			return
 		}
 
-		list := make([]userout.UserResponse, 0, len(usersDb))
-		for _, user := range usersDb {
-			list = append(list, userout.UserResponse{
-				BaseDto: dto.BaseDto{
-					Id:     user.GetId(),
-					Active: user.Active,
-				},
-				Name:    user.GetName(),
-				Email:   user.GetEmail(),
-				IsAdmin: user.GetIsAdmin(),
+		list := make([]userout.UserResponse, 0, len(page.Items))
+		for _, user := range page.Items {
+			list = append(list, userout.MapDomainToUserResponse(user))
+		}
+
+		nextCursor := ""
+		if page.HasNext && len(page.Items) > 0 {
+			last := page.Items[len(page.Items)-1]
+			nextCursor, err = httpapi.EncodeCursor(authBaseDomain.CursorKey{
+				CreatedAt: last.CreatedAt,
+				ID:        last.GetId(),
 			})
+			if err != nil {
+				httpapi.WriteProblem(c, httpapi.MapError(
+					fmt.Errorf("encode users cursor: %v", err),
+					httpapi.RequestID(c),
+				))
+				return
+			}
 		}
 		c.JSON(http.StatusOK, dto.ResponseDto{
 			Status:  http.StatusOK,
 			Message: "Ok",
 			Data: userout.UsersPageResponse{
-				Page:       page,
-				PageSize:   pageSize,
-				TotalItems: total,
-				TotalPages: httpapi.TotalPages(total, pageSize),
+				Limit:      request.Limit,
+				HasNext:    page.HasNext,
+				NextCursor: nextCursor,
 				Data:       list,
 			},
 		})

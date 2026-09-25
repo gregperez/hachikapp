@@ -87,6 +87,64 @@ func TestUsersRolesRejectsNullAndDuplicate(t *testing.T) {
 	}
 }
 
+func TestEntityTimestampsAreManagedByDatabase(t *testing.T) {
+	pool, ctx := openPool(t)
+
+	email := "timestamps-" + time.Now().Format("150405.000") + "@example.com"
+	var userID string
+	var createdAt, updatedAt time.Time
+	if err := pool.QueryRow(ctx, `
+INSERT INTO public.users (name, email, password)
+VALUES ('timestamps', $1, 'x')
+RETURNING id, created_at, updated_at`, email).Scan(&userID, &createdAt, &updatedAt); err != nil {
+		t.Fatal(err)
+	}
+	if createdAt.IsZero() || updatedAt.IsZero() || !createdAt.Equal(updatedAt) {
+		t.Fatalf("insert timestamps created=%v updated=%v", createdAt, updatedAt)
+	}
+
+	var createdAfter, updatedAfter time.Time
+	if err := pool.QueryRow(ctx, `
+UPDATE public.users
+SET name = 'timestamps-updated',
+    created_at = created_at - interval '1 day'
+WHERE id = $1
+RETURNING created_at, updated_at`, userID).Scan(&createdAfter, &updatedAfter); err != nil {
+		t.Fatal(err)
+	}
+	if !createdAfter.Equal(createdAt) {
+		t.Fatalf("created_at changed: before=%v after=%v", createdAt, createdAfter)
+	}
+	if !updatedAfter.After(updatedAt) {
+		t.Fatalf("updated_at did not advance: before=%v after=%v", updatedAt, updatedAfter)
+	}
+
+	var roleID string
+	var roleCreatedAt, roleUpdatedAt time.Time
+	if err := pool.QueryRow(ctx, `
+INSERT INTO public.roles (name)
+VALUES ($1)
+RETURNING id, created_at, updated_at`,
+		"timestamps-"+time.Now().Format("150405.000"),
+	).Scan(&roleID, &roleCreatedAt, &roleUpdatedAt); err != nil {
+		t.Fatal(err)
+	}
+	if roleCreatedAt.IsZero() || roleUpdatedAt.IsZero() {
+		t.Fatal("role timestamps were not initialized")
+	}
+
+	var assignmentCreatedAt, assignmentUpdatedAt time.Time
+	if err := pool.QueryRow(ctx, `
+INSERT INTO public.users_roles (user_id, role_id)
+VALUES ($1, $2)
+RETURNING created_at, updated_at`, userID, roleID).Scan(&assignmentCreatedAt, &assignmentUpdatedAt); err != nil {
+		t.Fatal(err)
+	}
+	if assignmentCreatedAt.IsZero() || assignmentUpdatedAt.IsZero() {
+		t.Fatal("users_roles timestamps were not initialized")
+	}
+}
+
 func TestUsersRolesCascadeOnUserDelete(t *testing.T) {
 	pool, ctx := openPool(t)
 	var userID, roleID string

@@ -6,9 +6,9 @@ import (
 	"sync"
 	"testing"
 
-	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
-	authBasePorts "github.com/WilsonSayago/authBase/v3/core/port"
-	"github.com/WilsonSayago/authBase/v3/infra/secundary"
+	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
+	authBasePorts "github.com/WilsonSayago/authBase/v4/core/port"
+	"github.com/WilsonSayago/authBase/v4/infra/secundary"
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/ports"
 	"github.com/WilsonSayago/base-golang/internal/core/services"
@@ -68,8 +68,11 @@ func (m *memUsers) Save(ctx context.Context, u domain.User) error {
 	}
 	return nil
 }
-func (m *memUsers) FindAll(ctx context.Context, pageSize, offset int) ([]domain.User, int, error) {
-	return nil, 0, nil
+func (m *memUsers) FindAll(
+	ctx context.Context,
+	request authBaseDomain.PageRequest,
+) (authBaseDomain.Page[domain.User], error) {
+	return authBaseDomain.Page[domain.User]{}, nil
 }
 func (m *memUsers) FindById(ctx context.Context, id string) (domain.User, error) {
 	m.mu.Lock()

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
-	authBasePorts "github.com/WilsonSayago/authBase/v3/core/port"
+	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
+	authBasePorts "github.com/WilsonSayago/authBase/v4/core/port"
 	"github.com/WilsonSayago/base-golang/internal/core"
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/ports"
@@ -55,8 +55,8 @@ func (s *UserService) FindByID(ctx context.Context, id string) (domain.User, err
 	return s.userRepository.FindByID(ctx, id)
 }
 
-func (s *UserService) FindAll(ctx context.Context, pageSize, offset int) ([]domain.User, int, error) {
-	return s.userRepository.FindAll(ctx, pageSize, offset)
+func (s *UserService) FindAll(ctx context.Context, request authBaseDomain.PageRequest) (authBaseDomain.Page[domain.User], error) {
+	return s.userRepository.FindAll(ctx, request)
 }
 
 func (s *UserService) FindByEmail(ctx context.Context, email string) (domain.User, error) {

@@ -2,6 +2,7 @@ package httpapi_test
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -9,12 +10,14 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	userout "github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/outputs/users"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
 
-	authBaseCore "github.com/WilsonSayago/authBase/v3/core"
+	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
+	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	"github.com/gin-gonic/gin"
 )
 
@@ -120,36 +123,72 @@ func TestMapError_Table(t *testing.T) {
 	}
 }
 
-func TestParsePagination(t *testing.T) {
+func TestCursorPagination(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
+	key := authBaseDomain.CursorKey{
+		CreatedAt: time.Date(2026, time.September, 24, 12, 34, 56, 123, time.UTC),
+		ID:        "00000000-0000-0000-0000-000000000001",
+	}
+	cursor, err := httpapi.EncodeCursor(key)
+	if err != nil {
+		t.Fatalf("EncodeCursor: %v", err)
+	}
+
 	okCases := []struct {
-		query            string
-		page, size, offs int
+		query string
+		limit int
+		after bool
 	}{
-		{"", 1, 10, 0},
-		{"page=2&pageSize=25", 2, 25, 25},
-		{"page=1&pageSize=100", 1, 100, 0},
+		{"", 10, false},
+		{"limit=25", 25, false},
+		{"limit=100&cursor=" + cursor, 100, true},
 	}
 	for _, tt := range okCases {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest(http.MethodGet, "/?"+tt.query, nil)
-		p, err := httpapi.ParsePagination(c)
+		p, err := httpapi.ParseCursorPagination(c)
 		if err != nil {
 			t.Fatalf("query=%q err=%v", tt.query, err)
 		}
-		if p.Page != tt.page || p.PageSize != tt.size || p.Offset != tt.offs {
+		if p.Limit != tt.limit || (p.After != nil) != tt.after {
 			t.Fatalf("query=%q got %+v", tt.query, p)
+		}
+		if tt.after && (p.After.ID != key.ID || !p.After.CreatedAt.Equal(key.CreatedAt)) {
+			t.Fatalf("query=%q cursor=%+v", tt.query, p.After)
 		}
 	}
 
-	bad := []string{"page=0", "page=-1", "page=x", "pageSize=0", "pageSize=101", "pageSize=abc"}
+	badPayload := base64.RawURLEncoding.EncodeToString([]byte(
+		`{"v":1,"createdAt":"2026-09-24T12:34:56Z","id":"bad"}`,
+	))
+	unknownVersion := base64.RawURLEncoding.EncodeToString([]byte(
+		`{"v":2,"createdAt":"2026-09-24T12:34:56Z","id":"00000000-0000-0000-0000-000000000001"}`,
+	))
+	invalidTimestamp := base64.RawURLEncoding.EncodeToString([]byte(
+		`{"v":1,"createdAt":"not-a-time","id":"00000000-0000-0000-0000-000000000001"}`,
+	))
+	unknownField := base64.RawURLEncoding.EncodeToString([]byte(
+		`{"v":1,"createdAt":"2026-09-24T12:34:56Z","id":"00000000-0000-0000-0000-000000000001","extra":true}`,
+	))
+	bad := []string{
+		"limit=0",
+		"limit=-1",
+		"limit=101",
+		"limit=abc",
+		"cursor=not-base64!",
+		"cursor=" + badPayload,
+		"cursor=" + unknownVersion,
+		"cursor=" + invalidTimestamp,
+		"cursor=" + unknownField,
+		"cursor=" + strings.Repeat("a", 1025),
+	}
 	for _, q := range bad {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest(http.MethodGet, "/?"+q, nil)
-		if _, err := httpapi.ParsePagination(c); err == nil {
+		if _, err := httpapi.ParseCursorPagination(c); err == nil {
 			t.Fatalf("query=%q expected error", q)
 		}
 	}

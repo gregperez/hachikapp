@@ -11,8 +11,8 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/ginadapter"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
 
-	authBaseCore "github.com/WilsonSayago/authBase/v3/core"
-	authBaseServices "github.com/WilsonSayago/authBase/v3/core/services"
+	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
+	authBaseServices "github.com/WilsonSayago/authBase/v4/core/services"
 	initModules "github.com/WilsonSayago/initModules/v2"
 	"github.com/gin-gonic/gin"
 )

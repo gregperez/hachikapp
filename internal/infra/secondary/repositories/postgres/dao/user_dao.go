@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
+	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
@@ -15,12 +17,11 @@ import (
 type IUserDao interface {
 	Save(ctx context.Context, user *dto.UserDTO) error
 	FindById(ctx context.Context, id string) (dto.UserDTO, error)
-	FindAll(ctx context.Context, pageSize, offset int) ([]dto.UserDTO, error)
+	FindAll(ctx context.Context, request authBaseDomain.PageRequest) ([]dto.UserDTO, bool, error)
 	FindByEmail(ctx context.Context, email string) (dto.UserDTO, error)
 	FindCredentialsByEmail(ctx context.Context, email string) (dto.UserDTO, error)
 	Update(ctx context.Context, user dto.UserDTO) error
 	SetActive(ctx context.Context, id string, active bool) error
-	Count(ctx context.Context) (int, error)
 	CountAdmins(ctx context.Context) (int, error)
 	CountAdminsWithTx(ctx context.Context, tx database.Transaction) (int, error)
 	UpdatePassword(ctx context.Context, id, passwordHash string) error
@@ -79,10 +80,11 @@ func (c *UserDao) SaveWithTx(ctx context.Context, tx database.Transaction, user 
 }
 
 func (c *UserDao) FindById(ctx context.Context, id string) (dto.UserDTO, error) {
-	const q = `SELECT name, email, is_admin, active FROM public.users WHERE id = $1`
+	const q = `SELECT name, email, is_admin, active, created_at, updated_at FROM public.users WHERE id = $1`
 	var name, email string
 	var isAdmin, active bool
-	err := c.db.QueryRow(ctx, q, id).Scan(&name, &email, &isAdmin, &active)
+	var createdAt, updatedAt time.Time
+	err := c.db.QueryRow(ctx, q, id).Scan(&name, &email, &isAdmin, &active, &createdAt, &updatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return dto.UserDTO{}, domain.ErrNotFound
@@ -90,39 +92,66 @@ func (c *UserDao) FindById(ctx context.Context, id string) (dto.UserDTO, error) 
 		return dto.UserDTO{}, fmt.Errorf("find user by id: %w", err)
 	}
 	return dto.UserDTO{
-		BaseDTO: dto.BaseDTO{Id: id, Active: active},
+		BaseDTO: dto.BaseDTO{
+			Id:        id,
+			Active:    active,
+			CreatedAt: createdAt,
+			UpdatedAt: updatedAt,
+		},
 		Name:    name,
 		Email:   email,
 		IsAdmin: isAdmin,
 	}, nil
 }
 
-func (c *UserDao) FindAll(ctx context.Context, pageSize, offset int) ([]dto.UserDTO, error) {
-	const q = `SELECT id, name, email, is_admin, active FROM public.users ORDER BY id LIMIT $1 OFFSET $2`
-	rows, err := c.db.Query(ctx, q, pageSize, offset)
+func (c *UserDao) FindAll(ctx context.Context, request authBaseDomain.PageRequest) ([]dto.UserDTO, bool, error) {
+	const firstPage = `SELECT id, name, email, is_admin, active, created_at, updated_at
+FROM public.users
+ORDER BY created_at DESC, id DESC
+LIMIT $1`
+	const nextPage = `SELECT id, name, email, is_admin, active, created_at, updated_at
+FROM public.users
+WHERE (created_at, id) < ($1, $2)
+ORDER BY created_at DESC, id DESC
+LIMIT $3`
+
+	limit := request.Limit + 1
+	var rows pgx.Rows
+	var err error
+	if request.After == nil {
+		rows, err = c.db.Query(ctx, firstPage, limit)
+	} else {
+		rows, err = c.db.Query(ctx, nextPage, request.After.CreatedAt, request.After.ID, limit)
+	}
 	if err != nil {
-		return nil, fmt.Errorf("query users: %w", err)
+		return nil, false, fmt.Errorf("query users: %w", err)
 	}
 	defer rows.Close()
 
 	list := make([]dto.UserDTO, 0)
 	for rows.Next() {
-		var id, name, email string
-		var isAdmin, active bool
-		if err := rows.Scan(&id, &name, &email, &isAdmin, &active); err != nil {
-			return nil, fmt.Errorf("scan user: %w", err)
+		var item dto.UserDTO
+		if err := rows.Scan(
+			&item.Id,
+			&item.Name,
+			&item.Email,
+			&item.IsAdmin,
+			&item.Active,
+			&item.CreatedAt,
+			&item.UpdatedAt,
+		); err != nil {
+			return nil, false, fmt.Errorf("scan user: %w", err)
 		}
-		list = append(list, dto.UserDTO{
-			BaseDTO: dto.BaseDTO{Id: id, Active: active},
-			Name:    name,
-			Email:   email,
-			IsAdmin: isAdmin,
-		})
+		list = append(list, item)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate users: %w", err)
+		return nil, false, fmt.Errorf("iterate users: %w", err)
 	}
-	return list, nil
+	hasNext := len(list) > request.Limit
+	if hasNext {
+		list = list[:request.Limit]
+	}
+	return list, hasNext, nil
 }
 
 func (c *UserDao) FindByEmail(ctx context.Context, email string) (dto.UserDTO, error) {
@@ -198,14 +227,6 @@ func (c *UserDao) SetActiveWithTx(ctx context.Context, tx database.Transaction, 
 		return domain.ErrNotFound
 	}
 	return nil
-}
-
-func (c *UserDao) Count(ctx context.Context) (int, error) {
-	var total int
-	if err := c.db.QueryRow(ctx, `SELECT COUNT(*) FROM public.users`).Scan(&total); err != nil {
-		return 0, fmt.Errorf("count users: %w", err)
-	}
-	return total, nil
 }
 
 func (c *UserDao) CountAdmins(ctx context.Context) (int, error) {

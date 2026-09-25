@@ -3,7 +3,7 @@ package dto
 import (
 	"time"
 
-	"github.com/WilsonSayago/authBase/v3/core/domain"
+	"github.com/WilsonSayago/authBase/v4/core/domain"
 )
 
 // BaseDto represents a base dto with common fields for all entities
@@ -21,6 +21,12 @@ type BaseDto struct {
 
 func (baseDto *BaseDto) DomainToEntity(base domain.Base) {
 	baseDto.Id = base.Id
+	if !base.CreatedAt.IsZero() {
+		baseDto.CreatedAt = &base.CreatedAt
+	}
+	if !base.UpdatedAt.IsZero() {
+		baseDto.UpdatedAt = &base.UpdatedAt
+	}
 	baseDto.CreatedBy = base.CreatedBy
 	baseDto.UpdatedBy = base.UpdatedBy
 	baseDto.Active = base.Active

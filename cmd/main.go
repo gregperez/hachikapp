@@ -15,7 +15,7 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/infra/config/sql"
 	"github.com/WilsonSayago/base-golang/internal/infra/logging"
 
-	"github.com/WilsonSayago/authBase/v3/infra/config/properties"
+	"github.com/WilsonSayago/authBase/v4/infra/config/properties"
 	initModules "github.com/WilsonSayago/initModules/v2"
 	"github.com/gin-gonic/gin"
 )

@@ -8,8 +8,8 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/dao"
 
-	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
-	authBasePorts "github.com/WilsonSayago/authBase/v3/core/port"
+	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
+	authBasePorts "github.com/WilsonSayago/authBase/v4/core/port"
 	initModules "github.com/WilsonSayago/initModules/v2"
 )
 
@@ -31,20 +31,19 @@ func (r RoleRepository) FindById(ctx context.Context, id string) (authBaseDomain
 	return ToRoleDomain(role), nil
 }
 
-func (r RoleRepository) FindAll(ctx context.Context, pageSize, offset int) ([]authBaseDomain.Role, int, error) {
-	total, err := r.roleDao.Count(ctx)
+func (r RoleRepository) FindAll(
+	ctx context.Context,
+	request authBaseDomain.PageRequest,
+) (authBaseDomain.Page[authBaseDomain.Role], error) {
+	roles, hasNext, err := r.roleDao.FindAll(ctx, request)
 	if err != nil {
-		return nil, 0, err
-	}
-	roles, err := r.roleDao.FindAll(ctx, pageSize, offset)
-	if err != nil {
-		return nil, 0, err
+		return authBaseDomain.Page[authBaseDomain.Role]{}, err
 	}
 	domainRoles := make([]authBaseDomain.Role, 0, len(roles))
 	for _, role := range roles {
 		domainRoles = append(domainRoles, ToRoleDomain(role))
 	}
-	return domainRoles, total, nil
+	return authBaseDomain.Page[authBaseDomain.Role]{Items: domainRoles, HasNext: hasNext}, nil
 }
 
 func (r RoleRepository) Save(ctx context.Context, role authBaseDomain.Role) (authBaseDomain.Role, error) {
@@ -81,8 +80,10 @@ func (r RoleRepository) SetActive(ctx context.Context, id string, active bool) e
 func ToRoleDomain(role dto.RoleDTO) authBaseDomain.Role {
 	return authBaseDomain.Role{
 		Base: authBaseDomain.Base{
-			Id:     role.Id,
-			Active: role.Active,
+			Id:        role.Id,
+			CreatedAt: role.CreatedAt,
+			UpdatedAt: role.UpdatedAt,
+			Active:    role.Active,
 		},
 		Name:        role.Name,
 		Routes:      role.Routes,

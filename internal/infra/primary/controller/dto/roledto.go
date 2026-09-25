@@ -1,6 +1,6 @@
 package dto
 
-import "github.com/WilsonSayago/authBase/v3/core/domain"
+import "github.com/WilsonSayago/authBase/v4/core/domain"
 
 // RoleDto is the request body for creating/updating a role.
 // @Description RoleDto contains the information about a role including its name, routes, and permissions

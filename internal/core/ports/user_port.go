@@ -3,7 +3,8 @@ package ports
 import (
 	"context"
 
-	"github.com/WilsonSayago/authBase/v3/core/port"
+	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
+	"github.com/WilsonSayago/authBase/v4/core/port"
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 )
 
@@ -13,7 +14,7 @@ type UserPort interface {
 	port.UserReader[domain.User]
 	port.CredentialReader
 	Save(ctx context.Context, u domain.User) error
-	FindAll(ctx context.Context, pageSize, offset int) ([]domain.User, int, error)
+	FindAll(ctx context.Context, request authBaseDomain.PageRequest) (authBaseDomain.Page[domain.User], error)
 	FindById(ctx context.Context, id string) (domain.User, error)
 	FindByEmail(ctx context.Context, email string) (domain.User, error)
 	FindFullById(ctx context.Context, id string) (domain.User, error)

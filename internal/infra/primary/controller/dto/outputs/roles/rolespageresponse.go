@@ -4,9 +4,8 @@ package roles
 // @swagger:model
 // @Description RolesPageResponse represents a paginated response of roles.
 type RolesPageResponse struct {
-	Page       int            `json:"page"`
-	PageSize   int            `json:"pageSize"`
-	TotalItems int            `json:"totalItems"`
-	TotalPages int            `json:"totalPages"`
+	Limit      int            `json:"limit"`
+	HasNext    bool           `json:"hasNext"`
+	NextCursor string         `json:"nextCursor,omitempty"`
 	Data       []RoleResponse `json:"data"`
 }

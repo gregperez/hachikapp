@@ -10,9 +10,9 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/dao"
 
-	authBaseCore "github.com/WilsonSayago/authBase/v3/core"
-	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
-	authBasePorts "github.com/WilsonSayago/authBase/v3/core/port"
+	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
+	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
+	authBasePorts "github.com/WilsonSayago/authBase/v4/core/port"
 	initModules "github.com/WilsonSayago/initModules/v2"
 )
 
@@ -205,20 +205,19 @@ func (repository *UserRepository) FindById(ctx context.Context, id string) (doma
 	return repository.FindFullById(ctx, id)
 }
 
-func (repository *UserRepository) FindAll(ctx context.Context, pageSize, offset int) ([]domain.User, int, error) {
-	totalRow, err := repository.userDao.Count(ctx)
+func (repository *UserRepository) FindAll(
+	ctx context.Context,
+	request authBaseDomain.PageRequest,
+) (authBaseDomain.Page[domain.User], error) {
+	users, hasNext, err := repository.userDao.FindAll(ctx, request)
 	if err != nil {
-		return nil, 0, err
-	}
-	users, err := repository.userDao.FindAll(ctx, pageSize, offset)
-	if err != nil {
-		return nil, 0, err
+		return authBaseDomain.Page[domain.User]{}, err
 	}
 	list := make([]domain.User, 0, len(users))
 	for _, user := range users {
 		list = append(list, toUserDomain(user))
 	}
-	return list, totalRow, nil
+	return authBaseDomain.Page[domain.User]{Items: list, HasNext: hasNext}, nil
 }
 
 func (repository *UserRepository) Update(ctx context.Context, user domain.User) error {
@@ -290,15 +289,18 @@ func toUserDomain(user dto.UserDTO) domain.User {
 	for _, role := range user.Roles {
 		roles = append(roles, ToRoleDomain(role))
 	}
+	userGeneric := authBaseDomain.NewUserGeneric(
+		user.Id,
+		user.Name,
+		user.Email,
+		roles,
+		user.IsAdmin,
+		user.Active,
+	)
+	userGeneric.Base.CreatedAt = user.CreatedAt
+	userGeneric.Base.UpdatedAt = user.UpdatedAt
 	return domain.User{
-		UserGeneric: authBaseDomain.NewUserGeneric(
-			user.Id,
-			user.Name,
-			user.Email,
-			roles,
-			user.IsAdmin,
-			user.Active,
-		),
+		UserGeneric: userGeneric,
 	}
 }
 

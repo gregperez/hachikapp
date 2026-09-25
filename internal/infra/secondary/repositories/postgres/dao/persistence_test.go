@@ -3,10 +3,11 @@ package dao_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
-	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
+	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
@@ -101,8 +102,127 @@ func TestFindAllCanceledContext(t *testing.T) {
 	ud := dao.NewUserDaoForTest(db)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	_, err := ud.FindAll(ctx, 10, 0)
+	_, _, err := ud.FindAll(ctx, authBaseDomain.PageRequest{Limit: 10})
 	if err == nil {
 		t.Fatal("expected error on canceled context")
 	}
+}
+
+func TestUserFindAllUsesCreatedAtIDCursor(t *testing.T) {
+	db, ctx := openTestDB(t)
+	ud := dao.NewUserDaoForTest(db)
+	createdAt := time.Date(1900, time.January, 1, 0, 0, 0, 0, time.UTC)
+	ids := []string{
+		"f0000000-0000-0000-0000-000000000001",
+		"f0000000-0000-0000-0000-000000000002",
+		"f0000000-0000-0000-0000-000000000003",
+	}
+	for i, id := range ids {
+		if _, err := db.Exec(ctx, `
+INSERT INTO public.users (id, name, email, password, created_at)
+VALUES ($1, $2, $3, 'hash', $4)
+ON CONFLICT (id) DO NOTHING`,
+			id,
+			"cursor-user",
+			fmt.Sprintf("cursor-user-%d@example.com", i),
+			createdAt,
+		); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Cleanup(func() {
+		_, _ = db.Exec(context.Background(), `DELETE FROM public.users WHERE id = ANY($1::uuid[])`, ids)
+	})
+
+	first, hasNext, err := ud.FindAll(ctx, authBaseDomain.PageRequest{
+		Limit: 2,
+		After: &authBaseDomain.CursorKey{
+			CreatedAt: time.Date(1901, time.January, 1, 0, 0, 0, 0, time.UTC),
+			ID:        "ffffffff-ffff-ffff-ffff-ffffffffffff",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !hasNext || len(first) != 2 || first[0].Id != ids[2] || first[1].Id != ids[1] {
+		t.Fatalf("first page ids=%v hasNext=%v", dtoIDs(first), hasNext)
+	}
+
+	second, hasNext, err := ud.FindAll(ctx, authBaseDomain.PageRequest{
+		Limit: 2,
+		After: &authBaseDomain.CursorKey{CreatedAt: first[1].CreatedAt, ID: first[1].Id},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hasNext || len(second) == 0 || second[0].Id != ids[0] {
+		t.Fatalf("second page ids=%v hasNext=%v", dtoIDs(second), hasNext)
+	}
+}
+
+func TestRoleFindAllUsesCreatedAtIDCursor(t *testing.T) {
+	db, ctx := openTestDB(t)
+	rd := dao.NewRoleDaoForTest(db)
+	createdAt := time.Date(1900, time.January, 2, 0, 0, 0, 0, time.UTC)
+	ids := []string{
+		"e0000000-0000-0000-0000-000000000001",
+		"e0000000-0000-0000-0000-000000000002",
+		"e0000000-0000-0000-0000-000000000003",
+	}
+	for i, id := range ids {
+		if _, err := db.Exec(ctx, `
+INSERT INTO public.roles (id, name, created_at)
+VALUES ($1, $2, $3)
+ON CONFLICT (id) DO NOTHING`,
+			id,
+			fmt.Sprintf("cursor-role-%d", i),
+			createdAt,
+		); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Cleanup(func() {
+		_, _ = db.Exec(context.Background(), `DELETE FROM public.roles WHERE id = ANY($1::uuid[])`, ids)
+	})
+
+	first, hasNext, err := rd.FindAll(ctx, authBaseDomain.PageRequest{
+		Limit: 2,
+		After: &authBaseDomain.CursorKey{
+			CreatedAt: time.Date(1901, time.January, 1, 0, 0, 0, 0, time.UTC),
+			ID:        "ffffffff-ffff-ffff-ffff-ffffffffffff",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !hasNext || len(first) != 2 || first[0].Id != ids[2] || first[1].Id != ids[1] {
+		t.Fatalf("first page ids=%v hasNext=%v", roleDTOIDs(first), hasNext)
+	}
+
+	second, hasNext, err := rd.FindAll(ctx, authBaseDomain.PageRequest{
+		Limit: 2,
+		After: &authBaseDomain.CursorKey{CreatedAt: first[1].CreatedAt, ID: first[1].Id},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hasNext || len(second) == 0 || second[0].Id != ids[0] {
+		t.Fatalf("second page ids=%v hasNext=%v", roleDTOIDs(second), hasNext)
+	}
+}
+
+func dtoIDs(items []dto.UserDTO) []string {
+	ids := make([]string, 0, len(items))
+	for _, item := range items {
+		ids = append(ids, item.Id)
+	}
+	return ids
+}
+
+func roleDTOIDs(items []dto.RoleDTO) []string {
+	ids := make([]string, 0, len(items))
+	for _, item := range items {
+		ids = append(ids, item.Id)
+	}
+	return ids
 }

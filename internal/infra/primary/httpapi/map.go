@@ -5,7 +5,7 @@ import (
 
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 
-	authBaseCore "github.com/WilsonSayago/authBase/v3/core"
+	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 )
 
 // MapError converts application/domain errors into a stable Problem.

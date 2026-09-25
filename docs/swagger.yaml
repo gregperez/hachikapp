@@ -205,14 +205,12 @@ definitions:
         items:
           $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse'
         type: array
-      page:
+      hasNext:
+        type: boolean
+      limit:
         type: integer
-      pageSize:
-        type: integer
-      totalItems:
-        type: integer
-      totalPages:
-        type: integer
+      nextCursor:
+        type: string
     type: object
   github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoutePathEnumDto:
     description: Enumeración de rutas en el sistema
@@ -267,14 +265,12 @@ definitions:
         items:
           $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse'
         type: array
-      page:
+      hasNext:
+        type: boolean
+      limit:
         type: integer
-      pageSize:
-        type: integer
-      totalItems:
-        type: integer
-      totalPages:
-        type: integer
+      nextCursor:
+        type: string
     type: object
   github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.FieldError:
     properties:
@@ -412,19 +408,18 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieves a paginated list of roles
+      description: Retrieves roles ordered by createdAt and id descending
       parameters:
-      - default: 1
-        description: Page number (>=1)
-        in: query
-        name: page
-        type: integer
       - default: 10
         description: Page size (1-100)
         in: query
         maximum: 100
-        name: pageSize
+        name: limit
         type: integer
+      - description: Opaque cursor returned by the previous page
+        in: query
+        name: cursor
+        type: string
       produces:
       - application/json
       responses:
@@ -622,19 +617,18 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieves a paginated list of users (stable order by repository)
+      description: Retrieves users ordered by createdAt and id descending
       parameters:
-      - default: 1
-        description: Page number (>=1)
-        in: query
-        name: page
-        type: integer
       - default: 10
         description: Page size (1-100)
         in: query
         maximum: 100
-        name: pageSize
+        name: limit
         type: integer
+      - description: Opaque cursor returned by the previous page
+        in: query
+        name: cursor
+        type: string
       produces:
       - application/json
       responses:

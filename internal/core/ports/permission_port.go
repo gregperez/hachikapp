@@ -3,7 +3,7 @@ package ports
 import (
 	"context"
 
-	domain "github.com/WilsonSayago/authBase/v3/core/domain"
+	domain "github.com/WilsonSayago/authBase/v4/core/domain"
 )
 
 type PermissionPort interface {

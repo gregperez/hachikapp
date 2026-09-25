@@ -6,7 +6,7 @@ This project is a Go-based application that uses PostgreSQL for data storage and
 ## Libraries
 
 ### Go Modules
-- **github.com/WilsonSayago/authBase/v3** ([v3.0.1](https://github.com/WilsonSayago/authBase/releases/tag/v3.0.1)): authentication and authorization.
+- **github.com/WilsonSayago/authBase/v4** ([v4.0.0](https://github.com/WilsonSayago/authBase/releases/tag/v4.0.0)): authentication, authorization, and keyset pagination contracts.
 - **github.com/WilsonSayago/initModules/v2** ([v2.0.0](https://github.com/WilsonSayago/initModules/releases/tag/v2.0.0)): config load and typed singletons.
 - Logging uses Go's standard `log/slog` (JSON to stdout).
 

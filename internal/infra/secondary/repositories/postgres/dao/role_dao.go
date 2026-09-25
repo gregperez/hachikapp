@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	authBaseDomain "github.com/WilsonSayago/authBase/v3/core/domain"
+	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
@@ -16,12 +16,11 @@ import (
 type IRoleDao interface {
 	FindAllByUserId(ctx context.Context, userId string) ([]dto.RoleDTO, error)
 	FindById(ctx context.Context, roleId string) (dto.RoleDTO, error)
-	FindAll(ctx context.Context, pageSize, offset int) ([]dto.RoleDTO, error)
+	FindAll(ctx context.Context, request authBaseDomain.PageRequest) ([]dto.RoleDTO, bool, error)
 	Save(ctx context.Context, role dto.RoleDTO) (dto.RoleDTO, error)
 	Update(ctx context.Context, role dto.RoleDTO) error
 	FindByName(ctx context.Context, name string) (dto.RoleDTO, error)
 	SetActive(ctx context.Context, id string, active bool) error
-	Count(ctx context.Context) (int, error)
 }
 
 type RoleDao struct {
@@ -40,7 +39,7 @@ func NewRoleDaoForTest(db database.DBTX) IRoleDao {
 }
 
 func (r *RoleDao) FindAllByUserId(ctx context.Context, userId string) ([]dto.RoleDTO, error) {
-	const q = `SELECT r.id, r.name, r.routes, r.permissions, r.active
+	const q = `SELECT r.id, r.name, r.routes, r.permissions, r.active, r.created_at, r.updated_at
 FROM public.roles r
 INNER JOIN public.users_roles ur ON ur.role_id = r.id
 WHERE ur.user_id = $1
@@ -55,7 +54,15 @@ ORDER BY r.id`
 	for rows.Next() {
 		var item dto.RoleDTO
 		var routes []authBaseDomain.RoutePathEnum
-		if err := rows.Scan(&item.Id, &item.Name, &routes, &item.Permissions, &item.Active); err != nil {
+		if err := rows.Scan(
+			&item.Id,
+			&item.Name,
+			&routes,
+			&item.Permissions,
+			&item.Active,
+			&item.CreatedAt,
+			&item.UpdatedAt,
+		); err != nil {
 			return nil, fmt.Errorf("scan role: %w", err)
 		}
 		item.Routes = routes
@@ -68,10 +75,19 @@ ORDER BY r.id`
 }
 
 func (r *RoleDao) FindById(ctx context.Context, roleId string) (dto.RoleDTO, error) {
-	const q = `SELECT r.id, r.name, r.routes, r.permissions, r.active FROM public.roles r WHERE r.id = $1`
+	const q = `SELECT r.id, r.name, r.routes, r.permissions, r.active, r.created_at, r.updated_at
+FROM public.roles r WHERE r.id = $1`
 	var item dto.RoleDTO
 	var routes []authBaseDomain.RoutePathEnum
-	err := r.db.QueryRow(ctx, q, roleId).Scan(&item.Id, &item.Name, &routes, &item.Permissions, &item.Active)
+	err := r.db.QueryRow(ctx, q, roleId).Scan(
+		&item.Id,
+		&item.Name,
+		&routes,
+		&item.Permissions,
+		&item.Active,
+		&item.CreatedAt,
+		&item.UpdatedAt,
+	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return dto.RoleDTO{}, domain.ErrNotFound
@@ -82,12 +98,27 @@ func (r *RoleDao) FindById(ctx context.Context, roleId string) (dto.RoleDTO, err
 	return item, nil
 }
 
-func (r *RoleDao) FindAll(ctx context.Context, pageSize, offset int) ([]dto.RoleDTO, error) {
-	const q = `SELECT r.id, r.name, r.routes, r.permissions, r.active
-FROM public.roles r ORDER BY r.id LIMIT $1 OFFSET $2`
-	rows, err := r.db.Query(ctx, q, pageSize, offset)
+func (r *RoleDao) FindAll(ctx context.Context, request authBaseDomain.PageRequest) ([]dto.RoleDTO, bool, error) {
+	const firstPage = `SELECT r.id, r.name, r.routes, r.permissions, r.active, r.created_at, r.updated_at
+FROM public.roles r
+ORDER BY r.created_at DESC, r.id DESC
+LIMIT $1`
+	const nextPage = `SELECT r.id, r.name, r.routes, r.permissions, r.active, r.created_at, r.updated_at
+FROM public.roles r
+WHERE (r.created_at, r.id) < ($1, $2)
+ORDER BY r.created_at DESC, r.id DESC
+LIMIT $3`
+
+	limit := request.Limit + 1
+	var rows pgx.Rows
+	var err error
+	if request.After == nil {
+		rows, err = r.db.Query(ctx, firstPage, limit)
+	} else {
+		rows, err = r.db.Query(ctx, nextPage, request.After.CreatedAt, request.After.ID, limit)
+	}
 	if err != nil {
-		return nil, fmt.Errorf("query roles: %w", err)
+		return nil, false, fmt.Errorf("query roles: %w", err)
 	}
 	defer rows.Close()
 
@@ -95,16 +126,28 @@ FROM public.roles r ORDER BY r.id LIMIT $1 OFFSET $2`
 	for rows.Next() {
 		var item dto.RoleDTO
 		var routes []authBaseDomain.RoutePathEnum
-		if err := rows.Scan(&item.Id, &item.Name, &routes, &item.Permissions, &item.Active); err != nil {
-			return nil, fmt.Errorf("scan role: %w", err)
+		if err := rows.Scan(
+			&item.Id,
+			&item.Name,
+			&routes,
+			&item.Permissions,
+			&item.Active,
+			&item.CreatedAt,
+			&item.UpdatedAt,
+		); err != nil {
+			return nil, false, fmt.Errorf("scan role: %w", err)
 		}
 		item.Routes = routes
 		list = append(list, item)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate roles: %w", err)
+		return nil, false, fmt.Errorf("iterate roles: %w", err)
 	}
-	return list, nil
+	hasNext := len(list) > request.Limit
+	if hasNext {
+		list = list[:request.Limit]
+	}
+	return list, hasNext, nil
 }
 
 func (r *RoleDao) Save(ctx context.Context, role dto.RoleDTO) (dto.RoleDTO, error) {
@@ -145,14 +188,6 @@ func (r *RoleDao) SetActive(ctx context.Context, id string, active bool) error {
 		return domain.ErrNotFound
 	}
 	return nil
-}
-
-func (r *RoleDao) Count(ctx context.Context) (int, error) {
-	var count int
-	if err := r.db.QueryRow(ctx, `SELECT COUNT(id) FROM public.roles`).Scan(&count); err != nil {
-		return 0, fmt.Errorf("count roles: %w", err)
-	}
-	return count, nil
 }
 
 func (r *RoleDao) Update(ctx context.Context, role dto.RoleDTO) error {

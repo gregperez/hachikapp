@@ -3,11 +3,11 @@ package ginadapter
 import (
 	"context"
 
-	authBaseCore "github.com/WilsonSayago/authBase/v3/core"
+	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 	"github.com/gin-gonic/gin"
 )
 
-// Context adapts *gin.Context to authBase/v3 core.Context.
+// Context adapts *gin.Context to authBase/v4 core.Context.
 // Gin v1.12 widened Keys to any; we re-expose string-keyed Get/Set for authBase.
 type Context struct {
 	*gin.Context

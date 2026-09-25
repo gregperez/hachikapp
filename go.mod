@@ -5,7 +5,7 @@ go 1.26.6
 toolchain go1.27.1
 
 require (
-	github.com/WilsonSayago/authBase/v4 v4.0.0
+	github.com/WilsonSayago/authBase/v4 v4.0.1
 	github.com/WilsonSayago/initModules/v2 v2.0.0
 	github.com/gin-contrib/cors v1.7.9
 	github.com/gin-gonic/gin v1.12.0
@@ -69,5 +69,3 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/WilsonSayago/authBase/v4 => ../authBase

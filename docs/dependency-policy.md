@@ -15,7 +15,7 @@ Raise the minimum only with an explicit plan; update README/CI together.
 
 | Module | Chosen | Source |
 |---|---|---|
-| `github.com/WilsonSayago/authBase/v4` | v4.0.0 | published module; local sibling `replace` is development-only |
+| `github.com/WilsonSayago/authBase/v4` | v4.0.1 | published module verified through proxy.golang.org |
 | `github.com/WilsonSayago/initModules/v2` | v2.0.0 | published module |
 | `github.com/gin-gonic/gin` | v1.12.0 | [proxy.golang.org](https://proxy.golang.org/github.com/gin-gonic/gin/@v/list) |
 | `github.com/gin-contrib/cors` | v1.7.9 | proxy |
@@ -29,9 +29,9 @@ Raise the minimum only with an explicit plan; update README/CI together.
 
 Removed unused direct require: `github.com/pkg/errors`.
 
-The checked-in `authBase/v4 => ../authBase` replacement supports this
-multi-repository workspace. Before distributing a standalone template, remove
-it and run `GOWORK=off go mod tidy && GOWORK=off go mod verify`.
+Checked-in filesystem `replace` directives are forbidden. `make mod-policy`
+checks the active `go.mod`, and `make mod-policy-test` verifies both allowed
+module-to-module replacements and rejected relative/absolute local paths.
 
 ## Deliberately deferred
 

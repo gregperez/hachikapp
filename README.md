@@ -8,7 +8,7 @@ explicit startup/shutdown behavior.
 ## Libraries
 
 ### Go Modules
-- **github.com/WilsonSayago/authBase/v4** ([v4.0.0](https://github.com/WilsonSayago/authBase/releases/tag/v4.0.0)): authentication, authorization, and keyset pagination contracts.
+- **github.com/WilsonSayago/authBase/v4** ([v4.0.1](https://github.com/WilsonSayago/authBase/releases/tag/v4.0.1)): authentication, authorization, and keyset pagination contracts.
 - **github.com/WilsonSayago/initModules/v2** ([v2.0.0](https://github.com/WilsonSayago/initModules/releases/tag/v2.0.0)): config load and typed singletons.
 - Logging uses Go's standard `log/slog` (JSON to stdout).
 
@@ -91,10 +91,10 @@ atomically and are never stored in plaintext.
 
 Go minimum **1.26.6** / preferred toolchain **1.27.1**. Update policy: [docs/dependency-policy.md](docs/dependency-policy.md).
 
-This workspace currently uses `replace github.com/WilsonSayago/authBase/v4 =>
-../authBase` for side-by-side development. A standalone checkout must either
-clone `authBase` at that sibling path or remove the `replace` to resolve the
-published `v4.0.0` module.
+The repository resolves `authBase/v4@v4.0.1` through the public Go module
+proxy. Checked-in filesystem `replace` directives are rejected by
+`make mod-policy`, so a standalone checkout does not depend on sibling
+repositories.
 
 ## Development quality gate
 

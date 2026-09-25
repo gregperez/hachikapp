@@ -212,7 +212,7 @@ func (s *UserService) ChangePassword(ctx context.Context, userID, currentPasswor
 	if err != nil {
 		return fmt.Errorf("errors.users.hash-password")
 	}
-	return s.userRepository.UpdatePassword(ctx, userID, hash)
+	return s.userRepository.UpdatePasswordAndRevokeSessions(ctx, userID, hash)
 }
 
 func (s *UserService) SetActive(ctx context.Context, actorID, userID string, active bool) error {
@@ -224,7 +224,14 @@ func (s *UserService) SetActive(ctx context.Context, actorID, userID string, act
 		return nil
 	}
 	if existing.GetIsAdmin() && existing.GetActive() && !active {
-		if err := s.userRepository.DeactivateAdminIfNotLast(ctx, userID); err != nil {
+		if err := s.userRepository.DeactivateAdminAndRevokeSessions(ctx, userID); err != nil {
+			return err
+		}
+		s.audit.PrivilegeChange("set_active", actorID, userID, nil, nil)
+		return nil
+	}
+	if !active {
+		if err := s.userRepository.DeactivateAndRevokeSessions(ctx, userID); err != nil {
 			return err
 		}
 		s.audit.PrivilegeChange("set_active", actorID, userID, nil, nil)

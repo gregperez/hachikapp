@@ -11,7 +11,13 @@ import (
 )
 
 func GetUserRepositoryInstance() ports.UserPort {
-	return repositories.NewUserInstance(GetUserDaoInstance(), GetRoleDaoInstance(), GetUserRoleDaoInstance(), GetValidationService())
+	return repositories.NewUserInstance(
+		GetUserDaoInstance(),
+		GetRoleDaoInstance(),
+		GetUserRoleDaoInstance(),
+		GetValidationService(),
+		RefreshTokenStoreInstance(),
+	)
 }
 
 func GetRoleRepositoryInstance() portsAuthBase.RolePort {

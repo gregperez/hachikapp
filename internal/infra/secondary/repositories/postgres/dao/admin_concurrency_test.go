@@ -51,6 +51,7 @@ func TestSaveFirstAdminConcurrentExactlyOne(t *testing.T) {
 		dao.NewRoleDaoForTest(pg),
 		dao.NewUserRoleDaoForTest(pg),
 		secundary.NewValidationService(),
+		nil,
 	)
 
 	email := fmt.Sprintf("first-admin-%d@example.com", time.Now().UnixNano())

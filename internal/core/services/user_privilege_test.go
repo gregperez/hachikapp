@@ -15,11 +15,13 @@ import (
 )
 
 type memUsers struct {
-	mu     sync.Mutex
-	byID   map[string]domain.User
-	admins int
-	roles  map[string]string
-	saved  []domain.User
+	mu           sync.Mutex
+	byID         map[string]domain.User
+	admins       int
+	roles        map[string]string
+	saved        []domain.User
+	revoked      []string
+	passwordHash string
 }
 
 func newMemUsers() *memUsers {
@@ -190,6 +192,36 @@ func (m *memUsers) DeactivateAdminIfNotLast(ctx context.Context, id string) erro
 	return nil
 }
 func (m *memUsers) UpdatePassword(ctx context.Context, id, passwordHash string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.passwordHash = passwordHash
+	return nil
+}
+func (m *memUsers) UpdatePasswordAndRevokeSessions(ctx context.Context, id, passwordHash string) error {
+	if err := m.UpdatePassword(ctx, id, passwordHash); err != nil {
+		return err
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.revoked = append(m.revoked, id)
+	return nil
+}
+func (m *memUsers) DeactivateAndRevokeSessions(ctx context.Context, id string) error {
+	if err := m.SetActive(ctx, id, false); err != nil {
+		return err
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.revoked = append(m.revoked, id)
+	return nil
+}
+func (m *memUsers) DeactivateAdminAndRevokeSessions(ctx context.Context, id string) error {
+	if err := m.DeactivateAdminIfNotLast(ctx, id); err != nil {
+		return err
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.revoked = append(m.revoked, id)
 	return nil
 }
 func (m *memUsers) FindRoleIDByName(ctx context.Context, name string) (string, error) {
@@ -205,6 +237,16 @@ func (m *memUsers) FindRoleIDByName(ctx context.Context, name string) (string, e
 type memAudit struct {
 	mu   sync.Mutex
 	logs []string
+}
+
+type passwordValidation struct{}
+
+func (passwordValidation) HashPassword(password string) (string, error) {
+	return "new:" + password, nil
+}
+
+func (passwordValidation) CheckPassword(hashedPassword, password string) bool {
+	return hashedPassword == "hash" && password == "CurrentHorse1"
 }
 
 func (a *memAudit) PrivilegeChange(action, actorID, subjectID string, roleIDs []string, isAdmin *bool) {
@@ -330,5 +372,100 @@ func TestSetActiveIdempotent(t *testing.T) {
 	got, _ := repo.FindById(ctx, "u1")
 	if !got.GetActive() {
 		t.Fatal("expected active")
+	}
+	if len(repo.revoked) != 0 {
+		t.Fatalf("activation revoked sessions: %v", repo.revoked)
+	}
+}
+
+func TestChangePasswordRevokesSessions(t *testing.T) {
+	t.Parallel()
+	repo := newMemUsers()
+	repo.put(domain.User{UserGeneric: authBaseDomain.NewUserGeneric(
+		"u1", "Ada", "ada@ex.com", nil, false, true,
+	)})
+	svc := services.NewUserService(repo, passwordValidation{}, nil)
+
+	if err := svc.ChangePassword(
+		context.Background(),
+		"u1",
+		"CurrentHorse1",
+		"ReplacementHorse2",
+	); err != nil {
+		t.Fatalf("ChangePassword() error = %v", err)
+	}
+	if repo.passwordHash != "new:ReplacementHorse2" {
+		t.Fatalf("password hash = %q", repo.passwordHash)
+	}
+	if len(repo.revoked) != 1 || repo.revoked[0] != "u1" {
+		t.Fatalf("revoked = %v, want [u1]", repo.revoked)
+	}
+}
+
+func TestDeactivateRevokesSessionsButActivationDoesNot(t *testing.T) {
+	t.Parallel()
+	repo := newMemUsers()
+	repo.put(domain.User{UserGeneric: authBaseDomain.NewUserGeneric(
+		"u1", "Ada", "ada@ex.com", nil, false, true,
+	)})
+	svc := services.NewUserService(repo, nil, nil)
+	ctx := context.Background()
+
+	if err := svc.SetActive(ctx, "admin", "u1", false); err != nil {
+		t.Fatalf("deactivate error = %v", err)
+	}
+	if len(repo.revoked) != 1 || repo.revoked[0] != "u1" {
+		t.Fatalf("revoked after deactivate = %v", repo.revoked)
+	}
+	if err := svc.SetActive(ctx, "admin", "u1", true); err != nil {
+		t.Fatalf("activate error = %v", err)
+	}
+	if len(repo.revoked) != 1 {
+		t.Fatalf("activation added revocation: %v", repo.revoked)
+	}
+}
+
+func TestDeactivateAdminRevokesSessions(t *testing.T) {
+	t.Parallel()
+	repo := newMemUsers()
+	repo.put(domain.User{UserGeneric: authBaseDomain.NewUserGeneric(
+		"a1", "Admin One", "a1@ex.com", nil, true, true,
+	)})
+	repo.put(domain.User{UserGeneric: authBaseDomain.NewUserGeneric(
+		"a2", "Admin Two", "a2@ex.com", nil, true, true,
+	)})
+	svc := services.NewUserService(repo, nil, nil)
+
+	if err := svc.SetActive(context.Background(), "a2", "a1", false); err != nil {
+		t.Fatalf("SetActive(admin false) error = %v", err)
+	}
+	if len(repo.revoked) != 1 || repo.revoked[0] != "a1" {
+		t.Fatalf("revoked = %v, want [a1]", repo.revoked)
+	}
+}
+
+func TestAdminFlagChangesDoNotRevokeSessions(t *testing.T) {
+	t.Parallel()
+	repo := newMemUsers()
+	repo.put(domain.User{UserGeneric: authBaseDomain.NewUserGeneric(
+		"a1", "Admin One", "a1@ex.com", nil, true, true,
+	)})
+	repo.put(domain.User{UserGeneric: authBaseDomain.NewUserGeneric(
+		"a2", "Admin Two", "a2@ex.com", nil, true, true,
+	)})
+	repo.put(domain.User{UserGeneric: authBaseDomain.NewUserGeneric(
+		"u1", "Ada", "ada@ex.com", nil, false, true,
+	)})
+	svc := services.NewUserService(repo, nil, nil)
+	ctx := context.Background()
+
+	if err := svc.SetAdminFlag(ctx, "a2", "a1", false); err != nil {
+		t.Fatalf("demote error = %v", err)
+	}
+	if err := svc.SetAdminFlag(ctx, "a2", "u1", true); err != nil {
+		t.Fatalf("promote error = %v", err)
+	}
+	if len(repo.revoked) != 0 {
+		t.Fatalf("admin flag changes revoked sessions: %v", repo.revoked)
 	}
 }

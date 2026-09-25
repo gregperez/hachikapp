@@ -8,21 +8,39 @@ import (
 
 	"github.com/WilsonSayago/authBase/v4/core"
 	"github.com/WilsonSayago/authBase/v4/core/domain"
+	"github.com/WilsonSayago/authBase/v4/core/port"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+const defaultPurgeBatchSize = 500
+
 // Store persists refresh sessions in PostgreSQL with atomic Rotate.
 type Store struct {
-	db  *database.PostgresPgx
-	now func() time.Time
+	db             *database.PostgresPgx
+	now            func() time.Time
+	purgeBatchSize int
 }
 
 // New returns a RefreshTokenStore backed by Postgres.
 func New(db *database.PostgresPgx) *Store {
-	return &Store{db: db, now: time.Now}
+	return NewWithPurgeBatchSize(db, defaultPurgeBatchSize)
 }
+
+// NewWithPurgeBatchSize constructs a store with bounded expiry cleanup.
+func NewWithPurgeBatchSize(db *database.PostgresPgx, purgeBatchSize int) *Store {
+	if purgeBatchSize <= 0 {
+		purgeBatchSize = defaultPurgeBatchSize
+	}
+	return &Store{db: db, now: time.Now, purgeBatchSize: purgeBatchSize}
+}
+
+var (
+	_ port.RefreshTokenStore    = (*Store)(nil)
+	_ port.UserSessionRevoker   = (*Store)(nil)
+	_ port.ExpiredSessionPurger = (*Store)(nil)
+)
 
 func (s *Store) Create(ctx context.Context, session domain.RefreshSession) error {
 	if err := ctx.Err(); err != nil {
@@ -155,6 +173,62 @@ WHERE family_id = $1 AND revoked_at IS NULL`, familyID, now); err != nil {
 		return fmt.Errorf("revoke refresh family: %w", err)
 	}
 	return nil
+}
+
+// RevokeUser invalidates every non-revoked refresh session owned by userID.
+func (s *Store) RevokeUser(ctx context.Context, userID string) error {
+	return s.revokeUser(ctx, s.db, userID)
+}
+
+// RevokeUserTx performs user-wide revocation in an existing transaction.
+func (s *Store) RevokeUserTx(ctx context.Context, tx database.Transaction, userID string) error {
+	if tx == nil {
+		return fmt.Errorf("revoke user transaction is nil")
+	}
+	return s.revokeUser(ctx, tx, userID)
+}
+
+func (s *Store) revokeUser(ctx context.Context, db database.DBTX, userID string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if userID == "" {
+		return fmt.Errorf("user id must not be empty")
+	}
+	if _, err := db.Exec(ctx, `
+UPDATE public.refresh_sessions
+SET revoked_at = $2
+WHERE user_id = $1::uuid AND revoked_at IS NULL`, userID, s.now().UTC()); err != nil {
+		return fmt.Errorf("revoke user refresh sessions: %w", err)
+	}
+	return nil
+}
+
+// PurgeExpired deletes at most the configured batch size of sessions whose
+// expiry is strictly before the caller-selected retention cutoff.
+func (s *Store) PurgeExpired(ctx context.Context, before time.Time) (int64, error) {
+	if err := ctx.Err(); err != nil {
+		return 0, err
+	}
+	if before.IsZero() {
+		return 0, fmt.Errorf("purge cutoff must not be zero")
+	}
+	tag, err := s.db.Exec(ctx, `
+WITH expired AS (
+	SELECT token_hash
+	FROM public.refresh_sessions
+	WHERE expires_at < $1
+	ORDER BY expires_at
+	LIMIT $2
+	FOR UPDATE SKIP LOCKED
+)
+DELETE FROM public.refresh_sessions AS sessions
+USING expired
+WHERE sessions.token_hash = expired.token_hash`, before.UTC(), s.purgeBatchSize)
+	if err != nil {
+		return 0, fmt.Errorf("purge expired refresh sessions: %w", err)
+	}
+	return tag.RowsAffected(), nil
 }
 
 func isUniqueViolation(err error) bool {

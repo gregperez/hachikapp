@@ -75,6 +75,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
                         }
+                    },
+                    "429": {
+                        "description": "Authentication rate limit exceeded",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
                     }
                 }
             }
@@ -167,6 +173,12 @@ const docTemplate = `{
                     },
                     "422": {
                         "description": "Validation failed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Authentication rate limit exceeded",
                         "schema": {
                             "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
                         }
@@ -1305,8 +1317,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "newPassword": {
-                    "type": "string",
-                    "minLength": 12
+                    "type": "string"
                 }
             }
         },
@@ -1325,8 +1336,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "password": {
-                    "type": "string",
-                    "minLength": 12
+                    "type": "string"
                 }
             }
         },

@@ -2,7 +2,7 @@ package httpapi
 
 import "net/http"
 
-// Problem is an RFC 7807–style error payload (application/problem+json).
+// Problem is an RFC 9457 problem-details payload (application/problem+json).
 // It never includes stack traces, SQL, DSN, hashes, or tokens.
 type Problem struct {
 	Type      string       `json:"type"`
@@ -30,6 +30,7 @@ const (
 	CodeValidation      = "VALIDATION_ERROR"
 	CodeInternal        = "INTERNAL_ERROR"
 	CodePayloadTooLarge = "PAYLOAD_TOO_LARGE"
+	CodeTooManyRequests = "TOO_MANY_REQUESTS"
 )
 
 const (
@@ -43,6 +44,7 @@ const (
 	TypeValidation      = typeBase + "validation"
 	TypeInternal        = typeBase + "internal"
 	TypePayloadTooLarge = typeBase + "payload-too-large"
+	TypeTooManyRequests = typeBase + "too-many-requests"
 )
 
 const ContentTypeProblemJSON = "application/problem+json"
@@ -89,4 +91,8 @@ func Internal(requestID string) Problem {
 
 func PayloadTooLarge(requestID string) Problem {
 	return newProblem(http.StatusRequestEntityTooLarge, CodePayloadTooLarge, TypePayloadTooLarge, "Payload too large", "Request body exceeds the allowed size", requestID, nil)
+}
+
+func TooManyRequests(requestID string) Problem {
+	return newProblem(http.StatusTooManyRequests, CodeTooManyRequests, TypeTooManyRequests, "Too many requests", "Too many authentication attempts", requestID, nil)
 }

@@ -104,7 +104,7 @@ func run() error {
 		Gate:   gate,
 		Logger: logger,
 		Register: func(r *gin.Engine) {
-			instance.RegisterControllers(r)
+			instance.RegisterControllers(r, cfg)
 		},
 	})
 

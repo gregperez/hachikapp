@@ -10,6 +10,7 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/services"
 	"github.com/WilsonSayago/base-golang/internal/infra/audit"
+	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/ginadapter"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/refreshstore"
@@ -65,11 +66,12 @@ func AuthorizationUseCaseInstance() authBaseCore.AuthorizationUseCase[domain.Use
 	})
 }
 
-func UserUseCaseInstance() core.UserUseCase {
+func UserUseCaseInstance(cfg appconfig.AuthConfig) core.UserUseCase {
 	return services.GetUserServiceInstance(
 		GetUserRepositoryInstance(),
 		GetValidationService(),
 		audit.NewLogger(nil),
+		PasswordBlocklistInstance(cfg),
 	)
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/WilsonSayago/base-golang/internal/infra/config"
+	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/prop"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/sql"
@@ -21,19 +22,21 @@ func OpenDatabase() *database.PostgresPgx {
 	return db
 }
 
-func RegisterControllers(r *gin.Engine) {
+func RegisterControllers(r *gin.Engine, cfg appconfig.Config) {
 	controller.GetAuthControllerInstance(
 		AuthenticationUseCaseInstance(),
 		AuthorizationUseCaseInstance(),
-		UserUseCaseInstance(),
+		UserUseCaseInstance(cfg.Auth),
 		TokenManagerInstance(),
 		r,
 		TranslateInstance(),
+		LoginLimiterInstance(cfg.Auth),
+		ClientOriginResolverInstance(cfg.Auth),
 	).RunController()
 
 	controller.GetUserControllerInstance(
 		AuthorizationUseCaseInstance(),
-		UserUseCaseInstance(),
+		UserUseCaseInstance(cfg.Auth),
 		r,
 		TranslateInstance(),
 	).RunController()

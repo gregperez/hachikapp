@@ -15,7 +15,7 @@ Raise the minimum only with an explicit plan; update README/CI together.
 
 | Module | Chosen | Source |
 |---|---|---|
-| `github.com/WilsonSayago/authBase/v4` | v4.0.1 | published module verified through proxy.golang.org |
+| `github.com/WilsonSayago/authBase/v4` | v4.1.0 | published module; additive session lifecycle capabilities |
 | `github.com/WilsonSayago/initModules/v2` | v2.0.0 | published module |
 | `github.com/gin-gonic/gin` | v1.12.0 | [proxy.golang.org](https://proxy.golang.org/github.com/gin-gonic/gin/@v/list) |
 | `github.com/gin-contrib/cors` | v1.7.9 | proxy |

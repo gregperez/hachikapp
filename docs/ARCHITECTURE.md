@@ -53,10 +53,11 @@ carga de propiedades y singletons tipados.
 adaptadores:
 
 - `UserRepository` implementa lectura de identidad y credenciales.
-- `refreshstore.Store` persiste hashes de refresh token y rota en una
-  transacción.
+- `refreshstore.Store` persiste hashes, rota atómicamente, revoca por usuario y
+  purga expiradas en lotes limitados.
 - `ginadapter.Context` adapta Gin al contexto esperado por autorización.
-- `AuthenticationService` implementa login, refresh y revocación de familia.
+- `AuthenticationService` implementa login, emisión privilegiada, refresh y
+  revocación de familia/usuario.
 - `Authorization` aplica `AuthorizeJWT` y `PoliciesGuard`.
 - `RoleService` usa el `RolePort` PostgreSQL de la aplicación.
 
@@ -94,6 +95,12 @@ la política de baseline.
 
 Los timestamps `created_at` y `updated_at` se administran en base de datos, lo
 que mantiene consistente el keyset entre procesos.
+
+Cambiar contraseña o desactivar una cuenta actualiza `users` y revoca sus
+sesiones en una única transacción. El componente
+`infra/lifecycle.ExpiredSessionPurger` ejecuta limpieza inicial y periódica con
+retención configurable; su registro en `initModules.App` se difiere al plan 015
+para preservar el orden de apagado antes de cerrar PostgreSQL.
 
 ## Observabilidad y límites operativos
 

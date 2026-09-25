@@ -19,6 +19,11 @@
 - Production validation applies TLS/placeholder rules to `DATABASE_URL` (O-012).
 - Config parse errors for ints/durations/bools abort startup (O-013).
 - Go minimum raised to 1.26.6 (O-029).
-- Depend on `authBase/v4@v4.0.1` for typed keyset pagination contracts and on
+- Depend on `authBase/v4@v4.1.0` for typed keyset pagination and additive
+  session lifecycle contracts, and on
   `initModules/v2@v2.0.0`.
+- Password changes and account deactivation now revoke all refresh families in
+  the same PostgreSQL transaction as the account mutation.
+- Added bounded, retention-aware expired-session cleanup prepared for lifecycle
+  registration in plan 015.
 - Process logging migrated from Logrus to `log/slog` (O-027 / plan 011).

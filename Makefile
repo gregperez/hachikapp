@@ -8,7 +8,8 @@ BIN_DIR := $(CURDIR)/.tmp/bin
 export PATH := $(BIN_DIR):$(PATH)
 
 .PHONY: help fmt-check lint test test-race test-db vuln secrets verify tools \
-	check-secrets migrate-verify migrations-test coverage openapi-generate openapi-lint
+	check-secrets migrate-verify migrations-test coverage openapi-generate openapi-lint \
+	mod-policy mod-policy-test
 
 help:
 	@echo "Targets:"
@@ -21,6 +22,8 @@ help:
 	@echo "  test-db           migrate-verify + DB integration tests"
 	@echo "  openapi-generate  regenerate docs/ from swag annotations"
 	@echo "  openapi-lint      contract checks + fail on OpenAPI drift"
+	@echo "  mod-policy        reject local filesystem replacements"
+	@echo "  mod-policy-test   test allowed and rejected replacement fixtures"
 	@echo "  vuln              govulncheck"
 	@echo "  secrets           gitleaks (redacted)"
 	@echo "  coverage          unit coverage profile (informational)"
@@ -44,16 +47,24 @@ fmt-check:
 	@out="$$(gofmt -l cmd internal docs)"; \
 	if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi
 
+mod-policy:
+	@chmod +x scripts/check-local-replaces.sh
+	./scripts/check-local-replaces.sh
+
+mod-policy-test:
+	@chmod +x scripts/check-local-replaces.sh scripts/check-local-replaces-test.sh
+	./scripts/check-local-replaces-test.sh
+
 lint:
 	$(GO) vet ./cmd/... ./internal/...
 	# Run analyzers with the module toolchain so they match go.mod (1.26+/1.27).
 	$(GO) run honnef.co/go/tools/cmd/staticcheck@$(STATICCHECK_VERSION) ./cmd/... ./internal/...
 
 test:
-	$(GO) test -count=1 ./internal/...
+	DATABASE_TEST_URL= $(GO) test -count=1 ./internal/...
 
 test-race:
-	$(GO) test -race -count=1 ./internal/...
+	DATABASE_TEST_URL= $(GO) test -race -count=1 ./internal/...
 
 migrate-verify migrations-test:
 	@chmod +x scripts/migrate-verify.sh
@@ -82,7 +93,7 @@ openapi-lint:
 	@chmod +x scripts/openapi-lint.sh
 	./scripts/openapi-lint.sh
 
-verify: fmt-check lint test test-race secrets vuln openapi-lint
+verify: fmt-check mod-policy mod-policy-test lint test test-race secrets vuln openapi-lint
 	@if [ -z "$${DATABASE_TEST_URL:-}" ]; then \
 		echo "DATABASE_TEST_URL is required for verify (use docker-compose.test.yml)"; \
 		exit 1; \

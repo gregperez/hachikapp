@@ -176,7 +176,16 @@ func TestUsersRolesCascadeOnUserDelete(t *testing.T) {
 
 func TestLoginEmailUsesUniqueIndex(t *testing.T) {
 	pool, ctx := openPool(t)
-	rows, err := pool.Query(ctx, `EXPLAIN SELECT id FROM public.users WHERE email = $1`, "nobody@example.com")
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	if _, err := tx.Exec(ctx, `SET LOCAL enable_seqscan = off`); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := tx.Query(ctx, `EXPLAIN SELECT id FROM public.users WHERE email = $1`, "nobody@example.com")
 	if err != nil {
 		t.Fatal(err)
 	}

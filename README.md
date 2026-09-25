@@ -34,9 +34,10 @@ Migrations create schema and catalog data. A historical seed in `000002` is revo
 
 ## Migrations
 Database migrations are managed using SQL files under `internal/resources/sql/migrations`.
+Create a new pair with a descriptive name (replace `<descriptive_name>`) and fill in both files before committing:
 
 ```sh
-  migrate create -ext sql -dir internal/resources/sql/migrations -seq insert_users_table
+  migrate create -ext sql -dir internal/resources/sql/migrations -seq <descriptive_name>
 ```
 
 ## Configuration

@@ -4,6 +4,14 @@ Estado analizado: commit `99a9826` (`main`), 2026-09-23.
 
 Estos documentos son instrucciones autocontenidas para que otro agente pueda ejecutar la modernización sin repetir el análisis inicial. El orden recomendado prioriza cortar riesgos de seguridad y recuperar una compilación reproducible antes de refactorizar.
 
+> Archivo histórico: cada plan conserva los paths, versiones y evidencia del
+> commit que analizó; no reemplaza la documentación vigente de
+> [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) ni el changelog.
+> Después del cierre de O-030 con authBase v3.0.1, la migración a
+> `authBase/v4` reintrodujo temporalmente un `replace ../authBase` para
+> desarrollo multi-repositorio. Consulte README y la política de dependencias
+> antes de usar un checkout aislado.
+
 ## Reglas para todos los planes
 
 - Crear una rama `codex/<numero>-<slug>` por plan y mantener commits pequeños y revisables.

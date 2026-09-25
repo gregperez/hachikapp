@@ -1,7 +1,9 @@
-# Project Name
+# base-golang
 
 ## Overview
-This project is a Go-based application that uses PostgreSQL for data storage and includes various libraries for handling authentication, database operations, and more.
+Production-oriented Go API template with Gin, PostgreSQL, JWT
+authentication/authorization, refresh-token rotation, cursor pagination, and
+explicit startup/shutdown behavior.
 
 ## Libraries
 
@@ -18,10 +20,16 @@ docker run --name base_golang -e POSTGRES_PASSWORD=change-me-local-only -d -p 54
 ```
 
 ### Internal Packages
-- **jwt/base/internal/core/ports**: Contains the core ports/interfaces for the application.
-- **jwt/base/internal/infra/config/database**: Handles database configuration and connections.
-- **jwt/base/internal/infra/secondary/repositories**: Contains repository implementations for data access.
-- **jwt/base/internal/infra/secondary/repositories/postgres/dao**: Data access objects for PostgreSQL.
+- **internal/core**: domain, application ports, and use cases.
+- **internal/infra/primary**: Gin controllers, DTOs, middleware, and HTTP errors.
+- **internal/infra/secondary/repositories**: port implementations and PostgreSQL adapters.
+- **internal/infra/secondary/repositories/postgres/dao**: SQL-focused data access.
+- **internal/infra/bootstrap**: HTTP engine, health probes, signals, and graceful shutdown.
+
+Architecture details and interactive diagrams:
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- [docs/diagrams/](docs/diagrams/)
 
 ## Database
 The project uses PostgreSQL as the primary database. The database schema includes a `users` table with the following fields:
@@ -29,8 +37,14 @@ The project uses PostgreSQL as the primary database. The database schema include
 - `password`
 - `email`
 - `is_admin`
+- `active`
+- database-managed `created_at` / `updated_at`
 
 Migrations create schema and catalog data. A historical seed in `000002` is revoked by forward migration `000006` so installs do not keep a known privileged account. Bootstrap a real admin via the procedure in [docs/security-operations.md](docs/security-operations.md).
+
+The current schema also contains `roles`, `users_roles`, and
+`refresh_sessions`; see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the
+versioned migrations for ownership and lifecycle details.
 
 ## Migrations
 Database migrations are managed using SQL files under `internal/resources/sql/migrations`.
@@ -58,18 +72,29 @@ Health (unversioned):
 - `GET /health/live` — process up
 - `GET /health/ready` — startup complete and DB reachable
 
-Instance wiring (repositories, validation, controllers) lives in `internal/infra/config/instance/port.go`.
+Instance wiring is split by responsibility under
+`internal/infra/config/instance/`: `port.go` (repositories/adapters),
+`usecase.go` (authBase and application services), and `primary.go`
+(controllers/routes).
 
 Security operations (rotation, bootstrap contract, exposure response, secret scanning):
 
 - [docs/security-operations.md](docs/security-operations.md)
 - `./scripts/check-secrets.sh` (gitleaks)
 
-**Auth note:** after upgrading to authBase v3, all prior JWTs are invalid; users must sign in again. Refresh tokens rotate atomically and are never stored in plaintext.
+**Auth note:** the historical pre-v3 → v3 migration invalidated older JWTs. The
+current v4 upgrade changes pagination contracts and does not itself invalidate
+v3 tokens when signing configuration remains unchanged. Refresh tokens rotate
+atomically and are never stored in plaintext.
 
 ## Dependencies
 
 Go minimum **1.26.6** / preferred toolchain **1.27.1**. Update policy: [docs/dependency-policy.md](docs/dependency-policy.md).
+
+This workspace currently uses `replace github.com/WilsonSayago/authBase/v4 =>
+../authBase` for side-by-side development. A standalone checkout must either
+clone `authBase` at that sibling path or remove the `replace` to resolve the
+published `v4.0.0` module.
 
 ## Development quality gate
 
@@ -89,11 +114,14 @@ To run the project, ensure you have Go installed and set up your PostgreSQL data
   go run ./cmd
 ```
 
-## Generate Documentation with Swagger (Swaggo) 
+## Generate API documentation with Swagger (Swaggo)
 You can test the generated documentation by visiting [http://localhost:8080/swagger/index.html#/](http://localhost:8080/swagger/index.html#/).
 
-To generate documentation using Swagger (Swaggo), use the following command:
+Regenerate and verify the committed contract with:
 
-```sh 
-  swag init -d ./cmd,./internal/infra/primary/controller,./internal/infra/primary/controller/dto 
+```sh
+make openapi-generate
+make openapi-lint
 ```
+
+Contract changes are recorded in [docs/CHANGELOG.md](docs/CHANGELOG.md).

@@ -1,0 +1,127 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "base-golang — Arranque y apagado",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "startup",
+        "label": "Arranque",
+        "focus": ["main", "config", "pool", "engine", "serve"],
+        "note": "La escucha HTTP comienza solo después de validar config, abrir el pool y migrar."
+      },
+      {
+        "id": "shutdown",
+        "label": "Apagado",
+        "focus": ["serve", "unready"],
+        "note": "La señal baja readiness, drena HTTP con deadline y después cierra PostgreSQL."
+      },
+      {
+        "id": "failure",
+        "label": "Fallo temprano",
+        "focus": ["config", "pool"],
+        "note": "Errores de config, conexión o migración abortan antes de exponer el servidor."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "entry", "label": "Proceso" },
+    { "id": "bootstrap", "label": "Bootstrap + PostgreSQL" },
+    { "id": "runtime", "label": "HTTP runtime" }
+  ],
+  "phases": [
+    { "id": "prepare", "label": "Preparar", "fromCol": 0, "toCol": 3 },
+    { "id": "run", "label": "Servir y detener", "fromCol": 4, "toCol": 5, "variant": "emphasis" }
+  ],
+  "mainPath": ["main", "config", "pool", "engine", "serve"],
+  "nodes": [
+    {
+      "id": "main",
+      "lane": "entry",
+      "col": 0,
+      "type": "backend",
+      "label": "main",
+      "sublabel": "run()",
+      "width": 112
+    },
+    {
+      "id": "config",
+      "lane": "bootstrap",
+      "col": 1,
+      "type": "security",
+      "label": "Load + validate",
+      "sublabel": "YAML + ENV + JWT",
+      "width": 136
+    },
+    {
+      "id": "pool",
+      "lane": "bootstrap",
+      "col": 2,
+      "type": "database",
+      "label": "Pool + Migrate",
+      "sublabel": "ping + mismo DSN",
+      "width": 132
+    },
+    {
+      "id": "engine",
+      "lane": "bootstrap",
+      "col": 4,
+      "type": "backend",
+      "label": "NewEngine",
+      "sublabel": "middleware + rutas",
+      "width": 128
+    },
+    {
+      "id": "serve",
+      "lane": "runtime",
+      "col": 5,
+      "type": "cloud",
+      "label": "RunServer",
+      "sublabel": "ready + listen",
+      "tag": "bloquea",
+      "width": 120
+    },
+    {
+      "id": "unready",
+      "lane": "bootstrap",
+      "col": 5,
+      "type": "security",
+      "label": "Unready + Shutdown",
+      "sublabel": "señal + deadline",
+      "width": 144
+    }
+  ],
+  "edges": [
+    { "id": "main-config", "from": "main", "to": "config", "variant": "emphasis" },
+    { "id": "config-pool", "from": "config", "to": "pool", "label": "válida", "variant": "emphasis" },
+    { "id": "pool-engine", "from": "pool", "to": "engine" },
+    { "id": "engine-serve", "from": "engine", "to": "serve", "variant": "emphasis" },
+    {
+      "id": "serve-unready",
+      "from": "serve",
+      "to": "unready",
+      "label": "SIGINT/TERM/HUP/QUIT",
+      "variant": "security",
+      "role": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Orden de arranque",
+      "items": [
+        "Config válida → pool PostgreSQL → migraciones → rutas → escucha HTTP",
+        "Readiness solo se activa cuando el servidor ya está construido"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Apagado seguro",
+      "items": [
+        "La señal desactiva readiness antes de http.Server.Shutdown",
+        "El pool se cierra al salir de run(); el shutdown HTTP tiene timeout"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,268 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "base-golang — Arquitectura hexagonal",
+    "quality_profile": "showcase",
+    "viewBox": [1240, 680],
+    "repository": {
+      "url": "https://github.com/WilsonSayago/base-golang",
+      "provider": "github",
+      "revision": "7c7f909a631771c0bc85a08ff723ac48b64a9ed8"
+    },
+    "views": [
+      {
+        "id": "request-path",
+        "label": "Petición HTTP",
+        "focus": ["client", "engine", "controllers", "usecases", "repositories", "postgres"],
+        "note": "La petición cruza adaptadores primarios, casos de uso y persistencia PostgreSQL."
+      },
+      {
+        "id": "auth-path",
+        "label": "Autenticación",
+        "focus": ["controllers", "authbase", "refreshstore", "postgres"],
+        "note": "authBase/v4 aplica JWT y rotación; la aplicación implementa el store PostgreSQL."
+      },
+      {
+        "id": "bootstrap-path",
+        "label": "Arranque",
+        "focus": ["bootstrap", "initmodules", "migrations", "engine", "postgres"],
+        "note": "main carga y valida config, abre el pool, migra y construye el servidor."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "client",
+      "type": "external",
+      "label": "Cliente",
+      "sublabel": "HTTP + Bearer",
+      "pos": [30, 300],
+      "size": [120, 58]
+    },
+    {
+      "id": "engine",
+      "type": "frontend",
+      "label": "Gin Engine",
+      "sublabel": "middleware + rutas",
+      "pos": [205, 300],
+      "size": [140, 58],
+      "sources": [
+        { "path": "internal/infra/bootstrap/http.go", "line": 31, "end_line": 61, "label": "NewEngine" }
+      ]
+    },
+    {
+      "id": "controllers",
+      "type": "frontend",
+      "label": "Controllers",
+      "sublabel": "auth · users · roles",
+      "pos": [400, 300],
+      "size": [150, 58],
+      "sources": [
+        { "path": "internal/infra/config/instance/primary.go", "line": 23, "end_line": 47, "label": "registro" },
+        { "path": "internal/infra/primary/controller/auth_controller.go", "line": 49, "end_line": 56, "label": "auth routes" }
+      ]
+    },
+    {
+      "id": "authbase",
+      "type": "security",
+      "label": "authBase/v4",
+      "sublabel": "JWT · policies · roles",
+      "pos": [610, 100],
+      "size": [150, 58],
+      "tag": "library",
+      "sources": [
+        { "path": "internal/infra/config/instance/usecase.go", "line": 23, "end_line": 66, "label": "auth wiring" }
+      ]
+    },
+    {
+      "id": "usecases",
+      "type": "backend",
+      "label": "Core services",
+      "sublabel": "casos de uso",
+      "pos": [610, 300],
+      "size": [150, 58],
+      "sources": [
+        { "path": "internal/core/services/user_service.go", "line": 14, "end_line": 60, "label": "UserService" }
+      ]
+    },
+    {
+      "id": "repositories",
+      "type": "backend",
+      "label": "Repositories",
+      "sublabel": "ports → DAO",
+      "pos": [820, 300],
+      "size": [150, 58],
+      "sources": [
+        { "path": "internal/infra/secondary/repositories/user_repository.go", "line": 19, "end_line": 58, "label": "UserRepository" }
+      ]
+    },
+    {
+      "id": "postgres",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "pgx pool",
+      "pos": [1030, 300],
+      "size": [150, 58],
+      "sources": [
+        { "path": "internal/infra/config/database/persistencepgx.go", "line": 49, "end_line": 92, "label": "pool adapter" }
+      ]
+    },
+    {
+      "id": "bootstrap",
+      "type": "backend",
+      "label": "cmd/main.go",
+      "sublabel": "bootstrap explícito",
+      "pos": [205, 510],
+      "size": [150, 58],
+      "sources": [
+        { "path": "cmd/main.go", "line": 40, "end_line": 121, "label": "run" }
+      ]
+    },
+    {
+      "id": "initmodules",
+      "type": "backend",
+      "label": "initModules/v2",
+      "sublabel": "config + singletons",
+      "pos": [30, 510],
+      "size": [150, 58],
+      "tag": "library",
+      "sources": [
+        { "path": "cmd/main.go", "line": 41, "end_line": 58, "label": "config" },
+        { "path": "internal/infra/config/instance/usecase.go", "line": 19, "end_line": 37, "label": "Once" }
+      ]
+    },
+    {
+      "id": "refreshstore",
+      "type": "database",
+      "label": "Refresh store",
+      "sublabel": "Rotate atómico",
+      "pos": [1030, 100],
+      "size": [150, 58],
+      "sources": [
+        { "path": "internal/infra/secondary/repositories/postgres/refreshstore/store.go", "line": 16, "end_line": 26, "label": "store" },
+        { "path": "internal/infra/secondary/repositories/postgres/refreshstore/store.go", "line": 55, "end_line": 140, "label": "Rotate" }
+      ]
+    },
+    {
+      "id": "migrations",
+      "type": "database",
+      "label": "Migrations",
+      "sublabel": "golang-migrate",
+      "pos": [1030, 510],
+      "size": [150, 58],
+      "sources": [
+        { "path": "internal/infra/config/sql/migration.go", "line": 12, "end_line": 31, "label": "Migrate" }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "client-engine",
+      "from": "client",
+      "to": "engine",
+      "label": "HTTP",
+      "variant": "emphasis"
+    },
+    {
+      "id": "engine-controllers",
+      "from": "engine",
+      "to": "controllers",
+      "label": "dispatch"
+    },
+    {
+      "id": "controllers-usecases",
+      "from": "controllers",
+      "to": "usecases",
+      "label": "interfaces",
+      "variant": "emphasis"
+    },
+    {
+      "id": "controllers-authbase",
+      "from": "controllers",
+      "to": "authbase",
+      "label": "AuthorizeJWT",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "id": "authbase-refresh",
+      "from": "authbase",
+      "to": "refreshstore",
+      "label": "Create / Rotate",
+      "variant": "security",
+      "labelDy": -26
+    },
+    {
+      "id": "usecases-repositories",
+      "from": "usecases",
+      "to": "repositories",
+      "label": "ports"
+    },
+    {
+      "id": "repositories-postgres",
+      "from": "repositories",
+      "to": "postgres",
+      "label": "SQL"
+    },
+    {
+      "id": "refresh-postgres",
+      "from": "refreshstore",
+      "to": "postgres",
+      "label": "transacción",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "bootstrap-engine",
+      "from": "bootstrap",
+      "to": "engine",
+      "label": "NewEngine",
+      "variant": "emphasis",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "bootstrap-initmodules",
+      "from": "bootstrap",
+      "to": "initmodules",
+      "label": "LoadProperties / Once",
+      "labelDy": 58
+    },
+    {
+      "id": "bootstrap-migrations",
+      "from": "bootstrap",
+      "to": "migrations",
+      "label": "Migrate",
+      "labelDy": -26
+    },
+    {
+      "id": "migrations-postgres",
+      "from": "migrations",
+      "to": "postgres",
+      "label": "mismo DSN",
+      "fromSide": "top",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Camino principal",
+      "items": [
+        "Cliente → Gin → Controllers → Core services → Repositories → PostgreSQL",
+        "Las dependencias se cablean explícitamente en config/instance"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Límites",
+      "items": [
+        "authBase aporta contratos y seguridad; la aplicación aporta HTTP y persistencia",
+        "initModules se limita a config y singletons; el lifecycle HTTP es explícito"
+      ]
+    }
+  ]
+}

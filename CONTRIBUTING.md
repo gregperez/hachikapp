@@ -51,5 +51,3 @@ Uses gitleaks with `.gitleaks.toml` and `.gitleaks-baseline.json` from plan 001.
 ## CI
 
 GitHub Actions workflow `.github/workflows/ci.yml` mirrors `make verify` with an ephemeral Postgres service and pinned third-party actions (full commit SHAs).
-
-GitHub Actions workflow `.github/workflows/ci.yml` mirrors `make verify` with an ephemeral Postgres service and pinned third-party actions (full commit SHAs).

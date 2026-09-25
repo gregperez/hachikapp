@@ -73,7 +73,10 @@ Perform the following **outside** the repository (secret manager, cloud IAM, dat
 1. **Inventory** — Identify which environments still use historically versioned DB passwords or JWT secrets (type and location only).
 2. **Issue new material** — Create new DB credentials and new access/refresh JWT secrets. Keep access and refresh secrets distinct and long enough (>= 32 bytes).
 3. **Deploy new config** — Roll out the new values to the runtime (env / secret store). Prefer overlapping windows where the app can verify with the new secrets after cutover.
-4. **Revoke sessions** — Invalidate refresh sessions / outstanding tokens issued under the old secrets (logout-all, truncate session store, or equivalent once plan 002 session store exists).
+4. **Revoke sessions** — Invalidate refresh sessions / outstanding tokens
+   issued under the old secrets. Use family revocation where the family is
+   known; for full-key compromise, perform an operator-approved bulk revoke or
+   truncate `refresh_sessions` during the maintenance window.
 5. **Verify** — Confirm health checks, login, and a protected call succeed with the new material.
 6. **Invalidate old material** — Rotate or delete the previous DB password and JWT secrets in the provider so they cannot be reused.
 7. **Record** — Log date, environment, and operator in an external ops log. Never record secret values.
@@ -129,12 +132,15 @@ gitleaks detect --source . --config .gitleaks.toml \
 
 The same command is intended for CI once the quality baseline (plan 003) wires it into the pipeline.
 
-## Token invalidation (authBase v3)
+## Historical token invalidation (pre-v3 → v3)
 
-Deploying the authBase v3 integration **invalidates all previously issued access and refresh tokens**.
-Clients must log in again. Refresh tokens are single-use (atomic rotation); reuse of a
-consumed refresh token revokes the whole family. Prefer `POST /v1/auth/logout` with the
-current refresh token to revoke a family explicitly (idempotent even if already revoked).
+The initial authBase v3 integration **invalidated all tokens issued by the
+pre-v3 implementation**. The later v3 → v4 pagination upgrade does not alter
+token claims or require re-login when signing configuration is unchanged.
+Clients affected by that historical migration had to log in again. Refresh
+tokens are single-use (atomic rotation); reuse of a consumed refresh token
+revokes the whole family. Prefer `POST /v1/auth/logout` with the current refresh
+token to revoke a family explicitly (idempotent even if already revoked).
 
 ## Adding a new sensitive setting
 

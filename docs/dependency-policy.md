@@ -1,6 +1,6 @@
 # Dependency update policy
 
-Last reviewed: 2026-09-23 (plan 011).
+Last reviewed: 2026-09-25 (authBase v4 migration).
 
 ## Go toolchain
 
@@ -15,6 +15,8 @@ Raise the minimum only with an explicit plan; update README/CI together.
 
 | Module | Chosen | Source |
 |---|---|---|
+| `github.com/WilsonSayago/authBase/v4` | v4.0.0 | published module; local sibling `replace` is development-only |
+| `github.com/WilsonSayago/initModules/v2` | v2.0.0 | published module |
 | `github.com/gin-gonic/gin` | v1.12.0 | [proxy.golang.org](https://proxy.golang.org/github.com/gin-gonic/gin/@v/list) |
 | `github.com/gin-contrib/cors` | v1.7.9 | proxy |
 | `github.com/go-playground/validator/v10` | v10.30.5 | proxy |
@@ -26,6 +28,10 @@ Raise the minimum only with an explicit plan; update README/CI together.
 | `github.com/swaggo/files` | v1.0.1 | latest on this module path (`files/v2` not adopted) |
 
 Removed unused direct require: `github.com/pkg/errors`.
+
+The checked-in `authBase/v4 => ../authBase` replacement supports this
+multi-repository workspace. Before distributing a standalone template, remove
+it and run `GOWORK=off go mod tidy && GOWORK=off go mod verify`.
 
 ## Deliberately deferred
 

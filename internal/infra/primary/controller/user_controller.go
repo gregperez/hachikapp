@@ -206,6 +206,7 @@ func (userC *UserController) GetById() func(c *gin.Context) {
 // @Success 200 {object} dto.ResponseDto{data=userout.UserResponse}
 // @Failure 401 {object} httpapi.Problem
 // @Router /v1/users/me [get]
+// @Router /v1/users/full-info [get]
 func (userC *UserController) FindFullById() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		userToken, ok := requireIdentity(userC.authorizationService, c)

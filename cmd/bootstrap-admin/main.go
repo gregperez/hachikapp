@@ -85,7 +85,10 @@ func run() error {
 		return fmt.Errorf("migrate: %w", err)
 	}
 
-	boot := services.NewAdminBootstrap(instance.GetUserRepositoryInstance())
+	boot := services.NewAdminBootstrap(
+		instance.GetUserRepositoryInstance(),
+		instance.PasswordBlocklistInstance(cfg.Auth),
+	)
 	if err := boot.Run(context.Background(), name, email, password); err != nil {
 		if errors.Is(err, domain.ErrAdminExists) {
 			return fmt.Errorf("administrator already exists")

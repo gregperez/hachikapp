@@ -5,7 +5,7 @@ package users
 type CreateUserRequest struct {
 	Name     string `json:"name" binding:"required"`
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=12"`
+	Password string `json:"password" binding:"required"`
 }
 
 // UpdateOwnProfileRequest allows a user to edit their own non-privileged fields.
@@ -34,7 +34,7 @@ type SetAdminFlagRequest struct {
 // ChangePasswordRequest changes the caller's password after verifying the current one.
 type ChangePasswordRequest struct {
 	CurrentPassword string `json:"currentPassword" binding:"required"`
-	NewPassword     string `json:"newPassword" binding:"required,min=12"`
+	NewPassword     string `json:"newPassword" binding:"required"`
 }
 
 // SetActiveRequest sets the desired active flag (idempotent).

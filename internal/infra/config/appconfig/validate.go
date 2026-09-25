@@ -2,6 +2,7 @@ package appconfig
 
 import (
 	"fmt"
+	"net/netip"
 	"strings"
 )
 
@@ -65,6 +66,26 @@ func (c Config) Validate() error {
 	}
 	if c.Runtime.LogLevel == "" {
 		return RedactedError("runtime.logLevel", "is required")
+	}
+	if c.Auth.LoginAccountLimit <= 0 {
+		return RedactedError("auth.loginAccountLimit", "must be positive")
+	}
+	if c.Auth.LoginOriginLimit <= 0 {
+		return RedactedError("auth.loginOriginLimit", "must be positive")
+	}
+	if c.Auth.RefreshFamilyLimit <= 0 {
+		return RedactedError("auth.refreshFamilyLimit", "must be positive")
+	}
+	if c.Auth.RateLimitWindow <= 0 {
+		return RedactedError("auth.rateLimitWindow", "must be positive")
+	}
+	if c.Auth.RateLimitMaxEntries <= 0 {
+		return RedactedError("auth.rateLimitMaxEntries", "must be positive")
+	}
+	for _, raw := range c.Auth.TrustedProxyCIDRs {
+		if _, err := netip.ParsePrefix(raw); err != nil {
+			return RedactedError("auth.trustedProxyCIDRs", "contains an invalid CIDR")
+		}
 	}
 
 	if c.CORS.AllowCredentials {

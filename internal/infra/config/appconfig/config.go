@@ -21,6 +21,7 @@ type Config struct {
 	CORS     CORSConfig
 	Docs     DocsConfig
 	Runtime  RuntimeConfig
+	Auth     AuthConfig
 }
 
 type ServerConfig struct {
@@ -65,6 +66,16 @@ type RuntimeConfig struct {
 	GinMode     string
 }
 
+type AuthConfig struct {
+	PasswordBlocklist   []string
+	LoginAccountLimit   int
+	LoginOriginLimit    int
+	RefreshFamilyLimit  int
+	RateLimitWindow     time.Duration
+	RateLimitMaxEntries int
+	TrustedProxyCIDRs   []string
+}
+
 // Defaults returns non-sensitive defaults. Secrets must come from env/file.
 func Defaults() Config {
 	return Config{
@@ -99,6 +110,20 @@ func Defaults() Config {
 			Environment: EnvDevelopment,
 			LogLevel:    "info",
 			GinMode:     "",
+		},
+		Auth: AuthConfig{
+			PasswordBlocklist: []string{
+				"passwordpassword",
+				"correct horse battery staple",
+				"qwertyuiopasdfgh",
+				"letmeinletmein",
+			},
+			LoginAccountLimit:   5,
+			LoginOriginLimit:    20,
+			RefreshFamilyLimit:  10,
+			RateLimitWindow:     15 * time.Minute,
+			RateLimitMaxEntries: 10000,
+			TrustedProxyCIDRs:   nil,
 		},
 	}
 }

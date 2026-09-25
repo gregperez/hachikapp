@@ -262,7 +262,7 @@ func TestCreateStripsPrivileges(t *testing.T) {
 	err := svc.Create(context.Background(), domain.WithPlainPassword(domain.User{
 		UserGeneric: authBaseDomain.NewUserGeneric("", "Ada", "ada@ex.com",
 			[]authBaseDomain.Role{{Base: authBaseDomain.Base{Id: "r1"}}}, true, true),
-	}, "CorrectHorse1"))
+	}, "CorrectHorseBattery1"))
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
@@ -341,10 +341,10 @@ func TestAdminBootstrapOnce(t *testing.T) {
 	repo := newMemUsers()
 	boot := services.NewAdminBootstrap(repo)
 	ctx := context.Background()
-	if err := boot.Run(ctx, "Admin", "admin@ex.com", "CorrectHorse1"); err != nil {
+	if err := boot.Run(ctx, "Admin", "admin@ex.com", "CorrectHorseBattery1"); err != nil {
 		t.Fatalf("first: %v", err)
 	}
-	if err := boot.Run(ctx, "Admin", "admin2@ex.com", "CorrectHorse1"); !errors.Is(err, domain.ErrAdminExists) {
+	if err := boot.Run(ctx, "Admin", "admin2@ex.com", "CorrectHorseBattery1"); !errors.Is(err, domain.ErrAdminExists) {
 		t.Fatalf("second: %v", err)
 	}
 }

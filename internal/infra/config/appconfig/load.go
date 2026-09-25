@@ -118,6 +118,28 @@ func applyEnv(cfg *Config) error {
 	}
 	setStr(&cfg.Runtime.LogLevel, "LOG_LEVEL")
 	setStr(&cfg.Runtime.GinMode, "GIN_MODE")
+
+	if v := os.Getenv("AUTH_PASSWORD_BLOCKLIST"); v != "" {
+		cfg.Auth.PasswordBlocklist = splitCSV(v)
+	}
+	if err := setInt(&cfg.Auth.LoginAccountLimit, "AUTH_LOGIN_ACCOUNT_LIMIT"); err != nil {
+		return err
+	}
+	if err := setInt(&cfg.Auth.LoginOriginLimit, "AUTH_LOGIN_ORIGIN_LIMIT"); err != nil {
+		return err
+	}
+	if err := setInt(&cfg.Auth.RefreshFamilyLimit, "AUTH_REFRESH_FAMILY_LIMIT"); err != nil {
+		return err
+	}
+	if err := setDuration(&cfg.Auth.RateLimitWindow, "AUTH_RATE_LIMIT_WINDOW"); err != nil {
+		return err
+	}
+	if err := setInt(&cfg.Auth.RateLimitMaxEntries, "AUTH_RATE_LIMIT_MAX_ENTRIES"); err != nil {
+		return err
+	}
+	if v := os.Getenv("AUTH_TRUSTED_PROXY_CIDRS"); v != "" {
+		cfg.Auth.TrustedProxyCIDRs = splitCSV(v)
+	}
 	return nil
 }
 
@@ -244,6 +266,16 @@ func envField(envKey string) string {
 		return "server.shutdownTimeout"
 	case "SERVER_MAX_HEADER_BYTES":
 		return "server.maxHeaderBytes"
+	case "AUTH_LOGIN_ACCOUNT_LIMIT":
+		return "auth.loginAccountLimit"
+	case "AUTH_LOGIN_ORIGIN_LIMIT":
+		return "auth.loginOriginLimit"
+	case "AUTH_REFRESH_FAMILY_LIMIT":
+		return "auth.refreshFamilyLimit"
+	case "AUTH_RATE_LIMIT_WINDOW":
+		return "auth.rateLimitWindow"
+	case "AUTH_RATE_LIMIT_MAX_ENTRIES":
+		return "auth.rateLimitMaxEntries"
 	default:
 		return strings.ToLower(envKey)
 	}

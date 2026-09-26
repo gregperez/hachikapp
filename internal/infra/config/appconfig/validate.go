@@ -96,6 +96,9 @@ func (c Config) Validate() error {
 			return RedactedError("auth.trustedProxyCIDRs", "contains an invalid CIDR")
 		}
 	}
+	if err := c.Auth.OIDC.validate(c.IsProduction()); err != nil {
+		return err
+	}
 
 	if c.CORS.AllowCredentials {
 		for _, origin := range c.CORS.AllowedOrigins {

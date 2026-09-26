@@ -122,6 +122,283 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/auth/oidc/google": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Removes the explicit (issuer, subject) link after password confirmation. Password login remains available.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Unlink a Google identity",
+                "parameters": [
+                    {
+                        "description": "Password confirmation",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCUnlinkRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Unlinked"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/auth/oidc/google/callback": {
+            "get": {
+                "description": "Consumes the one-time state cookie and code, then redirects to an allowlisted destination with an opaque grant or link status.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Complete Google OIDC callback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Authorization code",
+                        "name": "code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "CSRF state",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirect to the allowlisted destination"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/auth/oidc/google/exchange": {
+            "post": {
+                "description": "Consumes a one-time opaque grant and returns the existing local token contract. The grant is not a JWT.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Exchange an OIDC grant for local tokens",
+                "parameters": [
+                    {
+                        "description": "Opaque grant",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCExchangeRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.AuthDto"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/auth/oidc/google/link": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires a current access token and password confirmation. Does not auto-link by email.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Start explicit Google account linking",
+                "parameters": [
+                    {
+                        "description": "Password confirmation and allowlisted destination",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCLinkRequestDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirect to the identity provider"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/auth/oidc/google/login": {
+            "get": {
+                "description": "Redirects the browser to Google using Authorization Code + PKCE. Tokens never appear in the redirect.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Start Google OIDC login",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Exact allowlisted frontend destination",
+                        "name": "return_to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirect to the identity provider"
+                    },
+                    "400": {
+                        "description": "Destination is not allowlisted",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Authentication rate limit exceeded",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "503": {
+                        "description": "OIDC is disabled or unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/auth/refresh-token": {
             "post": {
                 "description": "Refreshes tokens using a refresh token (single-use rotation)",
@@ -1259,6 +1536,33 @@ const docTemplate = `{
                     "description": "🔹 Ejemplo de contraseña",
                     "type": "string",
                     "example": "password123"
+                }
+            }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCExchangeRequestDto": {
+            "type": "object",
+            "properties": {
+                "grant": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCLinkRequestDto": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "returnTo": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCUnlinkRequestDto": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string"
                 }
             }
         },

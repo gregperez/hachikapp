@@ -24,7 +24,7 @@ Plan 015 revisits that boundary now that isolated `NewContainer`, `OnceIn`,
    register properties on the package-level loader.
 2. **Use** one `initModules.NewApp` per `bootstrap.Application` and register
    `Lifecycle` adapters in dependency order: database, translations, expired
-   session cleanup, then HTTP.
+   session cleanup, optional OIDC transaction cleanup, then HTTP.
 3. **Do not** use package-level `Once`, `SetDefault` loggers, or a database
    singleton on production paths. `OnceIn` is acceptable only with the
    Application's own container.

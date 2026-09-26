@@ -85,6 +85,16 @@ per-refresh-family quotas. Forwarded client addresses are ignored unless
 `AUTH_TRUSTED_PROXY_CIDRS` explicitly identifies the deployment's proxies.
 Multi-replica deployments must replace the in-memory limiter with shared state.
 
+Optional Google Sign-In is OpenID Connect, not the Gmail API. Enable it with
+`OIDC_ENABLED=true` plus a 32-byte `OIDC_ENCRYPTION_KEY`, client credentials,
+an exact HTTPS redirect URI, and an allowlist of frontend destinations.
+Existing password users must link `(issuer, subject)` explicitly; matching
+email alone does not create a session. The browser callback returns an opaque
+one-time grant. `POST /v1/auth/oidc/google/exchange` then calls
+`EstablishSession` and returns the existing token contract. Losing the last
+authenticator (password plus every linked identity) requires a separate
+account-recovery process.
+
 **Auth note:** the historical pre-v3 → v3 migration invalidated older JWTs. The
 current v4 upgrade changes pagination contracts and does not itself invalidate
 v3 tokens when signing configuration remains unchanged. Refresh tokens rotate

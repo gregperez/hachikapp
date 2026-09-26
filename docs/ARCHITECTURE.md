@@ -37,7 +37,8 @@ lifecycles en este orden:
 1. Base de datos: ping al iniciar, close al detener.
 2. Traducciones: carga de locales.
 3. Limpieza de sesiones expiradas del plan 013.
-4. HTTP: listen al iniciar; readiness false y `Shutdown` al detener.
+4. Limpieza de transacciones/grants OIDC (si el login federado está habilitado).
+5. HTTP: listen al iniciar; readiness false y `Shutdown` al detener.
 
 `RunWithSignals` bloquea hasta una señal y detiene en orden inverso
 (HTTP → workers → DB) con un contexto de stop independiente del contexto
@@ -55,6 +56,11 @@ adaptadores:
 - `ginadapter.Context` adapta Gin al contexto esperado por autorización.
 - `AuthenticationService` implementa login, emisión privilegiada, refresh y
   revocación de familia/usuario.
+- El login federado OIDC vive en `base-golang`: un adaptador provider-neutral
+  verifica Authorization Code + PKCE, resuelve `(issuer, subject)` y llama
+  `EstablishSession`. No hay auto-registro ni auto-enlace por email. El
+  callback redirige con un grant opaco; los JWT locales salen solo de
+  `POST /v1/auth/oidc/google/exchange`.
 - `Authorization` aplica `AuthorizeJWT` y `PoliciesGuard`.
 - `RoleService` usa el `RolePort` PostgreSQL de la aplicación.
 
@@ -63,6 +69,9 @@ Rutas públicas:
 - `POST /v1/auth/login`
 - `POST /v1/auth/refresh-token`
 - `POST /v1/auth/logout`
+- `GET /v1/auth/oidc/google/login`
+- `GET /v1/auth/oidc/google/callback`
+- `POST /v1/auth/oidc/google/exchange`
 - `GET /health/live`
 - `GET /health/ready`
 

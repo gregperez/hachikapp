@@ -22,29 +22,31 @@ type FieldError struct {
 
 // Stable problem codes.
 const (
-	CodeBadRequest      = "BAD_REQUEST"
-	CodeUnauthorized    = "UNAUTHORIZED"
-	CodeForbidden       = "FORBIDDEN"
-	CodeNotFound        = "NOT_FOUND"
-	CodeConflict        = "CONFLICT"
-	CodeValidation      = "VALIDATION_ERROR"
-	CodeInternal        = "INTERNAL_ERROR"
-	CodePayloadTooLarge = "PAYLOAD_TOO_LARGE"
-	CodeTooManyRequests = "TOO_MANY_REQUESTS"
+	CodeBadRequest         = "BAD_REQUEST"
+	CodeUnauthorized       = "UNAUTHORIZED"
+	CodeForbidden          = "FORBIDDEN"
+	CodeNotFound           = "NOT_FOUND"
+	CodeConflict           = "CONFLICT"
+	CodeValidation         = "VALIDATION_ERROR"
+	CodeInternal           = "INTERNAL_ERROR"
+	CodePayloadTooLarge    = "PAYLOAD_TOO_LARGE"
+	CodeTooManyRequests    = "TOO_MANY_REQUESTS"
+	CodeServiceUnavailable = "SERVICE_UNAVAILABLE"
 )
 
 const (
 	typeBase = "https://example.invalid/problems/"
 
-	TypeBadRequest      = typeBase + "bad-request"
-	TypeUnauthorized    = typeBase + "unauthorized"
-	TypeForbidden       = typeBase + "forbidden"
-	TypeNotFound        = typeBase + "not-found"
-	TypeConflict        = typeBase + "conflict"
-	TypeValidation      = typeBase + "validation"
-	TypeInternal        = typeBase + "internal"
-	TypePayloadTooLarge = typeBase + "payload-too-large"
-	TypeTooManyRequests = typeBase + "too-many-requests"
+	TypeBadRequest         = typeBase + "bad-request"
+	TypeUnauthorized       = typeBase + "unauthorized"
+	TypeForbidden          = typeBase + "forbidden"
+	TypeNotFound           = typeBase + "not-found"
+	TypeConflict           = typeBase + "conflict"
+	TypeValidation         = typeBase + "validation"
+	TypeInternal           = typeBase + "internal"
+	TypePayloadTooLarge    = typeBase + "payload-too-large"
+	TypeTooManyRequests    = typeBase + "too-many-requests"
+	TypeServiceUnavailable = typeBase + "service-unavailable"
 )
 
 const ContentTypeProblemJSON = "application/problem+json"
@@ -95,4 +97,11 @@ func PayloadTooLarge(requestID string) Problem {
 
 func TooManyRequests(requestID string) Problem {
 	return newProblem(http.StatusTooManyRequests, CodeTooManyRequests, TypeTooManyRequests, "Too many requests", "Too many authentication attempts", requestID, nil)
+}
+
+func ServiceUnavailable(detail, requestID string) Problem {
+	if detail == "" {
+		detail = "The authentication provider is unavailable"
+	}
+	return newProblem(http.StatusServiceUnavailable, CodeServiceUnavailable, TypeServiceUnavailable, "Service unavailable", detail, requestID, nil)
 }

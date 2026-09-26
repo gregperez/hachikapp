@@ -12,11 +12,25 @@ type Logger struct {
 	log *slog.Logger
 }
 
-func NewLogger(log *slog.Logger) (ports.PrivilegeAuditor, error) {
+func NewLogger(log *slog.Logger) (Logger, error) {
 	if log == nil {
-		return nil, fmt.Errorf("audit logger is required")
+		return Logger{}, fmt.Errorf("audit logger is required")
 	}
 	return Logger{log: log}, nil
+}
+
+var (
+	_ ports.PrivilegeAuditor = Logger{}
+	_ ports.OIDCAuditor      = Logger{}
+)
+
+func (l Logger) OIDCEvent(action, provider, actorID, outcome string) {
+	l.log.Info("oidc event",
+		"action", action,
+		"provider", provider,
+		"actor_id", actorID,
+		"outcome", outcome,
+	)
 }
 
 func (l Logger) PrivilegeChange(action, actorID, subjectID string, roleIDs []string, isAdmin *bool) {

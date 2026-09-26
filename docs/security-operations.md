@@ -187,6 +187,34 @@ The included bounded in-memory limiter is suitable for one replica. Multiple
 replicas require an adapter backed by shared storage so every instance enforces
 the same counters and windows.
 
+## Google OIDC
+
+Sign in with Google is Authorization Code + PKCE S256. It does not call Gmail
+APIs and does not persist Google access or refresh tokens.
+
+1. Register a Web client in Google Cloud with the exact redirect
+   `https://<api-host>/v1/auth/oidc/google/callback`.
+2. Set `OIDC_ENABLED=true`, `OIDC_GOOGLE_CLIENT_ID`,
+   `OIDC_GOOGLE_CLIENT_SECRET`, `OIDC_GOOGLE_REDIRECT_URI`, and
+   `OIDC_GOOGLE_ALLOWED_DESTINATIONS` to exact frontend URLs (no wildcards).
+3. Generate `OIDC_ENCRYPTION_KEY` with `openssl rand -hex 32`. This key seals
+   the PKCE verifier at rest; rotate it like any other secret.
+4. Production rejects HTTP issuers, HTTP redirects, empty destinations, and
+   placeholder secrets.
+
+Linking is an authenticated operation (`POST /v1/auth/oidc/google/link`) and
+requires the current password. Login only succeeds for an already-linked
+`(issuer, subject)`. Unlink with `DELETE /v1/auth/oidc/google` after password
+confirmation. Password login remains available. If a user loses every
+authenticator, use a separate recovery process; this API does not invent one.
+
+Rotate the Google client secret in Google Cloud, then update
+`OIDC_GOOGLE_CLIENT_SECRET` and restart. Existing links stay valid because
+identity is `(issuer, subject)`, not the client secret.
+
+Expired OIDC transactions and grants are purged by the process lifecycle using
+the same interval/retention/batch settings as session cleanup.
+
 ## Adding a new sensitive setting
 
 1. Add the key to `properties.example.yml` and `.env.example` with a placeholder or `${ENV_VAR}`.

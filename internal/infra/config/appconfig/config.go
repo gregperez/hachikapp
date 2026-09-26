@@ -77,6 +77,29 @@ type AuthConfig struct {
 	SessionPurgeInterval   time.Duration
 	SessionPurgeRetention  time.Duration
 	SessionPurgeMaxBatches int
+	OIDC                   OIDCConfig
+}
+
+// OIDCConfig is the optional federated-login configuration.
+type OIDCConfig struct {
+	Enabled        bool
+	HTTPTimeout    time.Duration
+	TransactionTTL time.Duration
+	GrantTTL       time.Duration
+	CookieName     string
+	CookiePath     string
+	EncryptionKey  string
+	Providers      []OIDCProviderConfig
+}
+
+// OIDCProviderConfig is one Authorization Code + PKCE provider.
+type OIDCProviderConfig struct {
+	Name                     string
+	Issuer                   string
+	ClientID                 string
+	ClientSecret             string
+	RedirectURI              string
+	AllowedFinalDestinations []string
 }
 
 // Defaults returns non-sensitive defaults. Secrets must come from env/file.
@@ -130,6 +153,14 @@ func Defaults() Config {
 			SessionPurgeInterval:   time.Hour,
 			SessionPurgeRetention:  24 * time.Hour,
 			SessionPurgeMaxBatches: 10,
+			OIDC: OIDCConfig{
+				Enabled:        false,
+				HTTPTimeout:    10 * time.Second,
+				TransactionTTL: 10 * time.Minute,
+				GrantTTL:       2 * time.Minute,
+				CookieName:     "oidc_tx",
+				CookiePath:     "/v1/auth/oidc",
+			},
 		},
 	}
 }

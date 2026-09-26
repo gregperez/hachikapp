@@ -42,6 +42,11 @@ func TestOpenAPIContract(t *testing.T) {
 		"/v1/auth/login",
 		"/v1/auth/refresh-token",
 		"/v1/auth/logout",
+		"/v1/auth/oidc/google/login",
+		"/v1/auth/oidc/google/callback",
+		"/v1/auth/oidc/google/exchange",
+		"/v1/auth/oidc/google/link",
+		"/v1/auth/oidc/google",
 		"/v1/users",
 		"/v1/users/{id}",
 		"/v1/users/me",
@@ -56,9 +61,12 @@ func TestOpenAPIContract(t *testing.T) {
 	}
 
 	publicNoAuth := map[string]bool{
-		"post /v1/auth/login":         true,
-		"post /v1/auth/refresh-token": true,
-		"post /v1/auth/logout":        true,
+		"post /v1/auth/login":                true,
+		"post /v1/auth/refresh-token":        true,
+		"post /v1/auth/logout":               true,
+		"get /v1/auth/oidc/google/login":     true,
+		"get /v1/auth/oidc/google/callback":  true,
+		"post /v1/auth/oidc/google/exchange": true,
 	}
 	for path, methods := range paths {
 		methodMap, _ := methods.(map[string]any)
@@ -80,7 +88,8 @@ func TestOpenAPIContract(t *testing.T) {
 				}
 				continue
 			}
-			if strings.HasPrefix(path, "/v1/users") || strings.HasPrefix(path, "/v1/roles") {
+			if strings.HasPrefix(path, "/v1/users") || strings.HasPrefix(path, "/v1/roles") ||
+				key == "post /v1/auth/oidc/google/link" || key == "delete /v1/auth/oidc/google" {
 				if !hasBearer {
 					t.Fatalf("private route %s missing BearerAuth", key)
 				}

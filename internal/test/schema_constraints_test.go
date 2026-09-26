@@ -205,6 +205,36 @@ func TestLoginEmailUsesUniqueIndex(t *testing.T) {
 	}
 }
 
+func TestExternalIdentitiesUniqueIssuerSubject(t *testing.T) {
+	pool, ctx := openPool(t)
+	var exists bool
+	if err := pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'external_identities_issuer_subject_key')`).Scan(&exists); err != nil {
+		t.Fatal(err)
+	}
+	if !exists {
+		t.Skip("migration 000013 not applied")
+	}
+
+	var userID string
+	email := "oidc-" + time.Now().Format("150405.000") + "@example.com"
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO public.users (name, email, password) VALUES ('t', $1, 'x') RETURNING id`, email,
+	).Scan(&userID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `
+INSERT INTO public.external_identities (provider, issuer, subject, user_id)
+VALUES ('google', 'https://accounts.example.test', 'sub-dup', $1)`, userID); err != nil {
+		t.Fatal(err)
+	}
+	_, err := pool.Exec(ctx, `
+INSERT INTO public.external_identities (provider, issuer, subject, user_id)
+VALUES ('google', 'https://accounts.example.test', 'sub-dup', $1)`, userID)
+	if !isUniqueViolation(err) {
+		t.Fatalf("second identity err=%v, want unique_violation", err)
+	}
+}
+
 func TestSchemaHasHardenedConstraints(t *testing.T) {
 	pool, ctx := openPool(t)
 	for _, name := range []string{"roles_name_key", "users_roles_user_id_role_id_key"} {

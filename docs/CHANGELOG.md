@@ -12,6 +12,10 @@
 
 ### Security / reliability
 
+- Optional Google Sign-In uses OpenID Connect Authorization Code + PKCE.
+  Identities bind by `(issuer, subject)` after an explicit authenticated link.
+  The callback never places local or Google tokens in the redirect URL.
+
 - Privileged boolean request fields (`active`, `isAdmin`) require an explicit
   value; omitted fields return 422 instead of defaulting to `false` (O-024).
 - Unique conflicts map to HTTP 409 (O-025).

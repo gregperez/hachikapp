@@ -80,6 +80,23 @@ definitions:
     - email
     - password
     type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCExchangeRequestDto:
+    properties:
+      grant:
+        type: string
+    type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCLinkRequestDto:
+    properties:
+      password:
+        type: string
+      returnTo:
+        type: string
+    type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCUnlinkRequestDto:
+    properties:
+      password:
+        type: string
+    type: object
   github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto:
     description: Estructura esperada para refrescar un token JWT
     properties:
@@ -369,6 +386,187 @@ paths:
           schema:
             $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
       summary: Logout / revoke refresh family
+      tags:
+      - Authentication
+  /v1/auth/oidc/google:
+    delete:
+      consumes:
+      - application/json
+      description: Removes the explicit (issuer, subject) link after password confirmation.
+        Password login remains available.
+      parameters:
+      - description: Password confirmation
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCUnlinkRequestDto'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Unlinked
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Unlink a Google identity
+      tags:
+      - Authentication
+  /v1/auth/oidc/google/callback:
+    get:
+      description: Consumes the one-time state cookie and code, then redirects to
+        an allowlisted destination with an opaque grant or link status.
+      parameters:
+      - description: Authorization code
+        in: query
+        name: code
+        type: string
+      - description: CSRF state
+        in: query
+        name: state
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: Redirect to the allowlisted destination
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      summary: Complete Google OIDC callback
+      tags:
+      - Authentication
+  /v1/auth/oidc/google/exchange:
+    post:
+      consumes:
+      - application/json
+      description: Consumes a one-time opaque grant and returns the existing local
+        token contract. The grant is not a JWT.
+      parameters:
+      - description: Opaque grant
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCExchangeRequestDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.AuthDto'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      summary: Exchange an OIDC grant for local tokens
+      tags:
+      - Authentication
+  /v1/auth/oidc/google/link:
+    post:
+      consumes:
+      - application/json
+      description: Requires a current access token and password confirmation. Does
+        not auto-link by email.
+      parameters:
+      - description: Password confirmation and allowlisted destination
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCLinkRequestDto'
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: Redirect to the identity provider
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Start explicit Google account linking
+      tags:
+      - Authentication
+  /v1/auth/oidc/google/login:
+    get:
+      description: Redirects the browser to Google using Authorization Code + PKCE.
+        Tokens never appear in the redirect.
+      parameters:
+      - description: Exact allowlisted frontend destination
+        in: query
+        name: return_to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: Redirect to the identity provider
+        "400":
+          description: Destination is not allowlisted
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "429":
+          description: Authentication rate limit exceeded
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "503":
+          description: OIDC is disabled or unavailable
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      summary: Start Google OIDC login
       tags:
       - Authentication
   /v1/auth/refresh-token:

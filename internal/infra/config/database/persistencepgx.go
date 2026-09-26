@@ -139,7 +139,10 @@ func OpenPool(ctx context.Context, cfg appconfig.DatabaseConfig) (*PostgresPgx, 
 	return &PostgresPgx{pool: pool}, nil
 }
 
-// SetSingleton installs the process-wide pool used by legacy Once wiring.
+// SetSingleton is retained only so tests can prove production wiring does not
+// install a process-wide pool.
+//
+// Deprecated: inject *PostgresPgx explicitly.
 func SetSingleton(db *PostgresPgx) {
 	databasePostgresPgxSingleton = db
 }

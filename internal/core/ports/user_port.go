@@ -25,5 +25,8 @@ type UserPort interface {
 	DemoteAdminIfNotLast(ctx context.Context, id string) error
 	DeactivateAdminIfNotLast(ctx context.Context, id string) error
 	UpdatePassword(ctx context.Context, id, passwordHash string) error
+	UpdatePasswordAndRevokeSessions(ctx context.Context, id, passwordHash string) error
+	DeactivateAndRevokeSessions(ctx context.Context, id string) error
+	DeactivateAdminAndRevokeSessions(ctx context.Context, id string) error
 	FindRoleIDByName(ctx context.Context, name string) (string, error)
 }

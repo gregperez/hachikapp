@@ -9,45 +9,43 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/core"
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/ports"
-	initModules "github.com/WilsonSayago/initModules/v2"
 )
 
 type UserService struct {
 	userRepository ports.UserPort
 	validation     authBasePorts.ValidationPort
 	audit          ports.PrivilegeAuditor
+	passwords      domain.PasswordBlocklist
 }
 
 func GetUserServiceInstance(
 	userRepository ports.UserPort,
 	validation authBasePorts.ValidationPort,
 	audit ports.PrivilegeAuditor,
+	passwords ...domain.PasswordBlocklist,
 ) core.UserUseCase {
-	return initModules.Once(func() *UserService {
-		if audit == nil {
-			audit = ports.NoopAuditor{}
-		}
-		return &UserService{
-			userRepository: userRepository,
-			validation:     validation,
-			audit:          audit,
-		}
-	})
+	return NewUserService(userRepository, validation, audit, passwords...)
 }
 
-// NewUserService constructs a UserService without the process-wide Once (tests).
+// NewUserService constructs a UserService without process-wide state.
 func NewUserService(
 	userRepository ports.UserPort,
 	validation authBasePorts.ValidationPort,
 	audit ports.PrivilegeAuditor,
+	passwords ...domain.PasswordBlocklist,
 ) *UserService {
 	if audit == nil {
 		audit = ports.NoopAuditor{}
+	}
+	var passwordBlocklist domain.PasswordBlocklist
+	if len(passwords) > 0 {
+		passwordBlocklist = passwords[0]
 	}
 	return &UserService{
 		userRepository: userRepository,
 		validation:     validation,
 		audit:          audit,
+		passwords:      passwordBlocklist,
 	}
 }
 
@@ -68,7 +66,13 @@ func (s *UserService) FindFullById(ctx context.Context, id string) (domain.User,
 }
 
 func (s *UserService) Create(ctx context.Context, user domain.User) error {
-	if err := domain.ValidatePassword(user.PlainPassword()); err != nil {
+	if err := domain.ValidatePasswordContext(
+		ctx,
+		user.PlainPassword(),
+		s.passwords,
+		user.GetName(),
+		user.GetEmail(),
+	); err != nil {
 		return err
 	}
 	clean := domain.WithPlainPassword(domain.User{
@@ -194,11 +198,17 @@ func (s *UserService) ChangePassword(ctx context.Context, userID, currentPasswor
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if err := domain.ValidatePassword(newPassword); err != nil {
-		return err
-	}
 	existing, err := s.userRepository.FindFullById(ctx, userID)
 	if err != nil {
+		return err
+	}
+	if err := domain.ValidatePasswordContext(
+		ctx,
+		newPassword,
+		s.passwords,
+		existing.GetName(),
+		existing.GetEmail(),
+	); err != nil {
 		return err
 	}
 	cred, err := s.userRepository.FindCredentialsByUsername(ctx, existing.GetEmail())
@@ -212,7 +222,7 @@ func (s *UserService) ChangePassword(ctx context.Context, userID, currentPasswor
 	if err != nil {
 		return fmt.Errorf("errors.users.hash-password")
 	}
-	return s.userRepository.UpdatePassword(ctx, userID, hash)
+	return s.userRepository.UpdatePasswordAndRevokeSessions(ctx, userID, hash)
 }
 
 func (s *UserService) SetActive(ctx context.Context, actorID, userID string, active bool) error {
@@ -224,7 +234,14 @@ func (s *UserService) SetActive(ctx context.Context, actorID, userID string, act
 		return nil
 	}
 	if existing.GetIsAdmin() && existing.GetActive() && !active {
-		if err := s.userRepository.DeactivateAdminIfNotLast(ctx, userID); err != nil {
+		if err := s.userRepository.DeactivateAdminAndRevokeSessions(ctx, userID); err != nil {
+			return err
+		}
+		s.audit.PrivilegeChange("set_active", actorID, userID, nil, nil)
+		return nil
+	}
+	if !active {
+		if err := s.userRepository.DeactivateAndRevokeSessions(ctx, userID); err != nil {
 			return err
 		}
 		s.audit.PrivilegeChange("set_active", actorID, userID, nil, nil)

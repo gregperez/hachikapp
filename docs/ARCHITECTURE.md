@@ -15,9 +15,8 @@ arquitectura hexagonal. El núcleo depende de contratos; Gin, PostgreSQL,
   contrato HTTP.
 - `internal/infra/secondary/repositories/`: implementación de ports,
   PostgreSQL DAOs y `RefreshTokenStore`.
-- `internal/infra/config/instance/`: composition root de repositorios, casos de
-  uso, `authBase` y controllers.
-- `internal/infra/bootstrap/`: engine HTTP, health probes, señales y shutdown.
+- `internal/infra/bootstrap/`: composition root aislado (`Application`),
+  engine HTTP, health probes y adapters `Lifecycle`.
 - `internal/resources/sql/migrations/`: evolución incremental del esquema.
 
 La dirección principal es:
@@ -31,21 +30,19 @@ interfaces de casos de uso y traducen errores a `application/problem+json`.
 
 ## Arranque y apagado
 
-`cmd/main.go` mantiene un bootstrap explícito:
+`cmd/main.go` carga configuración, crea un logger y construye un
+`bootstrap.Application` aislado. El `initModules.App` de esa instancia registra
+lifecycles en este orden:
 
-1. Registra y carga propiedades YAML con expansión de entorno.
-2. Valida JWT y configuración runtime.
-3. Construye el logger JSON con `log/slog`.
-4. Abre un único pool pgx y verifica PostgreSQL.
-5. Ejecuta migraciones con el mismo DSN del pool.
-6. Construye traducción, readiness, middleware y rutas.
-7. Activa readiness y ejecuta `http.Server`.
-8. Ante `SIGHUP`, `SIGINT`, `SIGTERM` o `SIGQUIT`, baja readiness, ejecuta
-   `Shutdown` con deadline y cierra el pool.
+1. Base de datos: ping al iniciar, close al detener.
+2. Traducciones: carga de locales.
+3. Limpieza de sesiones expiradas del plan 013.
+4. HTTP: listen al iniciar; readiness false y `Shutdown` al detener.
 
-La decisión de no usar `initModules.App` para el lifecycle HTTP está registrada
-en [ADR 001](adr/001-initmodules-lifecycle.md). `initModules/v2` permanece para
-carga de propiedades y singletons tipados.
+`RunWithSignals` bloquea hasta una señal y detiene en orden inverso
+(HTTP → workers → DB) con un contexto de stop independiente del contexto
+cancelado. La decisión vigente está en
+[ADR 001](adr/001-initmodules-lifecycle.md).
 
 ## Autenticación y autorización
 
@@ -53,10 +50,11 @@ carga de propiedades y singletons tipados.
 adaptadores:
 
 - `UserRepository` implementa lectura de identidad y credenciales.
-- `refreshstore.Store` persiste hashes de refresh token y rota en una
-  transacción.
+- `refreshstore.Store` persiste hashes, rota atómicamente, revoca por usuario y
+  purga expiradas en lotes limitados.
 - `ginadapter.Context` adapta Gin al contexto esperado por autorización.
-- `AuthenticationService` implementa login, refresh y revocación de familia.
+- `AuthenticationService` implementa login, emisión privilegiada, refresh y
+  revocación de familia/usuario.
 - `Authorization` aplica `AuthorizeJWT` y `PoliciesGuard`.
 - `RoleService` usa el `RolePort` PostgreSQL de la aplicación.
 
@@ -94,6 +92,12 @@ la política de baseline.
 
 Los timestamps `created_at` y `updated_at` se administran en base de datos, lo
 que mantiene consistente el keyset entre procesos.
+
+Cambiar contraseña o desactivar una cuenta actualiza `users` y revoca sus
+sesiones en una única transacción. El componente
+`infra/lifecycle.ExpiredSessionPurger` ejecuta limpieza inicial y periódica con
+retención configurable; su registro en `initModules.App` se difiere al plan 015
+para preservar el orden de apagado antes de cerrar PostgreSQL.
 
 ## Observabilidad y límites operativos
 

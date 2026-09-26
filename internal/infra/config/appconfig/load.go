@@ -118,6 +118,37 @@ func applyEnv(cfg *Config) error {
 	}
 	setStr(&cfg.Runtime.LogLevel, "LOG_LEVEL")
 	setStr(&cfg.Runtime.GinMode, "GIN_MODE")
+
+	if v := os.Getenv("AUTH_PASSWORD_BLOCKLIST"); v != "" {
+		cfg.Auth.PasswordBlocklist = splitCSV(v)
+	}
+	if err := setInt(&cfg.Auth.LoginAccountLimit, "AUTH_LOGIN_ACCOUNT_LIMIT"); err != nil {
+		return err
+	}
+	if err := setInt(&cfg.Auth.LoginOriginLimit, "AUTH_LOGIN_ORIGIN_LIMIT"); err != nil {
+		return err
+	}
+	if err := setInt(&cfg.Auth.RefreshFamilyLimit, "AUTH_REFRESH_FAMILY_LIMIT"); err != nil {
+		return err
+	}
+	if err := setDuration(&cfg.Auth.RateLimitWindow, "AUTH_RATE_LIMIT_WINDOW"); err != nil {
+		return err
+	}
+	if err := setInt(&cfg.Auth.RateLimitMaxEntries, "AUTH_RATE_LIMIT_MAX_ENTRIES"); err != nil {
+		return err
+	}
+	if v := os.Getenv("AUTH_TRUSTED_PROXY_CIDRS"); v != "" {
+		cfg.Auth.TrustedProxyCIDRs = splitCSV(v)
+	}
+	if err := setDuration(&cfg.Auth.SessionPurgeInterval, "AUTH_SESSION_PURGE_INTERVAL"); err != nil {
+		return err
+	}
+	if err := setDuration(&cfg.Auth.SessionPurgeRetention, "AUTH_SESSION_PURGE_RETENTION"); err != nil {
+		return err
+	}
+	if err := setInt(&cfg.Auth.SessionPurgeMaxBatches, "AUTH_SESSION_PURGE_MAX_BATCHES"); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -244,6 +275,22 @@ func envField(envKey string) string {
 		return "server.shutdownTimeout"
 	case "SERVER_MAX_HEADER_BYTES":
 		return "server.maxHeaderBytes"
+	case "AUTH_LOGIN_ACCOUNT_LIMIT":
+		return "auth.loginAccountLimit"
+	case "AUTH_LOGIN_ORIGIN_LIMIT":
+		return "auth.loginOriginLimit"
+	case "AUTH_REFRESH_FAMILY_LIMIT":
+		return "auth.refreshFamilyLimit"
+	case "AUTH_RATE_LIMIT_WINDOW":
+		return "auth.rateLimitWindow"
+	case "AUTH_RATE_LIMIT_MAX_ENTRIES":
+		return "auth.rateLimitMaxEntries"
+	case "AUTH_SESSION_PURGE_INTERVAL":
+		return "auth.sessionPurgeInterval"
+	case "AUTH_SESSION_PURGE_RETENTION":
+		return "auth.sessionPurgeRetention"
+	case "AUTH_SESSION_PURGE_MAX_BATCHES":
+		return "auth.sessionPurgeMaxBatches"
 	default:
 		return strings.ToLower(envKey)
 	}

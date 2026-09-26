@@ -7,7 +7,6 @@ import (
 
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
-	"github.com/WilsonSayago/initModules/v2"
 )
 
 type IPermissionDao interface {
@@ -18,10 +17,15 @@ type PermissionDao struct {
 	db database.DBTX
 }
 
+func NewPermissionDao(db database.DBTX) IPermissionDao {
+	return &PermissionDao{db: db}
+}
+
+// NewPermissionDaoInstance is an alias for NewPermissionDao.
+//
+// Deprecated: use NewPermissionDao.
 func NewPermissionDaoInstance(db database.DBTX) IPermissionDao {
-	return initModules.Once(func() *PermissionDao {
-		return &PermissionDao{db: db}
-	})
+	return NewPermissionDao(db)
 }
 
 // FindAllByUserId aggregates permissions from the JSONB on roles linked via users_roles.

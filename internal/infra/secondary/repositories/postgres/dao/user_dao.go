@@ -10,7 +10,6 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
-	"github.com/WilsonSayago/initModules/v2"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -33,6 +32,8 @@ type IUserDao interface {
 	SaveWithTx(ctx context.Context, tx database.Transaction, user *dto.UserDTO) error
 	UpdateWithTx(ctx context.Context, tx database.Transaction, user dto.UserDTO) error
 	SetActiveWithTx(ctx context.Context, tx database.Transaction, id string, active bool) error
+	UpdatePasswordWithTx(ctx context.Context, tx database.Transaction, id, passwordHash string) error
+	DeactivateAdminIfNotLastWithTx(ctx context.Context, tx database.Transaction, id string) error
 
 	BeginTx(ctx context.Context) (database.Transaction, error)
 }
@@ -41,15 +42,20 @@ type UserDao struct {
 	db *database.PostgresPgx
 }
 
-func NewUserDaoInstance(db *database.PostgresPgx) IUserDao {
-	return initModules.Once(func() *UserDao {
-		return &UserDao{db: db}
-	})
+func NewUserDao(db *database.PostgresPgx) IUserDao {
+	return &UserDao{db: db}
 }
 
-// NewUserDaoForTest builds a DAO without process-wide Once (tests only).
+// NewUserDaoInstance is an alias for NewUserDao.
+//
+// Deprecated: use NewUserDao.
+func NewUserDaoInstance(db *database.PostgresPgx) IUserDao {
+	return NewUserDao(db)
+}
+
+// NewUserDaoForTest builds a DAO for tests.
 func NewUserDaoForTest(db *database.PostgresPgx) IUserDao {
-	return &UserDao{db: db}
+	return NewUserDao(db)
 }
 
 func (c *UserDao) BeginTx(ctx context.Context) (database.Transaction, error) {
@@ -305,6 +311,19 @@ func (c *UserDao) DeactivateAdminIfNotLast(ctx context.Context, id string) error
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
+	if err := c.DeactivateAdminIfNotLastWithTx(ctx, tx, id); err != nil {
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit deactivate admin: %w", err)
+	}
+	return nil
+}
+
+func (c *UserDao) DeactivateAdminIfNotLastWithTx(ctx context.Context, tx database.Transaction, id string) error {
+	if tx == nil {
+		return fmt.Errorf("deactivate admin transaction is nil")
+	}
 	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(87420011)`); err != nil {
 		return fmt.Errorf("lock deactivate admin: %w", err)
 	}
@@ -348,14 +367,26 @@ WHERE id = $1
 		}
 		return domain.ErrNotFound
 	}
-	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("commit deactivate admin: %w", err)
-	}
 	return nil
 }
 
 func (c *UserDao) UpdatePassword(ctx context.Context, id, passwordHash string) error {
-	tag, err := c.db.Exec(ctx, `UPDATE public.users SET password = $1 WHERE id = $2`, passwordHash, id)
+	return c.UpdatePasswordWithTx(ctx, nil, id, passwordHash)
+}
+
+func (c *UserDao) UpdatePasswordWithTx(
+	ctx context.Context,
+	tx database.Transaction,
+	id, passwordHash string,
+) error {
+	const q = `UPDATE public.users SET password = $1 WHERE id = $2`
+	var tag interface{ RowsAffected() int64 }
+	var err error
+	if tx != nil {
+		tag, err = tx.Exec(ctx, q, passwordHash, id)
+	} else {
+		tag, err = c.db.Exec(ctx, q, passwordHash, id)
+	}
 	if err != nil {
 		return fmt.Errorf("update password: %w", err)
 	}

@@ -1,31 +1,54 @@
 package domain
 
 import (
-	"strings"
-	"unicode"
+	"context"
+	"unicode/utf8"
 )
 
-// ValidatePassword enforces a minimum complexity policy for new passwords.
+const (
+	MinPasswordRunes = 15
+	MaxPasswordRunes = 128
+	MaxPasswordBytes = 1024
+)
+
+// PasswordBlocklist checks passwords against an offline, locally configured set.
+type PasswordBlocklist interface {
+	Blocked(ctx context.Context, password string) (bool, error)
+}
+
+// ValidatePassword enforces the length policy without a blocklist.
 func ValidatePassword(password string) error {
-	if len(password) < 12 {
+	return ValidatePasswordContext(context.Background(), password, nil)
+}
+
+// ValidatePasswordContext enforces the password policy and optional contextual checks.
+func ValidatePasswordContext(
+	ctx context.Context,
+	password string,
+	blocklist PasswordBlocklist,
+	contextualTerms ...string,
+) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	runes := utf8.RuneCountInString(password)
+	if !utf8.ValidString(password) ||
+		runes < MinPasswordRunes ||
+		runes > MaxPasswordRunes ||
+		len(password) > MaxPasswordBytes {
 		return ErrWeakPassword
 	}
-	var upper, lower, digit bool
-	for _, r := range password {
-		switch {
-		case unicode.IsUpper(r):
-			upper = true
-		case unicode.IsLower(r):
-			lower = true
-		case unicode.IsDigit(r):
-			digit = true
-		}
-	}
-	if !upper || !lower || !digit {
+	if containsContextualTerm(password, contextualTerms) {
 		return ErrWeakPassword
 	}
-	// Reject obvious whitespace-only padding.
-	if strings.TrimSpace(password) != password {
+	if blocklist == nil {
+		return nil
+	}
+	blocked, err := blocklist.Blocked(ctx, password)
+	if err != nil {
+		return err
+	}
+	if blocked {
 		return ErrWeakPassword
 	}
 	return nil

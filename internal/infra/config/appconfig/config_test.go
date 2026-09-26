@@ -148,3 +148,40 @@ func TestLoadRejectsInvalidBoolEnv(t *testing.T) {
 		t.Fatalf("err=%v", err)
 	}
 }
+
+func TestLoadAuthenticationSecuritySettings(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://u:p@localhost:5432/test?sslmode=disable")
+	t.Setenv("APP_ENV", "test")
+	t.Setenv("AUTH_PASSWORD_BLOCKLIST", "first blocked phrase,second blocked phrase")
+	t.Setenv("AUTH_LOGIN_ACCOUNT_LIMIT", "7")
+	t.Setenv("AUTH_LOGIN_ORIGIN_LIMIT", "30")
+	t.Setenv("AUTH_REFRESH_FAMILY_LIMIT", "12")
+	t.Setenv("AUTH_RATE_LIMIT_WINDOW", "20m")
+	t.Setenv("AUTH_RATE_LIMIT_MAX_ENTRIES", "500")
+	t.Setenv("AUTH_TRUSTED_PROXY_CIDRS", "10.0.0.0/8,2001:db8::/32")
+
+	cfg, err := appconfig.Load(appconfig.DatabaseConfig{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Auth.LoginAccountLimit != 7 ||
+		cfg.Auth.LoginOriginLimit != 30 ||
+		cfg.Auth.RefreshFamilyLimit != 12 ||
+		cfg.Auth.RateLimitMaxEntries != 500 {
+		t.Fatalf("auth limits=%+v", cfg.Auth)
+	}
+	if len(cfg.Auth.PasswordBlocklist) != 2 || len(cfg.Auth.TrustedProxyCIDRs) != 2 {
+		t.Fatalf("auth lists=%+v", cfg.Auth)
+	}
+}
+
+func TestValidateRejectsInvalidTrustedProxyCIDR(t *testing.T) {
+	cfg := appconfig.Defaults()
+	cfg.Database.Password = "secret-password-value"
+	cfg.Database.SSLMode = "disable"
+	cfg.Auth.TrustedProxyCIDRs = []string{"not-a-cidr"}
+	err := cfg.Validate()
+	if err == nil || !strings.Contains(err.Error(), "auth.trustedProxyCIDRs") {
+		t.Fatalf("err=%v", err)
+	}
+}

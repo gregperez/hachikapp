@@ -5,16 +5,14 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/WilsonSayago/base-golang/internal/infra/logging"
 	"github.com/gin-gonic/gin"
 )
 
 // Recovery returns middleware that catches panics, logs the stack internally,
 // and responds with a redacted 500 problem+json. User-facing bind/validation
-// errors must never reach this path.
-// A nil logger uses slog.Default().
+// errors must never reach this path. logger must be non-nil.
 func Recovery(logger *slog.Logger) gin.HandlerFunc {
-	lg := logging.OrDefault(logger)
+	lg := logger
 	return func(c *gin.Context) {
 		defer func() {
 			if rec := recover(); rec != nil {

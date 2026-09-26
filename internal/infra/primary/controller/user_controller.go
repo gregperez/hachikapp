@@ -16,7 +16,6 @@ import (
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
-	initModules "github.com/WilsonSayago/initModules/v2"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,20 +26,30 @@ type UserController struct {
 	t                    config.ITranslate
 }
 
+func NewUserController(
+	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *ginadapter.Context],
+	userService core.UserUseCase,
+	r *gin.Engine,
+	t config.ITranslate,
+) *UserController {
+	return &UserController{
+		authorizationService: authorizationService,
+		userService:          userService,
+		r:                    r,
+		t:                    t,
+	}
+}
+
+// GetUserControllerInstance is an alias for NewUserController.
+//
+// Deprecated: use NewUserController.
 func GetUserControllerInstance(
 	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *ginadapter.Context],
 	userService core.UserUseCase,
 	r *gin.Engine,
 	t config.ITranslate,
 ) *UserController {
-	return initModules.Once(func() *UserController {
-		return &UserController{
-			authorizationService: authorizationService,
-			userService:          userService,
-			r:                    r,
-			t:                    t,
-		}
-	})
+	return NewUserController(authorizationService, userService, r, t)
 }
 
 func (userC *UserController) RunController() {

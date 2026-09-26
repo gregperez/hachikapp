@@ -12,11 +12,16 @@ const adminRoleName = "admin"
 
 // AdminBootstrap creates the first administrator exactly once.
 type AdminBootstrap struct {
-	users ports.UserPort
+	users     ports.UserPort
+	passwords domain.PasswordBlocklist
 }
 
-func NewAdminBootstrap(users ports.UserPort) *AdminBootstrap {
-	return &AdminBootstrap{users: users}
+func NewAdminBootstrap(users ports.UserPort, passwords ...domain.PasswordBlocklist) *AdminBootstrap {
+	var passwordBlocklist domain.PasswordBlocklist
+	if len(passwords) > 0 {
+		passwordBlocklist = passwords[0]
+	}
+	return &AdminBootstrap{users: users, passwords: passwordBlocklist}
 }
 
 // Run creates an administrator with the admin role. Fails if any admin exists.
@@ -25,7 +30,7 @@ func (b *AdminBootstrap) Run(ctx context.Context, name, email, password string) 
 	if name == "" || email == "" {
 		return domain.ErrWeakPassword
 	}
-	if err := domain.ValidatePassword(password); err != nil {
+	if err := domain.ValidatePasswordContext(ctx, password, b.passwords, name, email); err != nil {
 		return err
 	}
 	roleID, err := b.users.FindRoleIDByName(ctx, adminRoleName)

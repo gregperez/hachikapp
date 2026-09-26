@@ -50,7 +50,7 @@ Never pass the password on argv or commit it.
 | Step | Contract |
 |---|---|
 | Input | Password only via non-echoing prompt (`terminal.ReadPassword`) or a short-lived environment variable that is unset after use. Never argv, never logs, never committed files. |
-| Hashing | Generate bcrypt at runtime via the project password hasher. |
+| Hashing | Generate Argon2id PHC at runtime via authBase. Existing bcrypt hashes remain verify-only during migration. |
 | Uniqueness | Fails if any active administrator already exists. |
 | Failure | Exit non-zero without modifying data when an admin exists or the password is weak. |
 | Atomicity | Persistence runs inside the repository transaction. |
@@ -73,10 +73,11 @@ Perform the following **outside** the repository (secret manager, cloud IAM, dat
 1. **Inventory** — Identify which environments still use historically versioned DB passwords or JWT secrets (type and location only).
 2. **Issue new material** — Create new DB credentials and new access/refresh JWT secrets. Keep access and refresh secrets distinct and long enough (>= 32 bytes).
 3. **Deploy new config** — Roll out the new values to the runtime (env / secret store). Prefer overlapping windows where the app can verify with the new secrets after cutover.
-4. **Revoke sessions** — Invalidate refresh sessions / outstanding tokens
-   issued under the old secrets. Use family revocation where the family is
-   known; for full-key compromise, perform an operator-approved bulk revoke or
-   truncate `refresh_sessions` during the maintenance window.
+4. **Revoke sessions** — Invalidate refresh sessions issued under the old
+   secrets. Use family revocation where one family is known and user-wide
+   revocation for an affected account. Full-key compromise still requires an
+   operator-approved global revoke during a maintenance window; do not expose
+   an unauthenticated bulk-revocation endpoint.
 5. **Verify** — Confirm health checks, login, and a protected call succeed with the new material.
 6. **Invalidate old material** — Rotate or delete the previous DB password and JWT secrets in the provider so they cannot be reused.
 7. **Record** — Log date, environment, and operator in an external ops log. Never record secret values.
@@ -141,6 +142,50 @@ Clients affected by that historical migration had to log in again. Refresh
 tokens are single-use (atomic rotation); reuse of a consumed refresh token
 revokes the whole family. Prefer `POST /v1/auth/logout` with the current refresh
 token to revoke a family explicitly (idempotent even if already revoked).
+
+Password changes and account deactivation revoke all refresh families for the
+user atomically with the account write. Reactivation therefore never restores
+an old refresh session; the user must authenticate again.
+
+Expired-session deletion is registered on the process `Lifecycle`. Configure:
+
+- `AUTH_SESSION_PURGE_INTERVAL` (default `1h`)
+- `AUTH_SESSION_PURGE_RETENTION` (default `24h`)
+- `AUTH_SESSION_PURGE_MAX_BATCHES` (default `10`)
+
+Operators must choose a forensic retention window before production use.
+
+## Password and authentication abuse policy
+
+New passwords contain 15–128 Unicode code points, may contain spaces, and have
+no character-class composition rule. The service also rejects contextual terms
+(such as the user's name or email components) and entries in an offline
+blocklist. `AUTH_PASSWORD_BLOCKLIST` replaces the built-in starter list with a
+comma-separated, deployment-owned list. Never send candidate passwords or
+their hashes to a remote service from the request path.
+
+authBase creates Argon2id hashes with 19 MiB memory, 2 iterations, parallelism
+1, 16-byte salts, and 32-byte keys. bcrypt remains supported only to verify
+existing rows; this release does not claim automatic rehash-on-login. Recalibrate
+Argon2id on production hardware and review the parameters annually.
+
+Login attempts use independent fixed-window quotas for normalized-account and
+origin hashes. Refresh attempts use the origin quota first, then a signed
+refresh-family hash only after JWT verification. A successful request clears
+the account/family penalty but never the shared origin quota. Configure:
+
+- `AUTH_LOGIN_ACCOUNT_LIMIT` (default `5`)
+- `AUTH_LOGIN_ORIGIN_LIMIT` (default `20`)
+- `AUTH_REFRESH_FAMILY_LIMIT` (default `10`)
+- `AUTH_RATE_LIMIT_WINDOW` (default `15m`)
+- `AUTH_RATE_LIMIT_MAX_ENTRIES` (default `10000`)
+- `AUTH_TRUSTED_PROXY_CIDRS` (empty by default)
+
+Forwarded headers are ignored unless the immediate peer belongs to an explicitly
+trusted CIDR. Configure only proxy networks controlled by the deployment.
+The included bounded in-memory limiter is suitable for one replica. Multiple
+replicas require an adapter backed by shared storage so every instance enforces
+the same counters and windows.
 
 ## Adding a new sensitive setting
 

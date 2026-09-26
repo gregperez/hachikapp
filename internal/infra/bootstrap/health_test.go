@@ -3,6 +3,8 @@ package bootstrap_test
 import (
 	"context"
 	"errors"
+	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,6 +14,10 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
 	"github.com/gin-gonic/gin"
 )
+
+func discardLogger() *slog.Logger {
+	return slog.New(slog.NewTextHandler(io.Discard, nil))
+}
 
 type stubPinger struct {
 	err error
@@ -82,7 +88,7 @@ func TestCORSRejectsDisallowedOrigin(t *testing.T) {
 	cfg.CORS.AllowedOrigins = []string{"http://allowed.example"}
 	cfg.CORS.AllowCredentials = true
 
-	r := bootstrap.NewEngine(bootstrap.HTTPDeps{Config: cfg, Gate: bootstrap.NewReadyGate(nil)})
+	r := bootstrap.NewEngine(bootstrap.HTTPDeps{Config: cfg, Gate: bootstrap.NewReadyGate(nil), Logger: discardLogger()})
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodOptions, "/health/live", nil)
 	req.Header.Set("Origin", "http://evil.example")
@@ -101,7 +107,7 @@ func TestSwaggerRespectsFlag(t *testing.T) {
 	cfg.Docs.SwaggerEnabled = false
 	cfg.ApplyNonProdCORSDefaults()
 
-	r := bootstrap.NewEngine(bootstrap.HTTPDeps{Config: cfg, Gate: bootstrap.NewReadyGate(nil)})
+	r := bootstrap.NewEngine(bootstrap.HTTPDeps{Config: cfg, Gate: bootstrap.NewReadyGate(nil), Logger: discardLogger()})
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/swagger/index.html", nil))
 	if w.Code != http.StatusNotFound {

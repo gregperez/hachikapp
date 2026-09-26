@@ -8,7 +8,7 @@ explicit startup/shutdown behavior.
 ## Libraries
 
 ### Go Modules
-- **github.com/WilsonSayago/authBase/v4** ([v4.0.0](https://github.com/WilsonSayago/authBase/releases/tag/v4.0.0)): authentication, authorization, and keyset pagination contracts.
+- **github.com/WilsonSayago/authBase/v4** ([v4.2.0](https://github.com/WilsonSayago/authBase/releases/tag/v4.2.0)): authentication, authorization, session lifecycle, Argon2id credentials, and keyset pagination contracts.
 - **github.com/WilsonSayago/initModules/v2** ([v2.0.0](https://github.com/WilsonSayago/initModules/releases/tag/v2.0.0)): config load and typed singletons.
 - Logging uses Go's standard `log/slog` (JSON to stdout).
 
@@ -72,29 +72,34 @@ Health (unversioned):
 - `GET /health/live` — process up
 - `GET /health/ready` — startup complete and DB reachable
 
-Instance wiring is split by responsibility under
-`internal/infra/config/instance/`: `port.go` (repositories/adapters),
-`usecase.go` (authBase and application services), and `primary.go`
-(controllers/routes).
+Process composition lives in `internal/infra/bootstrap.Application`. Each
+instance owns its container, logger, pool, engine, and `initModules.App`.
 
 Security operations (rotation, bootstrap contract, exposure response, secret scanning):
 
 - [docs/security-operations.md](docs/security-operations.md)
 - `./scripts/check-secrets.sh` (gitleaks)
 
+Authentication throttling is enabled with bounded per-account, per-origin, and
+per-refresh-family quotas. Forwarded client addresses are ignored unless
+`AUTH_TRUSTED_PROXY_CIDRS` explicitly identifies the deployment's proxies.
+Multi-replica deployments must replace the in-memory limiter with shared state.
+
 **Auth note:** the historical pre-v3 → v3 migration invalidated older JWTs. The
 current v4 upgrade changes pagination contracts and does not itself invalidate
 v3 tokens when signing configuration remains unchanged. Refresh tokens rotate
-atomically and are never stored in plaintext.
+atomically and are never stored in plaintext. Password changes and account
+deactivation revoke every refresh family for that user in the same database
+transaction as the sensitive account update.
 
 ## Dependencies
 
 Go minimum **1.26.6** / preferred toolchain **1.27.1**. Update policy: [docs/dependency-policy.md](docs/dependency-policy.md).
 
-This workspace currently uses `replace github.com/WilsonSayago/authBase/v4 =>
-../authBase` for side-by-side development. A standalone checkout must either
-clone `authBase` at that sibling path or remove the `replace` to resolve the
-published `v4.0.0` module.
+The repository resolves `authBase/v4@v4.2.0` through the public Go module
+proxy. Checked-in filesystem `replace` directives are rejected by
+`make mod-policy`, so a standalone checkout does not depend on sibling
+repositories.
 
 ## Development quality gate
 

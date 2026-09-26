@@ -7,41 +7,65 @@ import (
 
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/ports"
+	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/dao"
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	authBasePorts "github.com/WilsonSayago/authBase/v4/core/port"
-	initModules "github.com/WilsonSayago/initModules/v2"
 )
+
+type transactionalSessionRevoker interface {
+	RevokeUserTx(ctx context.Context, tx database.Transaction, userID string) error
+}
 
 type UserRepository struct {
 	userDao           dao.IUserDao
 	roleDao           dao.IRoleDao
 	userRoleDao       dao.IUserRoleDao
 	validationService authBasePorts.ValidationPort
+	sessionRevoker    transactionalSessionRevoker
 }
 
-func NewUserInstance(userDao dao.IUserDao, roleDao dao.IRoleDao, userRoleDao dao.IUserRoleDao, validationService authBasePorts.ValidationPort) ports.UserPort {
-	return initModules.Once(func() *UserRepository {
-		return &UserRepository{
-			userDao:           userDao,
-			roleDao:           roleDao,
-			userRoleDao:       userRoleDao,
-			validationService: validationService,
-		}
-	})
-}
-
-// NewUserRepositoryForTest builds a repository without process-wide Once (tests only).
-func NewUserRepositoryForTest(userDao dao.IUserDao, roleDao dao.IRoleDao, userRoleDao dao.IUserRoleDao, validationService authBasePorts.ValidationPort) *UserRepository {
+func NewUserRepository(
+	userDao dao.IUserDao,
+	roleDao dao.IRoleDao,
+	userRoleDao dao.IUserRoleDao,
+	validationService authBasePorts.ValidationPort,
+	sessionRevoker transactionalSessionRevoker,
+) *UserRepository {
 	return &UserRepository{
 		userDao:           userDao,
 		roleDao:           roleDao,
 		userRoleDao:       userRoleDao,
 		validationService: validationService,
+		sessionRevoker:    sessionRevoker,
 	}
+}
+
+// NewUserInstance is an alias for NewUserRepository.
+//
+// Deprecated: use NewUserRepository.
+func NewUserInstance(
+	userDao dao.IUserDao,
+	roleDao dao.IRoleDao,
+	userRoleDao dao.IUserRoleDao,
+	validationService authBasePorts.ValidationPort,
+	sessionRevoker transactionalSessionRevoker,
+) ports.UserPort {
+	return NewUserRepository(userDao, roleDao, userRoleDao, validationService, sessionRevoker)
+}
+
+// NewUserRepositoryForTest builds a repository for tests.
+func NewUserRepositoryForTest(
+	userDao dao.IUserDao,
+	roleDao dao.IRoleDao,
+	userRoleDao dao.IUserRoleDao,
+	validationService authBasePorts.ValidationPort,
+	sessionRevoker transactionalSessionRevoker,
+) *UserRepository {
+	return NewUserRepository(userDao, roleDao, userRoleDao, validationService, sessionRevoker)
 }
 
 func (repository *UserRepository) FindByID(ctx context.Context, id string) (domain.User, error) {
@@ -271,6 +295,62 @@ func (repository *UserRepository) UpdatePassword(ctx context.Context, id, passwo
 		return fmt.Errorf("errors.users.update-password")
 	}
 	return repository.userDao.UpdatePassword(ctx, id, passwordHash)
+}
+
+func (repository *UserRepository) UpdatePasswordAndRevokeSessions(
+	ctx context.Context,
+	id, passwordHash string,
+) error {
+	if id == "" || passwordHash == "" {
+		return fmt.Errorf("errors.users.update-password")
+	}
+	return repository.withSessionRevocationTx(ctx, id, "password update", func(tx database.Transaction) error {
+		return repository.userDao.UpdatePasswordWithTx(ctx, tx, id, passwordHash)
+	})
+}
+
+func (repository *UserRepository) DeactivateAndRevokeSessions(ctx context.Context, id string) error {
+	if id == "" {
+		return fmt.Errorf("errors.users.set-active")
+	}
+	return repository.withSessionRevocationTx(ctx, id, "user deactivation", func(tx database.Transaction) error {
+		return repository.userDao.SetActiveWithTx(ctx, tx, id, false)
+	})
+}
+
+func (repository *UserRepository) DeactivateAdminAndRevokeSessions(ctx context.Context, id string) error {
+	if id == "" {
+		return fmt.Errorf("errors.users.set-active")
+	}
+	return repository.withSessionRevocationTx(ctx, id, "admin deactivation", func(tx database.Transaction) error {
+		return repository.userDao.DeactivateAdminIfNotLastWithTx(ctx, tx, id)
+	})
+}
+
+func (repository *UserRepository) withSessionRevocationTx(
+	ctx context.Context,
+	userID, operation string,
+	mutate func(database.Transaction) error,
+) error {
+	if repository.sessionRevoker == nil {
+		return fmt.Errorf("%s session revoker is nil", operation)
+	}
+	tx, err := repository.userDao.BeginTx(ctx)
+	if err != nil {
+		return fmt.Errorf("begin %s tx: %w", operation, err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	if err := mutate(tx); err != nil {
+		return err
+	}
+	if err := repository.sessionRevoker.RevokeUserTx(ctx, tx, userID); err != nil {
+		return fmt.Errorf("%s revoke sessions: %w", operation, err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit %s: %w", operation, err)
+	}
+	return nil
 }
 
 func (repository *UserRepository) FindRoleIDByName(ctx context.Context, name string) (string, error) {

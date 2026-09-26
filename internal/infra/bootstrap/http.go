@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
-	"github.com/WilsonSayago/base-golang/internal/infra/logging"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -32,8 +31,13 @@ type HTTPDeps struct {
 // NewEngine builds the Gin engine with middleware, health, CORS, and routes.
 // Routes are registered before the caller starts listening.
 func NewEngine(deps HTTPDeps) *gin.Engine {
-	gin.SetMode(deps.Config.EffectiveGinMode())
-	lg := logging.OrDefault(deps.Logger)
+	if deps.Logger == nil {
+		panic("bootstrap: logger is required")
+	}
+	if gin.Mode() != gin.TestMode {
+		gin.SetMode(deps.Config.EffectiveGinMode())
+	}
+	lg := deps.Logger
 	r := gin.New()
 	r.Use(httpapi.Recovery(lg))
 	r.Use(requestIDMiddleware())
@@ -127,7 +131,7 @@ func requestIDMiddleware() gin.HandlerFunc {
 }
 
 func accessLogMiddleware(logger *slog.Logger) gin.HandlerFunc {
-	lg := logging.OrDefault(logger)
+	lg := logger
 	return func(c *gin.Context) {
 		start := time.Now()
 		c.Next()

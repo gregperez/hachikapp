@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -184,5 +185,150 @@ func TestReplayAfterConsumeRevokeFamilyIdempotent(t *testing.T) {
 	}
 	if err := store.Rotate(ctx, h2, session(userID, family, newID(), hash32(23), now)); err != core.ErrRefreshFamilyRevoked {
 		t.Fatalf("after revoke want ErrRefreshFamilyRevoked got %v", err)
+	}
+}
+
+func TestRevokeUserRevokesAllFamiliesAndIsolatesUsers(t *testing.T) {
+	pool := testPool(t)
+	setupSchema(t, pool)
+	cleanupSessions(t, pool)
+	userA := seedUser(t, pool)
+	userB := seedUser(t, pool)
+	store := refreshstore.New(database.NewPostgresPgxForTest(pool))
+	ctx := context.Background()
+	now := time.Now().UTC()
+
+	a1 := session(userA, newID(), newID(), hash32(31), now)
+	a2 := session(userA, newID(), newID(), hash32(32), now)
+	b1 := session(userB, newID(), newID(), hash32(33), now)
+	for _, item := range []domain.RefreshSession{a1, a2, b1} {
+		if err := store.Create(ctx, item); err != nil {
+			t.Fatalf("Create() error = %v", err)
+		}
+	}
+
+	if err := store.RevokeUser(ctx, userA); err != nil {
+		t.Fatalf("RevokeUser() error = %v", err)
+	}
+	if err := store.RevokeUser(ctx, userA); err != nil {
+		t.Fatalf("RevokeUser() idempotent error = %v", err)
+	}
+
+	var revokedA, revokedB int
+	if err := pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM public.refresh_sessions WHERE user_id = $1 AND revoked_at IS NOT NULL`,
+		userA,
+	).Scan(&revokedA); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM public.refresh_sessions WHERE user_id = $1 AND revoked_at IS NOT NULL`,
+		userB,
+	).Scan(&revokedB); err != nil {
+		t.Fatal(err)
+	}
+	if revokedA != 2 || revokedB != 0 {
+		t.Fatalf("revoked userA=%d userB=%d, want 2/0", revokedA, revokedB)
+	}
+
+	if err := store.Rotate(ctx, b1.TokenHash, session(userB, b1.FamilyID, newID(), hash32(34), now)); err != nil {
+		t.Fatalf("other user Rotate() error = %v", err)
+	}
+}
+
+func TestPurgeExpiredHonorsCutoffAndBatchLimit(t *testing.T) {
+	pool := testPool(t)
+	setupSchema(t, pool)
+	cleanupSessions(t, pool)
+	userID := seedUser(t, pool)
+	store := refreshstore.NewWithPurgeBatchSize(database.NewPostgresPgxForTest(pool), 2)
+	ctx := context.Background()
+	cutoff := time.Now().UTC().Truncate(time.Second)
+
+	sessions := []domain.RefreshSession{
+		{TokenID: newID(), FamilyID: newID(), UserID: userID, TokenHash: hash32(41), IssuedAt: cutoff.Add(-4 * time.Hour), ExpiresAt: cutoff.Add(-3 * time.Hour)},
+		{TokenID: newID(), FamilyID: newID(), UserID: userID, TokenHash: hash32(42), IssuedAt: cutoff.Add(-3 * time.Hour), ExpiresAt: cutoff.Add(-2 * time.Hour)},
+		{TokenID: newID(), FamilyID: newID(), UserID: userID, TokenHash: hash32(43), IssuedAt: cutoff.Add(-2 * time.Hour), ExpiresAt: cutoff.Add(-time.Hour)},
+		{TokenID: newID(), FamilyID: newID(), UserID: userID, TokenHash: hash32(44), IssuedAt: cutoff.Add(-time.Hour), ExpiresAt: cutoff},
+		{TokenID: newID(), FamilyID: newID(), UserID: userID, TokenHash: hash32(45), IssuedAt: cutoff, ExpiresAt: cutoff.Add(time.Hour)},
+	}
+	for _, item := range sessions {
+		if err := store.Create(ctx, item); err != nil {
+			t.Fatalf("Create() error = %v", err)
+		}
+	}
+
+	deleted, err := store.PurgeExpired(ctx, cutoff)
+	if err != nil {
+		t.Fatalf("PurgeExpired() error = %v", err)
+	}
+	if deleted != 2 {
+		t.Fatalf("first PurgeExpired() deleted = %d, want 2", deleted)
+	}
+	deleted, err = store.PurgeExpired(ctx, cutoff)
+	if err != nil {
+		t.Fatalf("second PurgeExpired() error = %v", err)
+	}
+	if deleted != 1 {
+		t.Fatalf("second PurgeExpired() deleted = %d, want 1", deleted)
+	}
+
+	var remaining, boundary int
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM public.refresh_sessions WHERE user_id = $1`, userID).Scan(&remaining); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM public.refresh_sessions WHERE user_id = $1 AND expires_at = $2`,
+		userID,
+		cutoff,
+	).Scan(&boundary); err != nil {
+		t.Fatal(err)
+	}
+	if remaining != 2 || boundary != 1 {
+		t.Fatalf("remaining=%d boundary=%d, want 2/1", remaining, boundary)
+	}
+}
+
+func TestRevokeUserRacesSafelyWithRotate(t *testing.T) {
+	pool := testPool(t)
+	setupSchema(t, pool)
+	cleanupSessions(t, pool)
+	userID := seedUser(t, pool)
+	store := refreshstore.New(database.NewPostgresPgxForTest(pool))
+	ctx := context.Background()
+	now := time.Now().UTC()
+	current := session(userID, newID(), newID(), hash32(51), now)
+	if err := store.Create(ctx, current); err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	start := make(chan struct{})
+	results := make(chan error, 2)
+	go func() {
+		<-start
+		results <- store.Rotate(ctx, current.TokenHash, session(userID, current.FamilyID, newID(), hash32(52), now))
+	}()
+	go func() {
+		<-start
+		results <- store.RevokeUser(ctx, userID)
+	}()
+	close(start)
+
+	for i := 0; i < 2; i++ {
+		err := <-results
+		if err != nil && !errors.Is(err, core.ErrRefreshFamilyRevoked) {
+			t.Fatalf("race operation error = %v", err)
+		}
+	}
+
+	var active int
+	if err := pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM public.refresh_sessions WHERE user_id = $1 AND revoked_at IS NULL`,
+		userID,
+	).Scan(&active); err != nil {
+		t.Fatal(err)
+	}
+	if active != 0 {
+		t.Fatalf("active sessions after revoke/rotate race = %d, want 0", active)
 	}
 }

@@ -71,7 +71,7 @@ durables gestionadas desde este workspace:
 |---|---:|---|---|---|---|
 | O-012 | P1 | `internal/infra/config/appconfig/load.go:48-51` acepta `DATABASE_URL`, mientras `internal/infra/config/appconfig/validate.go:90-103` valida TLS y placeholder sólo contra campos separados que quedan en defaults | En producción un `DATABASE_URL` con `sslmode=disable` (o credencial placeholder) pasa la validación y se usa sin cambios por el pool y migrador, eludiendo la política TLS/secrets declarada. | Resuelto | `applyDatabaseURLFields` + validación producción; tests en `config_test.go`. |
 | O-013 | P1 | `internal/infra/config/appconfig/load.go:96-121,135-140` descarta errores de `Atoi`, `ParseInt` y `ParseDuration`, y convierte cualquier booleano no reconocido a `false` | Un valor inválido de configuración se acepta silenciosamente y conserva un default o desactiva una opción; contradice el criterio de que todo error de parseo aborta antes de escuchar y puede degradar límites operativos. | Resuelto | Parseo estricto con error por campo; tests de int/bool inválidos. |
-| O-014 | P2 | `internal/infra/bootstrap/health_test.go:112-156` cancela un contexto, pero el gate ya está listo antes de iniciar y no se obtiene la dirección del listener ni se emite una señal real | No hay evidencia de que SIGTERM deje el proceso no-ready, rechace nuevas conexiones, termine una petición en vuelo dentro del deadline y libere el puerto, como exige el plan. | Abierto (P2) | Cubierto parcialmente por `TestRunServerCancel`; SIGTERM/in-flight completo queda como mejora post-cierre. |
+| O-014 | P2 | `internal/infra/bootstrap/application_test.go` arranca un listener en `127.0.0.1:0`, drena una request en vuelo, baja readiness y vuelve a bind del puerto | Shutdown HTTP ahora libera el listener y espera la petición en curso. | Resuelto (plan 015) | `TestHTTPShutdownDrainsInFlightAndReleasesPort`. |
 
 ### Observaciones de la verificación del plan 006
 
@@ -113,7 +113,7 @@ durables gestionadas desde este workspace:
 
 | ID | Prioridad | Evidencia | Impacto | Estado | Cierre esperado |
 |---|---:|---|---|---|---|
-| O-031 | P2 | `cmd/main.go:79` ejecuta `slog.SetDefault(logger)`; `internal/infra/config/instance/usecase.go:72` crea `audit.NewLogger(nil)`, que cae en `slog.Default()` | Aunque la migración elimina Logrus y los logs HTTP se inyectan correctamente, el proceso conserva estado global mutable. Tests paralelos, múltiples inicializaciones en proceso y consumidores embebidos pueden heredar o sustituir un logger ajeno; no se satisface el alcance declarado de logger totalmente inyectable. | Abierto | Propagar `*slog.Logger` por dependencias de bootstrap/instancias y eliminar los fallbacks productivos a `slog.Default()`/`slog.SetDefault`; añadir prueba que construya dos aplicaciones con loggers aislados. |
+| O-031 | P2 | `internal/infra/bootstrap/application_test.go` construye dos Applications con buffers de log distintos | Production wiring already injects `*slog.Logger` and no longer calls `slog.SetDefault` or `audit.NewLogger(nil)`. | Resuelto (plan 015) | `TestTwoApplicationsStayIsolated`. |
 
 ### Plantilla para observaciones de los planes 005–009
 
@@ -202,4 +202,4 @@ registrar el commit y la prueba que lo confirma.
 - Cada revisión posterior a un plan debe añadir sus hallazgos aquí antes de cerrar la tarea.
 - Mantener la prioridad basada en impacto verificable, no en antigüedad de la observación.
 - Programar una revisión de este registro antes de cada release hasta que quede vacío de P0/P1.
-- Residual abierto: O-014 (P2 lifecycle SIGTERM) y O-031 (inyección completa de `slog`).
+- Residual abierto: ninguno de O-014/O-031; ambos cerrados en el plan 015.

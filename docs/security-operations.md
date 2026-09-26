@@ -147,10 +147,13 @@ Password changes and account deactivation revoke all refresh families for the
 user atomically with the account write. Reactivation therefore never restores
 an old refresh session; the user must authenticate again.
 
-Expired-session deletion is retention-aware and batch-limited. The lifecycle
-component is constructed and tested but remains unregistered until plan 015
-owns its startup and shutdown ordering. Operators must choose a forensic
-retention window before enabling it in production.
+Expired-session deletion is registered on the process `Lifecycle`. Configure:
+
+- `AUTH_SESSION_PURGE_INTERVAL` (default `1h`)
+- `AUTH_SESSION_PURGE_RETENTION` (default `24h`)
+- `AUTH_SESSION_PURGE_MAX_BATCHES` (default `10`)
+
+Operators must choose a forensic retention window before production use.
 
 ## Password and authentication abuse policy
 

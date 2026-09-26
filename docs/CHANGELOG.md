@@ -33,4 +33,7 @@
   verified refresh-family quotas with RFC 9457 `429` responses.
 - New credential hashes use Argon2id through authBase v4.2; bcrypt remains
   verify-only for existing rows.
+- Process composition uses an isolated `Application` with `initModules.NewApp`
+  lifecycles (DB, translations, session purge, HTTP). Production paths no
+  longer install a global logger or database singleton.
 - Process logging migrated from Logrus to `log/slog` (O-027 / plan 011).

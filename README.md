@@ -72,10 +72,8 @@ Health (unversioned):
 - `GET /health/live` — process up
 - `GET /health/ready` — startup complete and DB reachable
 
-Instance wiring is split by responsibility under
-`internal/infra/config/instance/`: `port.go` (repositories/adapters),
-`usecase.go` (authBase and application services), and `primary.go`
-(controllers/routes).
+Process composition lives in `internal/infra/bootstrap.Application`. Each
+instance owns its container, logger, pool, engine, and `initModules.App`.
 
 Security operations (rotation, bootstrap contract, exposure response, secret scanning):
 

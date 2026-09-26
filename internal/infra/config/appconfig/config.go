@@ -67,13 +67,16 @@ type RuntimeConfig struct {
 }
 
 type AuthConfig struct {
-	PasswordBlocklist   []string
-	LoginAccountLimit   int
-	LoginOriginLimit    int
-	RefreshFamilyLimit  int
-	RateLimitWindow     time.Duration
-	RateLimitMaxEntries int
-	TrustedProxyCIDRs   []string
+	PasswordBlocklist      []string
+	LoginAccountLimit      int
+	LoginOriginLimit       int
+	RefreshFamilyLimit     int
+	RateLimitWindow        time.Duration
+	RateLimitMaxEntries    int
+	TrustedProxyCIDRs      []string
+	SessionPurgeInterval   time.Duration
+	SessionPurgeRetention  time.Duration
+	SessionPurgeMaxBatches int
 }
 
 // Defaults returns non-sensitive defaults. Secrets must come from env/file.
@@ -118,12 +121,15 @@ func Defaults() Config {
 				"qwertyuiopasdfgh",
 				"letmeinletmein",
 			},
-			LoginAccountLimit:   5,
-			LoginOriginLimit:    20,
-			RefreshFamilyLimit:  10,
-			RateLimitWindow:     15 * time.Minute,
-			RateLimitMaxEntries: 10000,
-			TrustedProxyCIDRs:   nil,
+			LoginAccountLimit:      5,
+			LoginOriginLimit:       20,
+			RefreshFamilyLimit:     10,
+			RateLimitWindow:        15 * time.Minute,
+			RateLimitMaxEntries:    10000,
+			TrustedProxyCIDRs:      nil,
+			SessionPurgeInterval:   time.Hour,
+			SessionPurgeRetention:  24 * time.Hour,
+			SessionPurgeMaxBatches: 10,
 		},
 	}
 }

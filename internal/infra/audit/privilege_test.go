@@ -13,7 +13,10 @@ func TestPrivilegeChangeEmitsAttrs(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
 	lg := slog.New(slog.NewJSONHandler(&buf, nil))
-	auditor := audit.NewLogger(lg)
+	auditor, err := audit.NewLogger(lg)
+	if err != nil {
+		t.Fatal(err)
+	}
 	flag := true
 	auditor.PrivilegeChange("set_admin_flag", "actor-1", "subject-2", []string{"r1"}, &flag)
 

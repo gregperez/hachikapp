@@ -10,16 +10,11 @@ import (
 
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/services"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
+	"github.com/WilsonSayago/base-golang/internal/infra/bootstrap"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/instance"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/prop"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/sql"
-	initModules "github.com/WilsonSayago/initModules/v2"
 	"golang.org/x/term"
 )
-
-const propertiesFile = "internal/resources/properties.yml"
 
 func main() {
 	if err := run(); err != nil {
@@ -42,32 +37,9 @@ func run() error {
 	}
 	defer clearString(&password)
 
-	dbProp := initModules.OnceValue(prop.NewDatabaseProperty)
-	if err := initModules.AddPropE(dbProp); err != nil {
-		return fmt.Errorf("register database properties: %w", err)
-	}
-	if err := initModules.LoadProperties(
-		initModules.WithFilePath(propertiesFile),
-		initModules.WithFormat(initModules.YML),
-	); err != nil {
-		return fmt.Errorf("load properties: %w", err)
-	}
-
-	ssl := dbProp.SSLMode
-	if ssl == "" {
-		ssl = "disable"
-	}
-	cfg, err := appconfig.Load(appconfig.DatabaseConfig{
-		Host:     dbProp.Host,
-		Port:     dbProp.Port,
-		Name:     dbProp.Name,
-		User:     dbProp.User,
-		Password: dbProp.Password,
-		SSLMode:  ssl,
-		MaxConns: dbProp.DbMaxConns,
-	})
+	cfg, _, err := bootstrap.LoadRuntimeInputs(bootstrap.DefaultPropertiesFile)
 	if err != nil {
-		return fmt.Errorf("invalid configuration: %w", err)
+		return err
 	}
 
 	dsn, err := cfg.Database.DSN()
@@ -78,17 +50,17 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("open database: %w", err)
 	}
-	database.SetSingleton(db)
 	defer db.Close()
 
 	if err := sql.Migrate(cfg.Database.MigrationsPath, dsn); err != nil {
 		return fmt.Errorf("migrate: %w", err)
 	}
 
-	boot := services.NewAdminBootstrap(
-		instance.GetUserRepositoryInstance(),
-		instance.PasswordBlocklistInstance(cfg.Auth),
-	)
+	users, blocklist, err := bootstrap.NewUserPersistence(db, cfg.Auth)
+	if err != nil {
+		return err
+	}
+	boot := services.NewAdminBootstrap(users, blocklist)
 	if err := boot.Run(context.Background(), name, email, password); err != nil {
 		if errors.Is(err, domain.ErrAdminExists) {
 			return fmt.Errorf("administrator already exists")

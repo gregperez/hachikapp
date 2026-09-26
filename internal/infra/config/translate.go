@@ -2,7 +2,7 @@ package config
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 	"log/slog"
 
 	"github.com/WilsonSayago/initModules/v2"
@@ -18,32 +18,52 @@ type ITranslate interface {
 
 type Translate struct {
 	bundle *i18n.Bundle
+	files  []string
+	logger *slog.Logger
 }
 
+// NewTranslate constructs a translator without loading files or starting work.
+func NewTranslate(logger *slog.Logger, files ...string) *Translate {
+	if len(files) == 0 {
+		files = []string{
+			"internal/resources/locales/en.json",
+			"internal/resources/locales/es.json",
+		}
+	}
+	return &Translate{files: files, logger: logger}
+}
+
+// GetTranslateInstance is retained for compatibility with leftover callers.
+//
+// Deprecated: use NewTranslate.
 func GetTranslateInstance() ITranslate {
-	return initModules.Once(func() *Translate {
-		return &Translate{}
-	})
+	return NewTranslate(nil)
 }
 
 func (t *Translate) Start() {
-	t.LoadTranslations()
+	if err := t.LoadTranslationsFiles(); err != nil && t.logger != nil {
+		t.logger.Error("load translations", "err", err)
+	}
 }
 
 func (t *Translate) LoadTranslations() {
+	_ = t.LoadTranslationsFiles()
+}
+
+// LoadTranslationsFiles loads locale files and returns an error instead of exiting.
+func (t *Translate) LoadTranslationsFiles() error {
+	if t == nil {
+		return fmt.Errorf("translator is nil")
+	}
 	b := i18n.NewBundle(language.English)
 	b.RegisterUnmarshalFunc("json", json.Unmarshal)
-
-	_, err := b.LoadMessageFile("internal/resources/locales/en.json")
-	if err != nil {
-		log.Fatal(err)
+	for _, file := range t.files {
+		if _, err := b.LoadMessageFile(file); err != nil {
+			return fmt.Errorf("load translation file %s: %w", file, err)
+		}
 	}
-	_, err = b.LoadMessageFile("internal/resources/locales/es.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	t.bundle = b
+	return nil
 }
 
 // TranslateByLang looks up a message without panicking.
@@ -58,10 +78,12 @@ func (t *Translate) TranslateByLang(lang string, messageID string, data map[stri
 		TemplateData: data,
 	})
 	if err != nil {
-		slog.Warn("missing translation",
-			"message_id", messageID,
-			"lang", lang,
-		)
+		if t.logger != nil {
+			t.logger.Warn("missing translation",
+				"message_id", messageID,
+				"lang", lang,
+			)
+		}
 		return "An error occurred"
 	}
 	return msg

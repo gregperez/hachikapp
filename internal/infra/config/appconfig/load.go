@@ -140,6 +140,15 @@ func applyEnv(cfg *Config) error {
 	if v := os.Getenv("AUTH_TRUSTED_PROXY_CIDRS"); v != "" {
 		cfg.Auth.TrustedProxyCIDRs = splitCSV(v)
 	}
+	if err := setDuration(&cfg.Auth.SessionPurgeInterval, "AUTH_SESSION_PURGE_INTERVAL"); err != nil {
+		return err
+	}
+	if err := setDuration(&cfg.Auth.SessionPurgeRetention, "AUTH_SESSION_PURGE_RETENTION"); err != nil {
+		return err
+	}
+	if err := setInt(&cfg.Auth.SessionPurgeMaxBatches, "AUTH_SESSION_PURGE_MAX_BATCHES"); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -276,6 +285,12 @@ func envField(envKey string) string {
 		return "auth.rateLimitWindow"
 	case "AUTH_RATE_LIMIT_MAX_ENTRIES":
 		return "auth.rateLimitMaxEntries"
+	case "AUTH_SESSION_PURGE_INTERVAL":
+		return "auth.sessionPurgeInterval"
+	case "AUTH_SESSION_PURGE_RETENTION":
+		return "auth.sessionPurgeRetention"
+	case "AUTH_SESSION_PURGE_MAX_BATCHES":
+		return "auth.sessionPurgeMaxBatches"
 	default:
 		return strings.ToLower(envKey)
 	}

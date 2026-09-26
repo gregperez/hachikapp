@@ -28,6 +28,24 @@ func MapError(err error, requestID string) Problem {
 		return Conflict("The resource already exists or conflicts with current state", requestID)
 	case errors.Is(err, authBaseCore.ErrInvalidCredentials), errors.Is(err, authBaseCore.ErrInvalidRefresh):
 		return Unauthorized("Invalid credentials", requestID)
+	case errors.Is(err, domain.ErrOIDCDisabled), errors.Is(err, domain.ErrOIDCUnavailable):
+		return ServiceUnavailable("Federated login is unavailable", requestID)
+	case errors.Is(err, domain.ErrOIDCUnknownProvider):
+		return NotFound("The requested identity provider was not found", requestID)
+	case errors.Is(err, domain.ErrOIDCRedirectNotAllowed):
+		return BadRequest("The requested destination is not allowed", requestID)
+	case errors.Is(err, domain.ErrOIDCInvalidState),
+		errors.Is(err, domain.ErrOIDCExpired),
+		errors.Is(err, domain.ErrOIDCReplay),
+		errors.Is(err, domain.ErrOIDCInvalidGrant),
+		errors.Is(err, domain.ErrOIDCEmailUnverified):
+		return Unauthorized("Federated login could not be completed", requestID)
+	case errors.Is(err, domain.ErrOIDCIdentityNotLinked),
+		errors.Is(err, domain.ErrOIDCInactiveUser),
+		errors.Is(err, domain.ErrOIDCReauthRequired):
+		return Unauthorized("Federated login could not be completed", requestID)
+	case errors.Is(err, domain.ErrOIDCIdentityConflict):
+		return Conflict("This identity is already linked to another account", requestID)
 	case errors.Is(err, ErrInvalidJSON), errors.Is(err, ErrInvalidQuery), errors.Is(err, ErrUnknownField), errors.Is(err, ErrEmptyBody):
 		detail := "Invalid request"
 		switch {

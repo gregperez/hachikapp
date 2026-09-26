@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 	authBaseServices "github.com/WilsonSayago/authBase/v4/core/services"
@@ -22,10 +23,13 @@ import (
 	applifecycle "github.com/WilsonSayago/base-golang/internal/infra/lifecycle"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/ginadapter"
+	"github.com/WilsonSayago/base-golang/internal/infra/secondary/oidcclient"
+	"github.com/WilsonSayago/base-golang/internal/infra/secondary/oidccrypto"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/passwordcheck"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/ratelimit"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/dao"
+	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/oidcstore"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/refreshstore"
 	initModules "github.com/WilsonSayago/initModules/v2"
 	"github.com/gin-gonic/gin"
@@ -63,6 +67,8 @@ type Application struct {
 
 	refreshStore   *refreshstore.Store
 	sessionPurger  *applifecycle.ExpiredSessionPurger
+	oidcPurger     *applifecycle.OIDCTransactionPurger
+	oidcService    *services.OIDCService
 	lifecycleNames []string
 }
 
@@ -177,6 +183,9 @@ func (a *Application) wire(opts Options) error {
 	if err != nil {
 		return fmt.Errorf("client origin resolver: %w", err)
 	}
+	if err := a.wireOIDC(opts, users, authn, auditor); err != nil {
+		return err
+	}
 
 	translate := config.NewTranslate(a.Logger, opts.TranslationFiles...)
 	gate := NewReadyGate(a.DB)
@@ -194,6 +203,9 @@ func (a *Application) wire(opts Options) error {
 				Translate:      translate,
 				Limiter:        limiter,
 				OriginResolver: originResolver,
+				OIDC:           a.oidcService,
+				OIDCConfig:     opts.Config.Auth.OIDC,
+				SecureCookie:   opts.Config.IsProduction(),
 			})
 		},
 	})
@@ -233,6 +245,10 @@ func (a *Application) registerLifecycles(opts Options) {
 		a.App.Register(a.sessionPurger)
 		a.lifecycleNames = append(a.lifecycleNames, "session-purger")
 	}
+	if a.oidcPurger != nil {
+		a.App.Register(a.oidcPurger)
+		a.lifecycleNames = append(a.lifecycleNames, "oidc-purger")
+	}
 	if !opts.SkipListen {
 		a.App.Register(a.HTTP)
 		a.lifecycleNames = append(a.lifecycleNames, "http")
@@ -267,6 +283,9 @@ type routeDeps struct {
 	Translate      config.ITranslate
 	Limiter        ports.LoginLimiter
 	OriginResolver *controller.ClientOriginResolver
+	OIDC           *services.OIDCService
+	OIDCConfig     appconfig.OIDCConfig
+	SecureCookie   bool
 }
 
 func registerRoutes(r *gin.Engine, deps routeDeps) {
@@ -280,8 +299,83 @@ func registerRoutes(r *gin.Engine, deps routeDeps) {
 		deps.Limiter,
 		deps.OriginResolver,
 	).RunController()
+	controller.NewOIDCController(
+		deps.OIDC,
+		deps.Authz,
+		r,
+		deps.Translate,
+		deps.Limiter,
+		deps.OriginResolver,
+		deps.OIDCConfig,
+		deps.SecureCookie,
+	).RunController()
 	controller.NewUserController(deps.Authz, deps.Users, r, deps.Translate).RunController()
 	controller.NewRoleController(deps.Authz, deps.Roles, r, deps.Translate).RunController()
+}
+
+func (a *Application) wireOIDC(
+	opts Options,
+	users ports.UserPort,
+	sessions authBaseCore.SessionIssuer,
+	auditor audit.Logger,
+) error {
+	cfg := opts.Config.Auth.OIDC
+	if !cfg.Enabled {
+		return nil
+	}
+	key, err := cfg.EncryptionKeyBytes()
+	if err != nil {
+		return err
+	}
+	box, err := oidccrypto.NewBox(key)
+	if err != nil {
+		return fmt.Errorf("oidc encryption: %w", err)
+	}
+	store := oidcstore.New(a.DB)
+	providers := make([]ports.OIDCProvider, 0, len(cfg.Providers))
+	destinations := make(map[string][]string, len(cfg.Providers))
+	for _, providerCfg := range cfg.Providers {
+		client, err := oidcclient.New(providerCfg, cfg.HTTPTimeout, nil)
+		if err != nil {
+			return fmt.Errorf("oidc provider %s: %w", providerCfg.Name, err)
+		}
+		providers = append(providers, client)
+		destinations[strings.ToLower(providerCfg.Name)] = append([]string(nil), providerCfg.AllowedFinalDestinations...)
+	}
+	validation := secundary.NewValidationService()
+	service, err := services.NewOIDCService(
+		services.OIDCServiceConfig{
+			Enabled:        true,
+			TransactionTTL: cfg.TransactionTTL,
+			GrantTTL:       cfg.GrantTTL,
+		},
+		providers,
+		destinations,
+		store,
+		store,
+		users,
+		box,
+		sessions,
+		validation,
+		auditor,
+	)
+	if err != nil {
+		return fmt.Errorf("oidc service: %w", err)
+	}
+	a.oidcService = service
+	if opts.SkipPurger {
+		return nil
+	}
+	purger, err := applifecycle.NewOIDCTransactionPurger(store, applifecycle.OIDCTransactionPurgerConfig{
+		Interval:   opts.Config.Auth.SessionPurgeInterval,
+		Retention:  opts.Config.Auth.SessionPurgeRetention,
+		MaxBatches: opts.Config.Auth.SessionPurgeMaxBatches,
+	}, a.Logger)
+	if err != nil {
+		return fmt.Errorf("oidc purger: %w", err)
+	}
+	a.oidcPurger = purger
+	return nil
 }
 
 // NewUserPersistence builds repositories for administrative tools without globals.

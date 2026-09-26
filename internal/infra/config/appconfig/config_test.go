@@ -175,6 +175,77 @@ func TestLoadAuthenticationSecuritySettings(t *testing.T) {
 	}
 }
 
+func TestLoadOIDCGoogleSettings(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://u:p@localhost:5432/test?sslmode=disable")
+	t.Setenv("APP_ENV", "test")
+	t.Setenv("OIDC_ENABLED", "true")
+	t.Setenv("OIDC_ENCRYPTION_KEY", "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+	t.Setenv("OIDC_GOOGLE_CLIENT_ID", "google-client-id")
+	t.Setenv("OIDC_GOOGLE_CLIENT_SECRET", "google-client-secret-value")
+	t.Setenv("OIDC_GOOGLE_REDIRECT_URI", "https://api.example.com/v1/auth/oidc/google/callback")
+	t.Setenv("OIDC_GOOGLE_ALLOWED_DESTINATIONS", "https://app.example.com/auth/oidc")
+
+	cfg, err := appconfig.Load(appconfig.DatabaseConfig{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.Auth.OIDC.Enabled {
+		t.Fatal("expected OIDC enabled")
+	}
+	provider, ok := cfg.Auth.OIDC.Provider("google")
+	if !ok {
+		t.Fatal("google provider missing")
+	}
+	if provider.Issuer != "https://accounts.google.com" || provider.ClientID != "google-client-id" {
+		t.Fatalf("provider=%+v", provider)
+	}
+	if len(provider.AllowedFinalDestinations) != 1 {
+		t.Fatalf("destinations=%v", provider.AllowedFinalDestinations)
+	}
+}
+
+func TestProductionRejectsHTTPIssuer(t *testing.T) {
+	cfg := appconfig.Defaults()
+	cfg.Database.Password = "real-production-password-value"
+	cfg.Database.SSLMode = "require"
+	cfg.Runtime.Environment = "production"
+	cfg.CORS.AllowedOrigins = []string{"https://app.example.com"}
+	cfg.Auth.OIDC.Enabled = true
+	cfg.Auth.OIDC.EncryptionKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	cfg.Auth.OIDC.Providers = []appconfig.OIDCProviderConfig{{
+		Name:                     "google",
+		Issuer:                   "http://accounts.google.com",
+		ClientID:                 "client",
+		ClientSecret:             "real-google-client-secret",
+		RedirectURI:              "https://api.example.com/v1/auth/oidc/google/callback",
+		AllowedFinalDestinations: []string{"https://app.example.com/auth/oidc"},
+	}}
+	err := cfg.Validate()
+	if err == nil || !strings.Contains(err.Error(), "auth.oidc.providers.issuer") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestOIDCRejectsWildcardDestination(t *testing.T) {
+	cfg := appconfig.Defaults()
+	cfg.Database.Password = "secret-password-value"
+	cfg.Database.SSLMode = "disable"
+	cfg.Auth.OIDC.Enabled = true
+	cfg.Auth.OIDC.EncryptionKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	cfg.Auth.OIDC.Providers = []appconfig.OIDCProviderConfig{{
+		Name:                     "google",
+		Issuer:                   "https://accounts.google.com",
+		ClientID:                 "client",
+		ClientSecret:             "real-google-client-secret",
+		RedirectURI:              "https://api.example.com/v1/auth/oidc/google/callback",
+		AllowedFinalDestinations: []string{"https://*.example.com/auth"},
+	}}
+	err := cfg.Validate()
+	if err == nil || !strings.Contains(err.Error(), "wildcard") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
 func TestValidateRejectsInvalidTrustedProxyCIDR(t *testing.T) {
 	cfg := appconfig.Defaults()
 	cfg.Database.Password = "secret-password-value"

@@ -149,7 +149,7 @@ func applyEnv(cfg *Config) error {
 	if err := setInt(&cfg.Auth.SessionPurgeMaxBatches, "AUTH_SESSION_PURGE_MAX_BATCHES"); err != nil {
 		return err
 	}
-	return nil
+	return applyOIDCEnv(&cfg.Auth.OIDC)
 }
 
 // applyDatabaseURLFields copies host/user/password/dbname/sslmode from DATABASE_URL
@@ -291,9 +291,63 @@ func envField(envKey string) string {
 		return "auth.sessionPurgeRetention"
 	case "AUTH_SESSION_PURGE_MAX_BATCHES":
 		return "auth.sessionPurgeMaxBatches"
+	case "OIDC_HTTP_TIMEOUT":
+		return "auth.oidc.httpTimeout"
+	case "OIDC_TRANSACTION_TTL":
+		return "auth.oidc.transactionTTL"
+	case "OIDC_GRANT_TTL":
+		return "auth.oidc.grantTTL"
 	default:
 		return strings.ToLower(envKey)
 	}
+}
+
+func applyOIDCEnv(cfg *OIDCConfig) error {
+	if v := os.Getenv("OIDC_ENABLED"); v != "" {
+		b, err := parseBoolStrict(v)
+		if err != nil {
+			return RedactedError("auth.oidc.enabled", err.Error())
+		}
+		cfg.Enabled = b
+	}
+	if err := setDuration(&cfg.HTTPTimeout, "OIDC_HTTP_TIMEOUT"); err != nil {
+		return err
+	}
+	if err := setDuration(&cfg.TransactionTTL, "OIDC_TRANSACTION_TTL"); err != nil {
+		return err
+	}
+	if err := setDuration(&cfg.GrantTTL, "OIDC_GRANT_TTL"); err != nil {
+		return err
+	}
+	setStr(&cfg.CookieName, "OIDC_COOKIE_NAME")
+	setStr(&cfg.CookiePath, "OIDC_COOKIE_PATH")
+	setStr(&cfg.EncryptionKey, "OIDC_ENCRYPTION_KEY")
+
+	google := OIDCProviderConfig{
+		Name:   OIDCProviderGoogle,
+		Issuer: googleIssuer,
+	}
+	setStr(&google.Issuer, "OIDC_GOOGLE_ISSUER")
+	setStr(&google.ClientID, "OIDC_GOOGLE_CLIENT_ID")
+	setStr(&google.ClientSecret, "OIDC_GOOGLE_CLIENT_SECRET")
+	setStr(&google.RedirectURI, "OIDC_GOOGLE_REDIRECT_URI")
+	if v := os.Getenv("OIDC_GOOGLE_ALLOWED_DESTINATIONS"); v != "" {
+		google.AllowedFinalDestinations = splitCSV(v)
+	}
+	if google.ClientID != "" || google.ClientSecret != "" || google.RedirectURI != "" || len(google.AllowedFinalDestinations) > 0 {
+		replaced := false
+		for i, provider := range cfg.Providers {
+			if strings.EqualFold(provider.Name, OIDCProviderGoogle) {
+				cfg.Providers[i] = google
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			cfg.Providers = append(cfg.Providers, google)
+		}
+	}
+	return nil
 }
 
 // RedactedError wraps validation failures without embedding secret values.

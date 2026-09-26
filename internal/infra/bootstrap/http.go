@@ -26,6 +26,7 @@ type HTTPDeps struct {
 	Register func(r *gin.Engine)
 	Gate     *ReadyGate
 	Logger   *slog.Logger
+	JWKS     []byte
 }
 
 // NewEngine builds the Gin engine with middleware, health, CORS, and routes.
@@ -54,6 +55,7 @@ func NewEngine(deps HTTPDeps) *gin.Engine {
 	r.Use(cors.New(corsCfg))
 
 	RegisterHealth(r, deps.Gate)
+	registerJWKS(r, deps.JWKS)
 
 	if deps.Config.Docs.SwaggerEnabled {
 		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

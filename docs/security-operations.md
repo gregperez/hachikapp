@@ -82,6 +82,48 @@ Perform the following **outside** the repository (secret manager, cloud IAM, dat
 6. **Invalidate old material** — Rotate or delete the previous DB password and JWT secrets in the provider so they cannot be reused.
 7. **Record** — Log date, environment, and operator in an external ops log. Never record secret values.
 
+## JWT key agility
+
+HMAC/HS256 remains the compatible default. Activate Ed25519 only after an
+overlap window is planned. Access and refresh keys/`kid`s must stay distinct.
+Never put private keys or refresh keys in JWKS, tickets, or logs.
+
+Generate Ed25519 material outside the repository:
+
+```sh
+openssl genpkey -algorithm ED25519 -out access.pem
+openssl genpkey -algorithm ED25519 -out refresh.pem
+chmod 600 access.pem refresh.pem
+```
+
+Store the files in the deployment secret volume. Config points at paths
+(`JWT_ED25519_ACCESS_KEY_PATH`, `JWT_ED25519_REFRESH_KEY_PATH`); parse errors
+name the field, never the PEM.
+
+### Rotation without an abrupt cut
+
+1. Keep HMAC secrets in config and set `JWT_HMAC_OVERLAP=true`.
+2. Deploy `JWT_ALG=ed25519` so new tokens are EdDSA while HMAC tokens still
+   verify. `GET /.well-known/jwks.json` then exposes only access public keys
+   (`Cache-Control: public, max-age=300` and `ETag`).
+3. Wait at least `max(JWT_ACCESS_HOURS, JWT_REFRESH_HOURS)`.
+4. Set `JWT_HMAC_OVERLAP=false` and remove HMAC verification. Do not accept
+   tokens without `kid` indefinitely.
+5. Later Ed25519 rotations move the current public key to
+   `JWT_ED25519_PREVIOUS_*` and issue with a new `kid`.
+
+Rollback: restore `JWT_ALG=hs256` only if HMAC secrets were retained and the
+overlap window has not expired. A compromised private key requires user-wide
+session revocation plus a new `kid`.
+
+The verifier looks up keys locally by `kid`. Incoming `jku`/`x5u`/`jwk`/`x5c`
+headers are rejected.
+
+Typed security events (`login_success`, `refresh_replay`, `oidc_success`, …)
+are written to slog. They include `actor_id` / `family_id` / `token_id` and
+never JWT strings, passwords, or emails. A sink failure does not change the
+authentication result.
+
 ### History rewrite (coordinated, destructive)
 
 Rewriting Git history to purge old blobs is **out of scope** for routine work. It requires:

@@ -12,6 +12,10 @@
 
 ### Security / reliability
 
+- Optional Ed25519 JWT signing with local `kid` lookup, HMAC overlap, and a
+  public access-only JWKS endpoint. Typed security events go to slog without
+  tokens or secrets.
+
 - Optional Google Sign-In uses OpenID Connect Authorization Code + PKCE.
   Identities bind by `(issuer, subject)` after an explicit authenticated link.
   The callback never places local or Google tokens in the redirect URL.
@@ -23,7 +27,7 @@
 - Production validation applies TLS/placeholder rules to `DATABASE_URL` (O-012).
 - Config parse errors for ints/durations/bools abort startup (O-013).
 - Go minimum raised to 1.26.6 (O-029).
-- Depend on `authBase/v4@v4.2.0` for typed keyset pagination, additive
+- Depend on `authBase/v4@v4.3.0` for JWT key agility, typed security events,
   session lifecycle contracts, equalized login verification, and Argon2id
   hashing, and on
   `initModules/v2@v2.0.0`.

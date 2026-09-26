@@ -8,7 +8,7 @@ explicit startup/shutdown behavior.
 ## Libraries
 
 ### Go Modules
-- **github.com/WilsonSayago/authBase/v4** ([v4.1.0](https://github.com/WilsonSayago/authBase/releases/tag/v4.1.0)): authentication, authorization, session lifecycle, and keyset pagination contracts.
+- **github.com/WilsonSayago/authBase/v4** ([v4.2.0](https://github.com/WilsonSayago/authBase/releases/tag/v4.2.0)): authentication, authorization, session lifecycle, Argon2id credentials, and keyset pagination contracts.
 - **github.com/WilsonSayago/initModules/v2** ([v2.0.0](https://github.com/WilsonSayago/initModules/releases/tag/v2.0.0)): config load and typed singletons.
 - Logging uses Go's standard `log/slog` (JSON to stdout).
 
@@ -98,7 +98,7 @@ transaction as the sensitive account update.
 
 Go minimum **1.26.6** / preferred toolchain **1.27.1**. Update policy: [docs/dependency-policy.md](docs/dependency-policy.md).
 
-The repository resolves `authBase/v4@v4.1.0` through the public Go module
+The repository resolves `authBase/v4@v4.2.0` through the public Go module
 proxy. Checked-in filesystem `replace` directives are rejected by
 `make mod-policy`, so a standalone checkout does not depend on sibling
 repositories.

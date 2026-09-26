@@ -99,6 +99,9 @@ func (c Config) Validate() error {
 	if err := c.Auth.OIDC.validate(c.IsProduction()); err != nil {
 		return err
 	}
+	if err := c.Auth.TokenKeys.validate(); err != nil {
+		return err
+	}
 
 	if c.CORS.AllowCredentials {
 		for _, origin := range c.CORS.AllowedOrigins {

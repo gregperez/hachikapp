@@ -78,6 +78,7 @@ type AuthConfig struct {
 	SessionPurgeRetention  time.Duration
 	SessionPurgeMaxBatches int
 	OIDC                   OIDCConfig
+	TokenKeys              TokenKeysConfig
 }
 
 // OIDCConfig is the optional federated-login configuration.

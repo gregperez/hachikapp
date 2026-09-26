@@ -246,6 +246,54 @@ func TestOIDCRejectsWildcardDestination(t *testing.T) {
 	}
 }
 
+func TestTokenKeysRejectAmbiguousAlgorithm(t *testing.T) {
+	cfg := appconfig.Defaults()
+	cfg.Database.Password = "secret-password-value"
+	cfg.Database.SSLMode = "disable"
+	cfg.Auth.TokenKeys.Algorithm = "none"
+	err := cfg.Validate()
+	if err == nil || !strings.Contains(err.Error(), "auth.tokenKeys.algorithm") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestTokenKeysEd25519RequiresDistinctKids(t *testing.T) {
+	cfg := appconfig.Defaults()
+	cfg.Database.Password = "secret-password-value"
+	cfg.Database.SSLMode = "disable"
+	cfg.Auth.TokenKeys.Algorithm = "ed25519"
+	cfg.Auth.TokenKeys.AccessKID = "same"
+	cfg.Auth.TokenKeys.RefreshKID = "same"
+	cfg.Auth.TokenKeys.AccessKeyPath = "/tmp/access.pem"
+	cfg.Auth.TokenKeys.RefreshKeyPath = "/tmp/refresh.pem"
+	err := cfg.Validate()
+	if err == nil || !strings.Contains(err.Error(), "auth.tokenKeys.refreshKid") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestLoadTokenKeysSettings(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://u:p@localhost:5432/test?sslmode=disable")
+	t.Setenv("APP_ENV", "test")
+	t.Setenv("JWT_ALG", "ed25519")
+	t.Setenv("JWT_ACCESS_KID", "access-1")
+	t.Setenv("JWT_REFRESH_KID", "refresh-1")
+	t.Setenv("JWT_ED25519_ACCESS_KEY_PATH", "/run/keys/access.pem")
+	t.Setenv("JWT_ED25519_REFRESH_KEY_PATH", "/run/keys/refresh.pem")
+	t.Setenv("JWT_HMAC_OVERLAP", "true")
+
+	cfg, err := appconfig.Load(appconfig.DatabaseConfig{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Auth.TokenKeys.AlgorithmNorm() != appconfig.TokenAlgEd25519 {
+		t.Fatalf("alg=%s", cfg.Auth.TokenKeys.Algorithm)
+	}
+	if !cfg.Auth.TokenKeys.HMACOverlap || cfg.Auth.TokenKeys.AccessKID != "access-1" {
+		t.Fatalf("keys=%+v", cfg.Auth.TokenKeys)
+	}
+}
+
 func TestValidateRejectsInvalidTrustedProxyCIDR(t *testing.T) {
 	cfg := appconfig.Defaults()
 	cfg.Database.Password = "secret-password-value"

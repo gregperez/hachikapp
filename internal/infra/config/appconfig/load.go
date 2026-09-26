@@ -149,6 +149,9 @@ func applyEnv(cfg *Config) error {
 	if err := setInt(&cfg.Auth.SessionPurgeMaxBatches, "AUTH_SESSION_PURGE_MAX_BATCHES"); err != nil {
 		return err
 	}
+	if err := applyTokenKeysEnv(&cfg.Auth.TokenKeys); err != nil {
+		return err
+	}
 	return applyOIDCEnv(&cfg.Auth.OIDC)
 }
 
@@ -297,9 +300,33 @@ func envField(envKey string) string {
 		return "auth.oidc.transactionTTL"
 	case "OIDC_GRANT_TTL":
 		return "auth.oidc.grantTTL"
+	case "JWT_HMAC_OVERLAP":
+		return "auth.tokenKeys.hmacOverlap"
 	default:
 		return strings.ToLower(envKey)
 	}
+}
+
+func applyTokenKeysEnv(cfg *TokenKeysConfig) error {
+	setStr(&cfg.Algorithm, "JWT_ALG")
+	setStr(&cfg.AccessKID, "JWT_ACCESS_KID")
+	setStr(&cfg.RefreshKID, "JWT_REFRESH_KID")
+	setStr(&cfg.PreviousAccessKID, "JWT_PREVIOUS_ACCESS_KID")
+	setStr(&cfg.PreviousAccessSecret, "JWT_PREVIOUS_ACCESS_SECRET")
+	setStr(&cfg.PreviousRefreshKID, "JWT_PREVIOUS_REFRESH_KID")
+	setStr(&cfg.PreviousRefreshSecret, "JWT_PREVIOUS_REFRESH_SECRET")
+	setStr(&cfg.AccessKeyPath, "JWT_ED25519_ACCESS_KEY_PATH")
+	setStr(&cfg.RefreshKeyPath, "JWT_ED25519_REFRESH_KEY_PATH")
+	setStr(&cfg.PreviousAccessPubPath, "JWT_ED25519_PREVIOUS_ACCESS_PUB_PATH")
+	setStr(&cfg.PreviousRefreshPubPath, "JWT_ED25519_PREVIOUS_REFRESH_PUB_PATH")
+	if v := os.Getenv("JWT_HMAC_OVERLAP"); v != "" {
+		b, err := parseBoolStrict(v)
+		if err != nil {
+			return RedactedError("auth.tokenKeys.hmacOverlap", err.Error())
+		}
+		cfg.HMACOverlap = b
+	}
+	return nil
 }
 
 func applyOIDCEnv(cfg *OIDCConfig) error {

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
-	"github.com/WilsonSayago/initModules/v2"
 )
 
 type IUserRoleDao interface {
@@ -19,13 +18,18 @@ type UserRoleDao struct {
 	db *database.PostgresPgx
 }
 
-func NewUserRoleDaoInstance(db *database.PostgresPgx) IUserRoleDao {
-	return initModules.Once(func() *UserRoleDao {
-		return &UserRoleDao{db: db}
-	})
+func NewUserRoleDao(db *database.PostgresPgx) IUserRoleDao {
+	return &UserRoleDao{db: db}
 }
 
-// NewUserRoleDaoForTest builds a DAO without process-wide Once (tests only).
+// NewUserRoleDaoInstance is an alias for NewUserRoleDao.
+//
+// Deprecated: use NewUserRoleDao.
+func NewUserRoleDaoInstance(db *database.PostgresPgx) IUserRoleDao {
+	return NewUserRoleDao(db)
+}
+
+// NewUserRoleDaoForTest builds a DAO for tests.
 func NewUserRoleDaoForTest(db *database.PostgresPgx) IUserRoleDao {
 	return &UserRoleDao{db: db}
 }

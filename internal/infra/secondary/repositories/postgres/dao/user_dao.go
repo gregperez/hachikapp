@@ -10,7 +10,6 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
-	"github.com/WilsonSayago/initModules/v2"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -43,15 +42,20 @@ type UserDao struct {
 	db *database.PostgresPgx
 }
 
-func NewUserDaoInstance(db *database.PostgresPgx) IUserDao {
-	return initModules.Once(func() *UserDao {
-		return &UserDao{db: db}
-	})
+func NewUserDao(db *database.PostgresPgx) IUserDao {
+	return &UserDao{db: db}
 }
 
-// NewUserDaoForTest builds a DAO without process-wide Once (tests only).
+// NewUserDaoInstance is an alias for NewUserDao.
+//
+// Deprecated: use NewUserDao.
+func NewUserDaoInstance(db *database.PostgresPgx) IUserDao {
+	return NewUserDao(db)
+}
+
+// NewUserDaoForTest builds a DAO for tests.
 func NewUserDaoForTest(db *database.PostgresPgx) IUserDao {
-	return &UserDao{db: db}
+	return NewUserDao(db)
 }
 
 func (c *UserDao) BeginTx(ctx context.Context) (database.Transaction, error) {

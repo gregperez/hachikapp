@@ -14,7 +14,6 @@ import (
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 	authBaseServices "github.com/WilsonSayago/authBase/v4/core/services"
-	initModules "github.com/WilsonSayago/initModules/v2"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,6 +28,31 @@ type AuthController struct {
 	originResolver        *ClientOriginResolver
 }
 
+func NewAuthController(
+	authenticationService authBaseCore.AuthenticationUseCase,
+	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *ginadapter.Context],
+	userService core.UserUseCase,
+	tokens *authBaseServices.TokenManager,
+	r *gin.Engine,
+	t config.ITranslate,
+	limiter ports.LoginLimiter,
+	originResolver *ClientOriginResolver,
+) *AuthController {
+	return &AuthController{
+		authenticationService: authenticationService,
+		authorizationService:  authorizationService,
+		userService:           userService,
+		tokens:                tokens,
+		r:                     r,
+		t:                     t,
+		limiter:               limiter,
+		originResolver:        originResolver,
+	}
+}
+
+// GetAuthControllerInstance is an alias for NewAuthController.
+//
+// Deprecated: use NewAuthController.
 func GetAuthControllerInstance(
 	authenticationService authBaseCore.AuthenticationUseCase,
 	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *ginadapter.Context],
@@ -39,18 +63,16 @@ func GetAuthControllerInstance(
 	limiter ports.LoginLimiter,
 	originResolver *ClientOriginResolver,
 ) *AuthController {
-	return initModules.Once(func() *AuthController {
-		return &AuthController{
-			authenticationService: authenticationService,
-			authorizationService:  authorizationService,
-			userService:           userService,
-			tokens:                tokens,
-			r:                     r,
-			t:                     t,
-			limiter:               limiter,
-			originResolver:        originResolver,
-		}
-	})
+	return NewAuthController(
+		authenticationService,
+		authorizationService,
+		userService,
+		tokens,
+		r,
+		t,
+		limiter,
+		originResolver,
+	)
 }
 
 func (authC *AuthController) RunController() {

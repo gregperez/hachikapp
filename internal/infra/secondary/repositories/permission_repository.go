@@ -6,17 +6,21 @@ import (
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/ports"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/dao"
-	"github.com/WilsonSayago/initModules/v2"
 )
 
 type PermissionRepository struct {
 	permissionDao dao.IPermissionDao
 }
 
+func NewPermissionRepository(permissionDao dao.IPermissionDao) *PermissionRepository {
+	return &PermissionRepository{permissionDao: permissionDao}
+}
+
+// NewPermissionInstance is an alias for NewPermissionRepository.
+//
+// Deprecated: use NewPermissionRepository.
 func NewPermissionInstance(permissionDao dao.IPermissionDao) ports.PermissionPort {
-	return initModules.Once(func() *PermissionRepository {
-		return &PermissionRepository{permissionDao: permissionDao}
-	})
+	return NewPermissionRepository(permissionDao)
 }
 
 func (r *PermissionRepository) FindAllByUser(ctx context.Context, userId string) ([]authBaseDomain.Permission, error) {

@@ -14,7 +14,6 @@ import (
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	authBasePorts "github.com/WilsonSayago/authBase/v4/core/port"
-	initModules "github.com/WilsonSayago/initModules/v2"
 )
 
 type transactionalSessionRevoker interface {
@@ -29,26 +28,7 @@ type UserRepository struct {
 	sessionRevoker    transactionalSessionRevoker
 }
 
-func NewUserInstance(
-	userDao dao.IUserDao,
-	roleDao dao.IRoleDao,
-	userRoleDao dao.IUserRoleDao,
-	validationService authBasePorts.ValidationPort,
-	sessionRevoker transactionalSessionRevoker,
-) ports.UserPort {
-	return initModules.Once(func() *UserRepository {
-		return &UserRepository{
-			userDao:           userDao,
-			roleDao:           roleDao,
-			userRoleDao:       userRoleDao,
-			validationService: validationService,
-			sessionRevoker:    sessionRevoker,
-		}
-	})
-}
-
-// NewUserRepositoryForTest builds a repository without process-wide Once (tests only).
-func NewUserRepositoryForTest(
+func NewUserRepository(
 	userDao dao.IUserDao,
 	roleDao dao.IRoleDao,
 	userRoleDao dao.IUserRoleDao,
@@ -62,6 +42,30 @@ func NewUserRepositoryForTest(
 		validationService: validationService,
 		sessionRevoker:    sessionRevoker,
 	}
+}
+
+// NewUserInstance is an alias for NewUserRepository.
+//
+// Deprecated: use NewUserRepository.
+func NewUserInstance(
+	userDao dao.IUserDao,
+	roleDao dao.IRoleDao,
+	userRoleDao dao.IUserRoleDao,
+	validationService authBasePorts.ValidationPort,
+	sessionRevoker transactionalSessionRevoker,
+) ports.UserPort {
+	return NewUserRepository(userDao, roleDao, userRoleDao, validationService, sessionRevoker)
+}
+
+// NewUserRepositoryForTest builds a repository for tests.
+func NewUserRepositoryForTest(
+	userDao dao.IUserDao,
+	roleDao dao.IRoleDao,
+	userRoleDao dao.IUserRoleDao,
+	validationService authBasePorts.ValidationPort,
+	sessionRevoker transactionalSessionRevoker,
+) *UserRepository {
+	return NewUserRepository(userDao, roleDao, userRoleDao, validationService, sessionRevoker)
 }
 
 func (repository *UserRepository) FindByID(ctx context.Context, id string) (domain.User, error) {

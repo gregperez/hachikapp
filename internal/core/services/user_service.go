@@ -9,7 +9,6 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/core"
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/core/ports"
-	initModules "github.com/WilsonSayago/initModules/v2"
 )
 
 type UserService struct {
@@ -25,24 +24,10 @@ func GetUserServiceInstance(
 	audit ports.PrivilegeAuditor,
 	passwords ...domain.PasswordBlocklist,
 ) core.UserUseCase {
-	return initModules.Once(func() *UserService {
-		if audit == nil {
-			audit = ports.NoopAuditor{}
-		}
-		var passwordBlocklist domain.PasswordBlocklist
-		if len(passwords) > 0 {
-			passwordBlocklist = passwords[0]
-		}
-		return &UserService{
-			userRepository: userRepository,
-			validation:     validation,
-			audit:          audit,
-			passwords:      passwordBlocklist,
-		}
-	})
+	return NewUserService(userRepository, validation, audit, passwords...)
 }
 
-// NewUserService constructs a UserService without the process-wide Once (tests).
+// NewUserService constructs a UserService without process-wide state.
 func NewUserService(
 	userRepository ports.UserPort,
 	validation authBasePorts.ValidationPort,

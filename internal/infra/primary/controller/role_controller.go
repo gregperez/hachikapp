@@ -15,7 +15,6 @@ import (
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
-	initModules "github.com/WilsonSayago/initModules/v2"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,20 +25,30 @@ type RoleController struct {
 	t                    config.ITranslate
 }
 
+func NewRoleController(
+	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *ginadapter.Context],
+	roleService authBaseCore.RoleUseCase,
+	r *gin.Engine,
+	t config.ITranslate,
+) *RoleController {
+	return &RoleController{
+		authorizationService: authorizationService,
+		roleService:          roleService,
+		r:                    r,
+		t:                    t,
+	}
+}
+
+// GetRoleControllerInstance is an alias for NewRoleController.
+//
+// Deprecated: use NewRoleController.
 func GetRoleControllerInstance(
 	authorizationService authBaseCore.AuthorizationUseCase[domain.User, *ginadapter.Context],
 	roleService authBaseCore.RoleUseCase,
 	r *gin.Engine,
 	t config.ITranslate,
 ) *RoleController {
-	return initModules.Once(func() *RoleController {
-		return &RoleController{
-			authorizationService: authorizationService,
-			roleService:          roleService,
-			r:                    r,
-			t:                    t,
-		}
-	})
+	return NewRoleController(authorizationService, roleService, r, t)
 }
 
 func (roleC *RoleController) RunController() {

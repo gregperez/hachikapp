@@ -9,7 +9,6 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/core/domain"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
-	"github.com/WilsonSayago/initModules/v2"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -27,15 +26,20 @@ type RoleDao struct {
 	db database.DBTX
 }
 
-func NewRoleDaoInstance(db database.DBTX) IRoleDao {
-	return initModules.Once(func() *RoleDao {
-		return &RoleDao{db: db}
-	})
+func NewRoleDao(db database.DBTX) IRoleDao {
+	return &RoleDao{db: db}
 }
 
-// NewRoleDaoForTest builds a DAO without process-wide Once (tests only).
+// NewRoleDaoInstance is an alias for NewRoleDao.
+//
+// Deprecated: use NewRoleDao.
+func NewRoleDaoInstance(db database.DBTX) IRoleDao {
+	return NewRoleDao(db)
+}
+
+// NewRoleDaoForTest builds a DAO for tests.
 func NewRoleDaoForTest(db database.DBTX) IRoleDao {
-	return &RoleDao{db: db}
+	return NewRoleDao(db)
 }
 
 func (r *RoleDao) FindAllByUserId(ctx context.Context, userId string) ([]dto.RoleDTO, error) {

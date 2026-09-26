@@ -10,17 +10,21 @@ import (
 
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	authBasePorts "github.com/WilsonSayago/authBase/v4/core/port"
-	initModules "github.com/WilsonSayago/initModules/v2"
 )
 
 type RoleRepository struct {
 	roleDao dao.IRoleDao
 }
 
+func NewRoleRepository(roleDao dao.IRoleDao) *RoleRepository {
+	return &RoleRepository{roleDao: roleDao}
+}
+
+// NewRoleInstance is an alias for NewRoleRepository.
+//
+// Deprecated: use NewRoleRepository.
 func NewRoleInstance(roleDao dao.IRoleDao) authBasePorts.RolePort {
-	return initModules.Once(func() *RoleRepository {
-		return &RoleRepository{roleDao: roleDao}
-	})
+	return NewRoleRepository(roleDao)
 }
 
 func (r RoleRepository) FindById(ctx context.Context, id string) (authBaseDomain.Role, error) {

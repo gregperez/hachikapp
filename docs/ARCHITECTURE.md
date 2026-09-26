@@ -63,6 +63,10 @@ adaptadores:
   `POST /v1/auth/oidc/google/exchange`.
 - `Authorization` aplica `AuthorizeJWT` y `PoliciesGuard`.
 - `RoleService` usa el `RolePort` PostgreSQL de la aplicación.
+- El signing HMAC sigue siendo el default. Ed25519 se activa solo con
+  `JWT_ALG=ed25519` y claves de archivo; `/.well-known/jwks.json` publica
+  únicamente claves públicas de access. Los eventos tipados de authBase se
+  escriben a slog sin JWT, secretos ni PII cruda.
 
 Rutas públicas:
 
@@ -74,6 +78,7 @@ Rutas públicas:
 - `POST /v1/auth/oidc/google/exchange`
 - `GET /health/live`
 - `GET /health/ready`
+- `GET /.well-known/jwks.json` — solo si hay claves públicas de access
 
 Las rutas de usuarios y roles requieren access token; las operaciones
 administrativas además requieren permisos por entidad y acción.

@@ -47,7 +47,7 @@ Estos documentos son instrucciones autocontenidas para que otro agente pueda eje
 | 014 | [Endurecer credenciales y login](./014-endurecer-credenciales-y-login.md) | P0 | L | 012, 013 | Verificado (`authBase/v4.2.0`; política NIST, Argon2id y throttling) |
 | 015 | [Aislar composition root y lifecycle](./015-aislar-composition-root-y-lifecycle.md) | P1 | L | 012, 013 | Verificado (Application aislada; O-014 y O-031 cerrados) |
 | 016 | [Agregar login OIDC con Google](./016-agregar-login-oidc-google.md) | P1 | L | 012–015 | Verificado (OIDC Google, grant opaco y `EstablishSession`) |
-| 017 | [Agregar agilidad de claves JWT y eventos de seguridad](./017-agilidad-claves-jwt-y-eventos-seguridad.md) | P2 | L | 012, 013, 015 | TODO |
+| 017 | [Agregar agilidad de claves JWT y eventos de seguridad](./017-agilidad-claves-jwt-y-eventos-seguridad.md) | P2 | L | 012, 013, 015 | Verificado (`authBase/v4.3.0`; JWKS, overlap y eventos) |
 
 ```text
 001 -> 002 -> 003 -> 005 -> 006 -----> 007 -> 008 -> 009 -> 010

@@ -133,20 +133,30 @@ func (a *Application) wire(opts Options) error {
 	)
 	roles := repositories.NewRoleRepository(dao.NewRoleDao(a.DB))
 
-	tokens, err := authBaseServices.NewTokenManager(opts.JWT)
+	material, err := newTokenMaterial(opts.JWT, opts.Config.Auth.TokenKeys)
+	if err != nil {
+		return fmt.Errorf("token crypto: %w", err)
+	}
+	tokens, err := authBaseServices.NewTokenManagerWithCrypto(opts.JWT, material.Crypto)
 	if err != nil {
 		return fmt.Errorf("token manager: %w", err)
 	}
-	authn, err := authBaseServices.NewAuthenticationService[domain.User](
+	authn, err := authBaseServices.NewAuthenticationServiceWithCrypto[domain.User](
 		users,
 		users,
 		refreshStore,
 		validation,
 		opts.JWT,
+		material.Crypto,
 	)
 	if err != nil {
 		return fmt.Errorf("authentication service: %w", err)
 	}
+	sink, err := audit.NewSecuritySink(a.Logger)
+	if err != nil {
+		return fmt.Errorf("security sink: %w", err)
+	}
+	authn.WithSecurityEvents(sink)
 	authz, err := authBaseServices.NewAuthorization[domain.User, *ginadapter.Context](users, tokens)
 	if err != nil {
 		return fmt.Errorf("authorization service: %w", err)
@@ -183,7 +193,7 @@ func (a *Application) wire(opts Options) error {
 	if err != nil {
 		return fmt.Errorf("client origin resolver: %w", err)
 	}
-	if err := a.wireOIDC(opts, users, authn, auditor); err != nil {
+	if err := a.wireOIDC(opts, users, authn, auditor, sink); err != nil {
 		return err
 	}
 
@@ -193,6 +203,7 @@ func (a *Application) wire(opts Options) error {
 		Config: opts.Config,
 		Gate:   gate,
 		Logger: a.Logger,
+		JWKS:   material.JWKS,
 		Register: func(r *gin.Engine) {
 			registerRoutes(r, routeDeps{
 				Authn:          authn,
@@ -318,6 +329,7 @@ func (a *Application) wireOIDC(
 	users ports.UserPort,
 	sessions authBaseCore.SessionIssuer,
 	auditor audit.Logger,
+	sink audit.SecuritySink,
 ) error {
 	cfg := opts.Config.Auth.OIDC
 	if !cfg.Enabled {
@@ -357,7 +369,7 @@ func (a *Application) wireOIDC(
 		box,
 		sessions,
 		validation,
-		auditor,
+		audit.FanoutOIDC{Inner: auditor, Sink: sink},
 	)
 	if err != nil {
 		return fmt.Errorf("oidc service: %w", err)

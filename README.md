@@ -8,7 +8,7 @@ explicit startup/shutdown behavior.
 ## Libraries
 
 ### Go Modules
-- **github.com/WilsonSayago/authBase/v4** ([v4.2.0](https://github.com/WilsonSayago/authBase/releases/tag/v4.2.0)): authentication, authorization, session lifecycle, Argon2id credentials, and keyset pagination contracts.
+- **github.com/WilsonSayago/authBase/v4** ([v4.3.0](https://github.com/WilsonSayago/authBase/releases/tag/v4.3.0)): authentication, authorization, session lifecycle, Argon2id credentials, JWT key agility, and keyset pagination contracts.
 - **github.com/WilsonSayago/initModules/v2** ([v2.0.0](https://github.com/WilsonSayago/initModules/releases/tag/v2.0.0)): config load and typed singletons.
 - Logging uses Go's standard `log/slog` (JSON to stdout).
 
@@ -71,6 +71,7 @@ Health (unversioned):
 
 - `GET /health/live` — process up
 - `GET /health/ready` — startup complete and DB reachable
+- `GET /.well-known/jwks.json` — access public keys only, when Ed25519 is enabled
 
 Process composition lives in `internal/infra/bootstrap.Application`. Each
 instance owns its container, logger, pool, engine, and `initModules.App`.
@@ -95,6 +96,12 @@ one-time grant. `POST /v1/auth/oidc/google/exchange` then calls
 authenticator (password plus every linked identity) requires a separate
 account-recovery process.
 
+JWT signing stays HMAC/HS256 unless `JWT_ALG=ed25519` is set with distinct
+access/refresh key files (mode `0600`). During the cutover, set
+`JWT_HMAC_OVERLAP=true` and wait at least the longest token lifetime before
+removing the HMAC verifier. The process never follows `jku`/`x5u` from a
+token. See [docs/security-operations.md](docs/security-operations.md).
+
 **Auth note:** the historical pre-v3 → v3 migration invalidated older JWTs. The
 current v4 upgrade changes pagination contracts and does not itself invalidate
 v3 tokens when signing configuration remains unchanged. Refresh tokens rotate
@@ -106,7 +113,7 @@ transaction as the sensitive account update.
 
 Go minimum **1.26.6** / preferred toolchain **1.27.1**. Update policy: [docs/dependency-policy.md](docs/dependency-policy.md).
 
-The repository resolves `authBase/v4@v4.2.0` through the public Go module
+The repository resolves `authBase/v4@v4.3.0` through the public Go module
 proxy. Checked-in filesystem `replace` directives are rejected by
 `make mod-policy`, so a standalone checkout does not depend on sibling
 repositories.

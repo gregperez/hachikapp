@@ -1,6 +1,6 @@
 # Dependency update policy
 
-Last reviewed: 2026-09-25 (authBase v4 migration).
+Last reviewed: 2026-09-26 (authBase v4.3.0).
 
 ## Go toolchain
 
@@ -15,7 +15,7 @@ Raise the minimum only with an explicit plan; update README/CI together.
 
 | Module | Chosen | Source |
 |---|---|---|
-| `github.com/WilsonSayago/authBase/v4` | v4.2.0 | published module; Argon2id hashing and equalized login verification |
+| `github.com/WilsonSayago/authBase/v4` | v4.3.0 | published module; JWT key agility and typed security events |
 | `github.com/WilsonSayago/initModules/v2` | v2.0.0 | published module |
 | `github.com/gin-gonic/gin` | v1.12.0 | [proxy.golang.org](https://proxy.golang.org/github.com/gin-gonic/gin/@v/list) |
 | `github.com/gin-contrib/cors` | v1.7.9 | proxy |

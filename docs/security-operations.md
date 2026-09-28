@@ -195,6 +195,17 @@ Expired-session deletion is registered on the process `Lifecycle`. Configure:
 - `AUTH_SESSION_PURGE_RETENTION` (default `24h`)
 - `AUTH_SESSION_PURGE_MAX_BATCHES` (default `10`)
 
+Administrative audit events are append-only (`audit_events`). A sink failure
+never fails login or privilege mutations; it is logged as `audit persist failed`.
+Configure retention independently:
+
+- `AUDIT_RETENTION` (default `2160h`, 90 days)
+- `AUDIT_PURGE_INTERVAL` (default `24h`)
+- `AUDIT_PURGE_MAX_BATCHES` (default `10`)
+
+`GET /v1/audit-events` requires `AUDIT_EVENTS.read`. Do not shorten retention or
+export the table to a SIEM without a privacy review (see `docs/adr/003-persisted-audit.md`).
+
 Operators must choose a forensic retention window before production use.
 
 ## Password and authentication abuse policy

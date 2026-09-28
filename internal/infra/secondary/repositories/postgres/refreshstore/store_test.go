@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -56,8 +57,16 @@ func setupSchema(t *testing.T, pool *pgxpool.Pool) {
 			issued_at timestamptz NOT NULL,
 			expires_at timestamptz NOT NULL,
 			consumed_at timestamptz NULL,
-			revoked_at timestamptz NULL
+			revoked_at timestamptz NULL,
+			client_label varchar(120) NOT NULL DEFAULT '',
+			ip_prefix varchar(64) NOT NULL DEFAULT '',
+			last_seen_at timestamptz NOT NULL DEFAULT now(),
+			family_started_at timestamptz NOT NULL DEFAULT now()
 		)`,
+		`ALTER TABLE public.refresh_sessions ADD COLUMN IF NOT EXISTS client_label varchar(120) NOT NULL DEFAULT ''`,
+		`ALTER TABLE public.refresh_sessions ADD COLUMN IF NOT EXISTS ip_prefix varchar(64) NOT NULL DEFAULT ''`,
+		`ALTER TABLE public.refresh_sessions ADD COLUMN IF NOT EXISTS last_seen_at timestamptz NOT NULL DEFAULT now()`,
+		`ALTER TABLE public.refresh_sessions ADD COLUMN IF NOT EXISTS family_started_at timestamptz NOT NULL DEFAULT now()`,
 	}
 	for _, s := range stmts {
 		if _, err := pool.Exec(ctx, s); err != nil {
@@ -330,5 +339,99 @@ func TestRevokeUserRacesSafelyWithRotate(t *testing.T) {
 	}
 	if active != 0 {
 		t.Fatalf("active sessions after revoke/rotate race = %d, want 0", active)
+	}
+}
+
+func TestListActiveByUserIsolatesAndHidesInactive(t *testing.T) {
+	pool := testPool(t)
+	setupSchema(t, pool)
+	cleanupSessions(t, pool)
+	userA := seedUser(t, pool)
+	userB := seedUser(t, pool)
+	db := database.NewPostgresPgxForTest(pool)
+	store := refreshstore.New(db)
+	ctx := context.Background()
+	now := time.Now().UTC()
+
+	if err := store.Create(ctx, session(userA, "family-a", newID(), hash32(1), now)); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Create(ctx, session(userB, "family-b", newID(), hash32(2), now)); err != nil {
+		t.Fatal(err)
+	}
+	expired := session(userA, "family-expired", newID(), hash32(3), now.Add(-2*time.Hour))
+	expired.ExpiresAt = now.Add(-time.Minute)
+	if err := store.Create(ctx, expired); err != nil {
+		t.Fatal(err)
+	}
+
+	page, err := store.ListActiveByUser(ctx, userA, domain.PageRequest{Limit: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page.Items) != 1 || page.Items[0].FamilyID != "family-a" {
+		t.Fatalf("items=%+v", page.Items)
+	}
+
+	if err := store.RevokeFamilyForUser(ctx, userB, "family-a"); err != nil {
+		t.Fatal(err)
+	}
+	page, err = store.ListActiveByUser(ctx, userA, domain.PageRequest{Limit: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page.Items) != 1 {
+		t.Fatalf("foreign revoke leaked: %+v", page.Items)
+	}
+
+	if err := store.RevokeFamilyForUser(ctx, userA, "family-a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.RevokeFamilyForUser(ctx, userA, "family-a"); err != nil {
+		t.Fatal(err)
+	}
+	page, err = store.ListActiveByUser(ctx, userA, domain.PageRequest{Limit: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page.Items) != 0 {
+		t.Fatalf("revoked still listed: %+v", page.Items)
+	}
+}
+
+func TestListActiveByUserKeysetCursor(t *testing.T) {
+	pool := testPool(t)
+	setupSchema(t, pool)
+	cleanupSessions(t, pool)
+	userID := seedUser(t, pool)
+	db := database.NewPostgresPgxForTest(pool)
+	store := refreshstore.New(db)
+	ctx := context.Background()
+	now := time.Now().UTC()
+	for i := byte(0); i < 3; i++ {
+		if err := store.Create(ctx, session(userID, fmt.Sprintf("family-%d", i), newID(), hash32(i), now.Add(time.Duration(i)*time.Millisecond))); err != nil {
+			t.Fatal(err)
+		}
+	}
+	first, err := store.ListActiveByUser(ctx, userID, domain.PageRequest{Limit: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(first.Items) != 2 || !first.HasNext {
+		t.Fatalf("first page=%+v", first)
+	}
+	last := first.Items[len(first.Items)-1]
+	second, err := store.ListActiveByUser(ctx, userID, domain.PageRequest{
+		Limit: 2,
+		After: &domain.CursorKey{CreatedAt: last.LastSeenAt, ID: last.FamilyID},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(second.Items) != 1 || second.HasNext {
+		t.Fatalf("second page=%+v", second)
+	}
+	if second.Items[0].FamilyID == first.Items[0].FamilyID || second.Items[0].FamilyID == first.Items[1].FamilyID {
+		t.Fatalf("cursor overlapped %+v %+v", first.Items, second.Items)
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -18,8 +19,10 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/infra/bootstrap"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
 	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
+	"github.com/WilsonSayago/base-golang/internal/test/testdb"
 	initModules "github.com/WilsonSayago/initModules/v2"
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func TestMain(m *testing.M) {
@@ -264,6 +267,92 @@ func TestHTTPShutdownDrainsInFlightAndReleasesPort(t *testing.T) {
 		t.Fatalf("port not released: %v", err)
 	}
 	_ = ln.Close()
+}
+
+func TestNewApplicationClosesOwnedPoolOnWireError(t *testing.T) {
+	dsn, err := testdb.RequireURL()
+	if err != nil {
+		t.Skip(err.Error())
+	}
+	appName := "owned-pool-" + strings.ReplaceAll(t.Name(), "/", "-")
+	cfg := testConfig()
+	cfg.Database.URL = dsn + "&application_name=" + appName
+	cfg.Database.SSLMode = "disable"
+	cfg.Auth.TokenKeys.Algorithm = "ed25519"
+	cfg.Auth.TokenKeys.AccessKID = "access-1"
+	cfg.Auth.TokenKeys.RefreshKID = "refresh-1"
+	cfg.Auth.TokenKeys.AccessKeyPath = filepath.Join(t.TempDir(), "missing-access.pem")
+	cfg.Auth.TokenKeys.RefreshKeyPath = filepath.Join(t.TempDir(), "missing-refresh.pem")
+
+	probe := openProbePool(t, dsn)
+	_, err = bootstrap.NewApplication(bootstrap.Options{
+		Config:           cfg,
+		JWT:              testJWT(),
+		Logger:           testLogger(nil),
+		SkipMigrate:      true,
+		SkipPurger:       true,
+		SkipListen:       true,
+		SkipDatabaseLife: true,
+	})
+	if err == nil {
+		t.Fatal("expected wire error")
+	}
+	if n := countNamedBackends(t, probe, appName); n != 0 {
+		t.Fatalf("owned pool leaked %d backends named %s: %v", n, appName, err)
+	}
+}
+
+func TestNewApplicationDoesNotCloseInjectedPoolOnWireError(t *testing.T) {
+	dsn, err := testdb.RequireURL()
+	if err != nil {
+		t.Skip(err.Error())
+	}
+	pool := openProbePool(t, dsn)
+	db := database.NewPostgresPgxForTest(pool)
+	cfg := testConfig()
+	cfg.Database.URL = dsn
+	cfg.Database.SSLMode = "disable"
+	cfg.Auth.TokenKeys.Algorithm = "ed25519"
+	cfg.Auth.TokenKeys.AccessKID = "access-1"
+	cfg.Auth.TokenKeys.RefreshKID = "refresh-1"
+	cfg.Auth.TokenKeys.AccessKeyPath = filepath.Join(t.TempDir(), "missing-access.pem")
+	cfg.Auth.TokenKeys.RefreshKeyPath = filepath.Join(t.TempDir(), "missing-refresh.pem")
+
+	_, err = bootstrap.NewApplication(bootstrap.Options{
+		Config:           cfg,
+		JWT:              testJWT(),
+		Logger:           testLogger(nil),
+		DB:               db,
+		SkipMigrate:      true,
+		SkipPurger:       true,
+		SkipListen:       true,
+		SkipDatabaseLife: true,
+	})
+	if err == nil {
+		t.Fatal("expected wire error")
+	}
+	if pingErr := db.Ping(context.Background()); pingErr != nil {
+		t.Fatalf("injected pool was closed: %v", pingErr)
+	}
+}
+
+func openProbePool(t *testing.T, dsn string) *pgxpool.Pool {
+	t.Helper()
+	pool, err := pgxpool.New(context.Background(), dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+	return pool
+}
+
+func countNamedBackends(t *testing.T, pool *pgxpool.Pool, appName string) int {
+	t.Helper()
+	var n int
+	if err := pool.QueryRow(context.Background(), `SELECT count(*) FROM pg_stat_activity WHERE application_name = $1`, appName).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	return n
 }
 
 type orderedLifecycle struct {

@@ -18,7 +18,10 @@ import (
 )
 
 func TestClientExchangeVerifiesIDToken(t *testing.T) {
-	provider, issuer := newFakeOIDC(t, "client-1", "good-code", "good-verifier", "good-nonce", "sub-9", true)
+	provider, issuer := startFakeOIDC(t, fakeOIDCConfig{
+		ClientID: "client-1", Code: "good-code", Verifier: "good-verifier",
+		Nonce: "good-nonce", Subject: "sub-9", Verified: true,
+	})
 	defer provider.Close()
 
 	client, err := oidcclient.New(appconfig.OIDCProviderConfig{
@@ -45,7 +48,10 @@ func TestClientExchangeVerifiesIDToken(t *testing.T) {
 }
 
 func TestClientRejectsUnknownIssuer(t *testing.T) {
-	provider, issuer := newFakeOIDC(t, "client-1", "good-code", "good-verifier", "good-nonce", "sub-9", true)
+	provider, issuer := startFakeOIDC(t, fakeOIDCConfig{
+		ClientID: "client-1", Code: "good-code", Verifier: "good-verifier",
+		Nonce: "good-nonce", Subject: "sub-9", Verified: true,
+	})
 	defer provider.Close()
 
 	client, err := oidcclient.New(appconfig.OIDCProviderConfig{
@@ -63,25 +69,88 @@ func TestClientRejectsUnknownIssuer(t *testing.T) {
 	}
 }
 
-type fakeOIDC struct {
-	key      *rsa.PrivateKey
-	issuer   string
-	clientID string
-	code     string
-	verifier string
-	nonce    string
-	subject  string
-	verified bool
+func TestClientRejectsInvalidClaims(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name string
+		cfg  fakeOIDCConfig
+	}{
+		{name: "empty subject", cfg: fakeOIDCConfig{Subject: ""}},
+		{name: "missing iat", cfg: fakeOIDCConfig{OmitIAT: true}},
+		{name: "future iat", cfg: fakeOIDCConfig{IssuedAt: time.Now().Add(time.Hour)}},
+		{name: "expired", cfg: fakeOIDCConfig{Expiry: time.Now().Add(-time.Minute)}},
+		{name: "wrong signature", cfg: fakeOIDCConfig{WrongSignature: true}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			cfg := tc.cfg
+			cfg.ClientID = "client-1"
+			cfg.Code = "good-code"
+			cfg.Verifier = "good-verifier"
+			cfg.Nonce = "good-nonce"
+			if tc.name != "empty subject" {
+				cfg.Subject = "sub-9"
+			}
+			cfg.Verified = true
+			provider, issuer := startFakeOIDC(t, cfg)
+			defer provider.Close()
+			client, err := oidcclient.New(appconfig.OIDCProviderConfig{
+				Name: "google", Issuer: issuer, ClientID: "client-1", ClientSecret: "secret",
+				RedirectURI: "https://api.example.com/callback",
+			}, 2*time.Second, provider.Client())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := client.Exchange(context.Background(), "good-code", "good-verifier", "good-nonce"); err != domain.ErrOIDCInvalidState {
+				t.Fatalf("err=%v", err)
+			}
+		})
+	}
 }
 
-func newFakeOIDC(t *testing.T, clientID, code, verifier, nonce, subject string, verified bool) (*httptest.Server, string) {
+func TestClientExchangeHonorsTimeoutAndCancel(t *testing.T) {
+	t.Parallel()
+	provider, issuer := startFakeOIDC(t, fakeOIDCConfig{
+		ClientID: "client-1", Code: "good-code", Verifier: "good-verifier",
+		Nonce: "good-nonce", Subject: "sub-9", Verified: true, HangToken: true,
+	})
+	defer provider.Close()
+	client, err := oidcclient.New(appconfig.OIDCProviderConfig{
+		Name: "google", Issuer: issuer, ClientID: "client-1", ClientSecret: "secret",
+		RedirectURI: "https://api.example.com/callback",
+	}, 50*time.Millisecond, provider.Client())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.AuthorizationURL("state", "good-nonce", "challenge"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Exchange(context.Background(), "good-code", "good-verifier", "good-nonce"); err == nil {
+		t.Fatal("expected timeout")
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := client.Exchange(ctx, "good-code", "good-verifier", "good-nonce"); err == nil {
+		t.Fatal("expected canceled exchange")
+	}
+}
+
+type fakeOIDCConfig struct {
+	ClientID, Code, Verifier, Nonce, Subject     string
+	Verified, OmitIAT, WrongSignature, HangToken bool
+	IssuedAt, Expiry                             time.Time
+}
+
+func startFakeOIDC(t *testing.T, cfg fakeOIDCConfig) (*httptest.Server, string) {
 	t.Helper()
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		t.Fatal(err)
 	}
-	state := &fakeOIDC{
-		key: key, clientID: clientID, code: code, verifier: verifier, nonce: nonce, subject: subject, verified: verified,
+	altKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
 	}
 	mux := http.NewServeMux()
 	var server *httptest.Server
@@ -101,30 +170,49 @@ func newFakeOIDC(t *testing.T, clientID, code, verifier, nonce, subject string, 
 		_ = json.NewEncoder(w).Encode(jwks)
 	})
 	mux.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
+		if cfg.HangToken {
+			time.Sleep(time.Second)
+			return
+		}
 		if err := r.ParseForm(); err != nil {
 			http.Error(w, "form", http.StatusBadRequest)
 			return
 		}
-		if r.Form.Get("code") != state.code || r.Form.Get("code_verifier") != state.verifier {
+		if r.Form.Get("code") != cfg.Code || r.Form.Get("code_verifier") != cfg.Verifier {
 			http.Error(w, "code", http.StatusBadRequest)
 			return
 		}
-		signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.RS256, Key: key}, (&jose.SignerOptions{}).WithType("JWT").WithHeader("kid", "kid-1"))
+		signKey := key
+		if cfg.WrongSignature {
+			signKey = altKey
+		}
+		signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.RS256, Key: signKey}, (&jose.SignerOptions{}).WithType("JWT").WithHeader("kid", "kid-1"))
 		if err != nil {
 			http.Error(w, "sign", http.StatusInternalServerError)
 			return
 		}
 		now := time.Now()
-		raw, err := jwt.Signed(signer).Claims(map[string]any{
+		exp := now.Add(time.Minute)
+		if !cfg.Expiry.IsZero() {
+			exp = cfg.Expiry
+		}
+		iat := now
+		if !cfg.IssuedAt.IsZero() {
+			iat = cfg.IssuedAt
+		}
+		claims := map[string]any{
 			"iss":            server.URL,
-			"sub":            state.subject,
-			"aud":            state.clientID,
-			"exp":            now.Add(time.Minute).Unix(),
-			"iat":            now.Unix(),
-			"nonce":          state.nonce,
+			"sub":            cfg.Subject,
+			"aud":            cfg.ClientID,
+			"exp":            exp.Unix(),
+			"nonce":          cfg.Nonce,
 			"email":          "ada@example.com",
-			"email_verified": state.verified,
-		}).Serialize()
+			"email_verified": cfg.Verified,
+		}
+		if !cfg.OmitIAT {
+			claims["iat"] = iat.Unix()
+		}
+		raw, err := jwt.Signed(signer).Claims(claims).Serialize()
 		if err != nil {
 			http.Error(w, "jwt", http.StatusInternalServerError)
 			return
@@ -138,6 +226,5 @@ func newFakeOIDC(t *testing.T, clientID, code, verifier, nonce, subject string, 
 		})
 	})
 	server = httptest.NewServer(mux)
-	state.issuer = server.URL
 	return server, server.URL
 }

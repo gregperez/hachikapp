@@ -367,6 +367,67 @@ func TestOIDCRejectsUnknownDestinationAndDisabled(t *testing.T) {
 	}
 }
 
+func TestOIDCRejectsInactiveUser(t *testing.T) {
+	t.Parallel()
+	mem := &memOIDC{
+		principal: domain.ExternalPrincipal{
+			Provider: "google", Issuer: "https://accounts.example.test", Subject: "sub-1",
+			Email: "ada@example.com", EmailVerified: true,
+		},
+	}
+	seedUser(mem, "user-1", "ada@example.com", "CorrectHorseBattery1", false)
+	mem.identities = map[string]domain.ExternalIdentity{
+		"https://accounts.example.test\x00sub-1": {
+			ID: "https://accounts.example.test\x00sub-1", Provider: "google",
+			Issuer: "https://accounts.example.test", Subject: "sub-1", UserID: "user-1",
+		},
+	}
+	svc := newService(t, mem)
+	start, err := svc.StartLogin(context.Background(), "google", "https://app.example.com/auth/oidc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.FinishCallback(context.Background(), "google", start.State, start.State, "code-1"); err != domain.ErrOIDCInactiveUser {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestOIDCRejectsExpiredGrant(t *testing.T) {
+	t.Parallel()
+	mem := &memOIDC{
+		principal: domain.ExternalPrincipal{
+			Provider: "google", Issuer: "https://accounts.example.test", Subject: "sub-1",
+			Email: "ada@example.com", EmailVerified: true,
+		},
+	}
+	seedUser(mem, "user-1", "ada@example.com", "CorrectHorseBattery1", true)
+	mem.identities = map[string]domain.ExternalIdentity{
+		"https://accounts.example.test\x00sub-1": {
+			ID: "https://accounts.example.test\x00sub-1", Provider: "google",
+			Issuer: "https://accounts.example.test", Subject: "sub-1", UserID: "user-1",
+		},
+	}
+	svc := newService(t, mem)
+	start, err := svc.StartLogin(context.Background(), "google", "https://app.example.com/auth/oidc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cb, err := svc.FinishCallback(context.Background(), "google", start.State, start.State, "code-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mem.mu.Lock()
+	past := time.Now().Add(-time.Second)
+	for id, tx := range mem.txns {
+		tx.GrantExpiresAt = &past
+		mem.txns[id] = tx
+	}
+	mem.mu.Unlock()
+	if _, _, err := svc.ExchangeGrant(context.Background(), grantFrom(cb.RedirectURL)); err != domain.ErrOIDCExpired {
+		t.Fatalf("err=%v", err)
+	}
+}
+
 func grantFrom(raw string) string {
 	const prefix = "grant="
 	i := strings.Index(raw, prefix)

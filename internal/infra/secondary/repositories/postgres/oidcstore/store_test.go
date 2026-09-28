@@ -111,6 +111,67 @@ func TestConcurrentConsumeState(t *testing.T) {
 	}
 }
 
+func TestConsumeExpiredGrant(t *testing.T) {
+	store, pool, ctx := openStore(t)
+	hash := []byte("state-expired-grant-" + time.Now().Format("150405.000000"))
+	if err := store.Create(ctx, domain.OIDCTransaction{
+		Provider:       "google",
+		StateHash:      hash,
+		Nonce:          []byte("nonce"),
+		VerifierCipher: []byte("cipher"),
+		Intent:         domain.OIDCIntentLogin,
+		ReturnTo:       "https://app.example.com/auth/oidc",
+		ExpiresAt:      time.Now().Add(time.Minute),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	tx, err := store.ConsumeByStateHash(ctx, hash, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	grant := []byte("grant-hash-" + time.Now().Format("150405.000000"))
+	if err := store.AttachGrant(ctx, tx.ID, grant, insertUser(t, pool, ctx), time.Now().Add(-time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.ConsumeGrant(ctx, grant, time.Now()); err != domain.ErrOIDCExpired {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestConcurrentLinkConflict(t *testing.T) {
+	store, pool, ctx := openStore(t)
+	userA := insertUser(t, pool, ctx)
+	userB := insertUser(t, pool, ctx)
+	subject := "sub-race-" + time.Now().Format("150405.000000")
+	var wg sync.WaitGroup
+	errs := make(chan error, 2)
+	for _, userID := range []string{userA, userB} {
+		wg.Add(1)
+		go func(userID string) {
+			defer wg.Done()
+			errs <- store.Link(ctx, domain.ExternalIdentity{
+				Provider: "google", Issuer: "https://accounts.example.test", Subject: subject, UserID: userID,
+			})
+		}(userID)
+	}
+	wg.Wait()
+	close(errs)
+	var ok, conflict int
+	for err := range errs {
+		switch err {
+		case nil:
+			ok++
+		case domain.ErrConflict:
+			conflict++
+		default:
+			t.Fatalf("unexpected err=%v", err)
+		}
+	}
+	if ok != 1 || conflict != 1 {
+		t.Fatalf("ok=%d conflict=%d", ok, conflict)
+	}
+}
+
 func TestLinkConflictOnIssuerSubject(t *testing.T) {
 	store, pool, ctx := openStore(t)
 	userA := insertUser(t, pool, ctx)

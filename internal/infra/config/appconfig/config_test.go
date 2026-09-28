@@ -272,6 +272,21 @@ func TestTokenKeysEd25519RequiresDistinctKids(t *testing.T) {
 	}
 }
 
+func TestTokenKeysEd25519RejectsIdenticalActivePaths(t *testing.T) {
+	cfg := appconfig.Defaults()
+	cfg.Database.Password = "secret-password-value"
+	cfg.Database.SSLMode = "disable"
+	cfg.Auth.TokenKeys.Algorithm = "ed25519"
+	cfg.Auth.TokenKeys.AccessKID = "access-1"
+	cfg.Auth.TokenKeys.RefreshKID = "refresh-1"
+	cfg.Auth.TokenKeys.AccessKeyPath = "/run/keys/shared.pem"
+	cfg.Auth.TokenKeys.RefreshKeyPath = "/run/keys/shared.pem"
+	err := cfg.Validate()
+	if err == nil || !strings.Contains(err.Error(), "auth.tokenKeys.refreshKeyPath") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
 func TestLoadTokenKeysSettings(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://u:p@localhost:5432/test?sslmode=disable")
 	t.Setenv("APP_ENV", "test")

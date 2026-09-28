@@ -62,6 +62,9 @@ func (c TokenKeysConfig) validate() error {
 		if strings.TrimSpace(c.RefreshKeyPath) == "" {
 			return RedactedError("auth.tokenKeys.refreshKeyPath", "is required")
 		}
+		if c.AccessKeyPath == c.RefreshKeyPath {
+			return RedactedError("auth.tokenKeys.refreshKeyPath", "must differ from access key path")
+		}
 		if c.PreviousAccessPubPath != "" && strings.TrimSpace(c.PreviousAccessKID) == "" {
 			return RedactedError("auth.tokenKeys.previousAccessKid", "is required when a previous access public key is set")
 		}

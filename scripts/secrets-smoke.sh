@@ -26,4 +26,27 @@ if grep -E "plans/|docs/security-operations" "${ROOT}/.gitleaks.toml" >/dev/null
   exit 1
 fi
 
+GITLEAKS_BIN="${ROOT}/.tmp/bin/gitleaks"
+if [[ ! -x "${GITLEAKS_BIN}" ]] && command -v gitleaks >/dev/null 2>&1; then
+  GITLEAKS_BIN="$(command -v gitleaks)"
+fi
+if [[ ! -x "${GITLEAKS_BIN}" ]]; then
+  echo "gitleaks binary is required for the negative fixture check" >&2
+  exit 1
+fi
+
+echo "gitleaks: a private-key fixture without the historical sentinel must still fail"
+NEG_DIR="$(mktemp -d "${TMPDIR:-/tmp}/gitleaks-neg.XXXXXX")"
+cleanup_neg() { rm -rf "${NEG_DIR}"; }
+trap cleanup_neg EXIT
+cat > "${NEG_DIR}/leak.pem" <<'EOF'
+-----BEGIN PRIVATE KEY-----
+MC4CAQAwBQYDK2VwBCIEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+-----END PRIVATE KEY-----
+EOF
+if "${GITLEAKS_BIN}" detect --no-git --source "${NEG_DIR}" --config "${ROOT}/.gitleaks.toml" --no-banner --redact >/dev/null 2>&1; then
+  echo "expected gitleaks to detect an independent private-key fixture" >&2
+  exit 1
+fi
+
 echo "secrets-smoke OK"

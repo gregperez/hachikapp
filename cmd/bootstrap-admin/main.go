@@ -66,7 +66,7 @@ func run() error {
 			return fmt.Errorf("administrator already exists")
 		}
 		if errors.Is(err, domain.ErrWeakPassword) {
-			return fmt.Errorf("password does not meet complexity requirements")
+			return fmt.Errorf("password does not meet the current policy")
 		}
 		return err
 	}

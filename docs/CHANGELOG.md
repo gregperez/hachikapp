@@ -27,10 +27,10 @@
 - Production validation applies TLS/placeholder rules to `DATABASE_URL` (O-012).
 - Config parse errors for ints/durations/bools abort startup (O-013).
 - Go minimum raised to 1.26.6 (O-029).
-- Depend on `authBase/v4@v4.3.0` for JWT key agility, typed security events,
-  session lifecycle contracts, equalized login verification, and Argon2id
-  hashing, and on
-  `initModules/v2@v2.0.0`.
+- Depend on `authBase/v4@v4.3.1` for isolated access/refresh key material,
+  JWT key agility, typed security events, session lifecycle contracts,
+  equalized login verification, and Argon2id hashing, and on
+  `initModules/v2@v2.0.1`.
 - Password changes and account deactivation now revoke all refresh families in
   the same PostgreSQL transaction as the account mutation.
 - Added bounded, retention-aware expired-session cleanup prepared for lifecycle

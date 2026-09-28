@@ -10,8 +10,8 @@ github.com/PuerkitoBio/purell v1.1.1 h1:WEQqlqaGbrPkxLJWfBwQmfEAE1Z7ONdDLqrN38tN
 github.com/PuerkitoBio/purell v1.1.1/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 h1:d+Bc7a5rLufV/sSk/8dngufqelfh6jnri85riMAaF/M=
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
-github.com/WilsonSayago/authBase/v4 v4.3.0 h1:fASPR9FQr8HvX0NwDVROyFfSjA1uY4MzlDcwk0BqmLw=
-github.com/WilsonSayago/authBase/v4 v4.3.0/go.mod h1:pFRVfBNgymHBbKTxlbhMgHFV3pbvTTJYroKfehSdFoo=
+github.com/WilsonSayago/authBase/v4 v4.3.1 h1:Rk+2vsaBqUu2RsaO5XAUQTxioC+EYVNiBv0fpz3HE9g=
+github.com/WilsonSayago/authBase/v4 v4.3.1/go.mod h1:pFRVfBNgymHBbKTxlbhMgHFV3pbvTTJYroKfehSdFoo=
 github.com/WilsonSayago/initModules/v2 v2.0.1 h1:PD2YUILpiy6y1W3Z+hC3P++HD8cbpOJnCzPua2wpqxM=
 github.com/WilsonSayago/initModules/v2 v2.0.1/go.mod h1:iIH3qOCOPRbR0cbrakTrpHe48fQ18kLPuljAt6l/U3A=
 github.com/bytedance/gopkg v0.1.4 h1:oZnQwnX82KAIWb7033bEwtxvTqXcYMxDBaQxo5JJHWM=

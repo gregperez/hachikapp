@@ -272,11 +272,13 @@ definitions:
     - USERS
     - ROLES
     - AUDIT_EVENTS
+    - SETTINGS
     type: string
     x-enum-varnames:
     - USERS
     - ROLES
     - AUDIT_EVENTS
+    - SETTINGS
   github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionResponse:
     description: Active session. Never includes hashes or JWTs.
     properties:
@@ -314,6 +316,44 @@ definitions:
         type: integer
       nextCursor:
         type: string
+    type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.PublicSettingsResponse:
+    description: Public branding fields available before and after login.
+    properties:
+      defaultLocale:
+        type: string
+      displayName:
+        type: string
+      logoUrl:
+        type: string
+    type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse:
+    description: Typed application settings including optimistic version.
+    properties:
+      defaultLocale:
+        type: string
+      displayName:
+        type: string
+      logoUrl:
+        type: string
+      updatedAt:
+        type: string
+      updatedBy:
+        type: string
+      version:
+        type: integer
+    type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.UpdateSettingsRequest:
+    description: Allowlisted application settings. Unknown or protected keys are rejected.
+    properties:
+      defaultLocale:
+        type: string
+      displayName:
+        type: string
+      logoUrl:
+        type: string
+      version:
+        type: integer
     type: object
   github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse:
     description: UserResponse represents a user response.
@@ -959,6 +999,105 @@ paths:
       summary: Change role status
       tags:
       - Roles
+  /v1/settings:
+    get:
+      description: Returns typed settings including optimistic version. Requires SETTINGS.read.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Get administrative application settings
+      tags:
+      - Settings
+    put:
+      consumes:
+      - application/json
+      description: Allowlisted branding fields with optimistic version. Unknown or
+        protected keys return 422. Requires SETTINGS.update.
+      parameters:
+      - description: Expected version as a quoted ETag
+        in: header
+        name: If-Match
+        type: string
+      - description: Allowlisted settings
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.UpdateSettingsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Update application settings
+      tags:
+      - Settings
+  /v1/settings/public:
+    get:
+      description: Returns display name, logo URL and default locale. No authentication.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.PublicSettingsResponse'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      summary: Get public application branding
+      tags:
+      - Settings
   /v1/users:
     get:
       consumes:

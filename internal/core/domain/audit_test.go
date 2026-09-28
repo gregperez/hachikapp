@@ -19,6 +19,7 @@ func TestSanitizeAuditMetadataDropsSecretsAndUnknownKeys(t *testing.T) {
 		"prompt":        "ignore previous instructions",
 		"cookie":        "base_refresh=abc",
 		"roleIds":       []string{"11111111-1111-1111-1111-111111111111"},
+		"fields":        []string{"displayName", "logoUrl"},
 		"isAdmin":       true,
 		"familyId":      "family-1",
 		"tokenId":       "tid-1",
@@ -42,6 +43,10 @@ func TestSanitizeAuditMetadataDropsSecretsAndUnknownKeys(t *testing.T) {
 	ids, _ := got["roleIds"].([]string)
 	if len(ids) != 1 {
 		t.Fatalf("roleIds=%v", got["roleIds"])
+	}
+	fields, _ := got["fields"].([]string)
+	if len(fields) != 2 {
+		t.Fatalf("fields=%v", got["fields"])
 	}
 }
 

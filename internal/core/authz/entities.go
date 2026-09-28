@@ -8,6 +8,7 @@ const (
 	EntityRoles           = "ROLES"
 	EntityUsersPrivileges = "USERS_PRIVILEGES" // assign roles / is_admin
 	EntityAuditEvents     = "AUDIT_EVENTS"
+	EntitySettings        = "SETTINGS"
 )
 
 // Re-export operations for controllers without scattering string literals.

@@ -24,8 +24,14 @@ func MapError(err error, requestID string) Problem {
 		return Conflict("Cannot disable or demote the last administrator", requestID)
 	case errors.Is(err, domain.ErrWeakPassword):
 		return Validation("Password does not meet the current policy", requestID, nil)
-	case errors.Is(err, domain.ErrAdminExists), errors.Is(err, domain.ErrConflict):
-		return Conflict("The resource already exists or conflicts with current state", requestID)
+	case errors.Is(err, domain.ErrAdminExists), errors.Is(err, domain.ErrConflict), errors.Is(err, domain.ErrStaleVersion):
+		detail := "The resource already exists or conflicts with current state"
+		if errors.Is(err, domain.ErrStaleVersion) {
+			detail = "The settings were updated by someone else"
+		}
+		return Conflict(detail, requestID)
+	case errors.Is(err, domain.ErrInvalidSettings):
+		return Validation(err.Error(), requestID, nil)
 	case errors.Is(err, authBaseCore.ErrInvalidCredentials), errors.Is(err, authBaseCore.ErrInvalidRefresh):
 		return Unauthorized("Invalid credentials", requestID)
 	case errors.Is(err, domain.ErrOIDCDisabled), errors.Is(err, domain.ErrOIDCUnavailable):

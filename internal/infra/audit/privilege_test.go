@@ -35,3 +35,23 @@ func TestPrivilegeChangeEmitsAttrs(t *testing.T) {
 		t.Fatalf("is_admin=%v", m["is_admin"])
 	}
 }
+
+func TestSettingsChangeLogsFieldNamesOnly(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	lg := slog.New(slog.NewJSONHandler(&buf, nil))
+	auditor, err := audit.NewLogger(lg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	auditor.SettingsChange(context.Background(), "actor-1", []string{"displayName", "logoUrl"})
+	body := buf.String()
+	if !bytes.Contains(buf.Bytes(), []byte(`"action":"update_settings"`)) {
+		t.Fatalf("missing action: %s", body)
+	}
+	for _, leaked := range []string{"jwtSecret", "postgres://", "password"} {
+		if bytes.Contains(bytes.ToLower(buf.Bytes()), []byte(leaked)) {
+			t.Fatalf("leaked %q in %s", leaked, body)
+		}
+	}
+}

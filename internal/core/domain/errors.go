@@ -25,4 +25,10 @@ var (
 
 	// ErrInvalidAuditFilter is returned when list filters are outside the allowlist.
 	ErrInvalidAuditFilter = errors.New("invalid audit filter")
+
+	// ErrInvalidSettings is returned when a settings payload fails allowlist or schema checks (maps to HTTP 422).
+	ErrInvalidSettings = errors.New("invalid settings")
+
+	// ErrStaleVersion is returned when an optimistic-concurrency token does not match (maps to HTTP 409).
+	ErrStaleVersion = errors.New("stale version")
 )

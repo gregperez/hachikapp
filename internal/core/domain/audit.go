@@ -15,10 +15,11 @@ const (
 
 	AuditActorSystem = "system"
 
-	AuditSubjectUser    = "user"
-	AuditSubjectSession = "session"
-	AuditSubjectOIDC    = "oidc"
-	AuditSubjectSystem  = "system"
+	AuditSubjectUser     = "user"
+	AuditSubjectSession  = "session"
+	AuditSubjectOIDC     = "oidc"
+	AuditSubjectSystem   = "system"
+	AuditSubjectSettings = "settings"
 )
 
 const (
@@ -70,6 +71,7 @@ var allowedAuditActions = map[string]string{
 	"assign_roles":    AuditCategoryPrivilege,
 	"set_admin_flag":  AuditCategoryPrivilege,
 	"set_active":      AuditCategoryPrivilege,
+	"update_settings": AuditCategoryPrivilege,
 }
 
 var allowedAuditMetadataKeys = map[string]struct{}{
@@ -78,6 +80,7 @@ var allowedAuditMetadataKeys = map[string]struct{}{
 	"isAdmin":  {},
 	"familyId": {},
 	"tokenId":  {},
+	"fields":   {},
 }
 
 var forbiddenAuditSubstrings = []string{
@@ -128,7 +131,7 @@ func SanitizeAuditMetadata(raw map[string]any) map[string]any {
 			if b, ok := value.(bool); ok {
 				out[key] = b
 			}
-		case "roleIds":
+		case "roleIds", "fields":
 			if ids := sanitizeStringSlice(value); len(ids) > 0 {
 				out[key] = ids
 			}

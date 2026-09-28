@@ -53,6 +53,8 @@ func TestOpenAPIContract(t *testing.T) {
 		"/v1/users/me/sessions",
 		"/v1/users/me/sessions/{familyId}",
 		"/v1/audit-events",
+		"/v1/settings",
+		"/v1/settings/public",
 		"/v1/roles",
 		"/v1/roles/{id}",
 		"/v1/roles/{id}/change-status",
@@ -70,6 +72,7 @@ func TestOpenAPIContract(t *testing.T) {
 		"get /v1/auth/oidc/google/login":     true,
 		"get /v1/auth/oidc/google/callback":  true,
 		"post /v1/auth/oidc/google/exchange": true,
+		"get /v1/settings/public":            true,
 	}
 	for path, methods := range paths {
 		methodMap, _ := methods.(map[string]any)
@@ -92,6 +95,7 @@ func TestOpenAPIContract(t *testing.T) {
 				continue
 			}
 			if strings.HasPrefix(path, "/v1/users") || strings.HasPrefix(path, "/v1/roles") ||
+				strings.HasPrefix(path, "/v1/audit-events") || strings.HasPrefix(path, "/v1/settings") ||
 				key == "post /v1/auth/oidc/google/link" || key == "delete /v1/auth/oidc/google" {
 				if !hasBearer {
 					t.Fatalf("private route %s missing BearerAuth", key)

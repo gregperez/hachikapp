@@ -32,6 +32,7 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/dao"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/oidcstore"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/refreshstore"
+	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/settingsstore"
 	initModules "github.com/WilsonSayago/initModules/v2"
 	"github.com/gin-gonic/gin"
 )
@@ -164,6 +165,7 @@ func (a *Application) wire(opts Options) error {
 		return fmt.Errorf("authentication service: %w", err)
 	}
 	auditStore := auditstore.New(a.DB)
+	settingsStore := settingsstore.New(a.DB)
 	recorder, err := audit.NewRecorder(a.Logger, auditStore)
 	if err != nil {
 		return fmt.Errorf("audit recorder: %w", err)
@@ -177,6 +179,7 @@ func (a *Application) wire(opts Options) error {
 	userUseCase := services.NewUserService(users, validation, recorder, blocklist)
 	sessionUseCase := services.NewSessionService(refreshStore)
 	auditUseCase := services.NewAuditService(auditStore)
+	settingsUseCase := services.NewSettingsService(settingsStore, recorder)
 	roleUseCase := authBaseServices.GetRoleServiceInstance(roles)
 
 	limiter, err := ratelimit.NewMemory(ratelimit.Config{
@@ -229,6 +232,7 @@ func (a *Application) wire(opts Options) error {
 				SecureCookie:   opts.Config.IsProduction(),
 				Sessions:       sessionUseCase,
 				Audits:         auditUseCase,
+				Settings:       settingsUseCase,
 			})
 		},
 	})
@@ -324,6 +328,7 @@ type routeDeps struct {
 	SecureCookie   bool
 	Sessions       core.SessionUseCase
 	Audits         core.AuditUseCase
+	Settings       core.SettingsUseCase
 }
 
 func registerRoutes(r *gin.Engine, deps routeDeps) {
@@ -349,6 +354,7 @@ func registerRoutes(r *gin.Engine, deps routeDeps) {
 	).RunController()
 	controller.NewSessionController(deps.Authz, deps.Sessions, deps.Tokens, r, deps.Translate).RunController()
 	controller.NewAuditController(deps.Authz, deps.Audits, r, deps.Translate).RunController()
+	controller.NewSettingsController(deps.Authz, deps.Settings, r, deps.Translate).RunController()
 	controller.NewUserController(deps.Authz, deps.Users, r, deps.Translate).RunController()
 	controller.NewRoleController(deps.Authz, deps.Roles, r, deps.Translate).RunController()
 }

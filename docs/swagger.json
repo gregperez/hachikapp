@@ -898,6 +898,172 @@
                 }
             }
         },
+        "/v1/settings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns typed settings including optimistic version. Requires SETTINGS.read.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Get administrative application settings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allowlisted branding fields with optimistic version. Unknown or protected keys return 422. Requires SETTINGS.update.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Update application settings",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Expected version as a quoted ETag",
+                        "name": "If-Match",
+                        "in": "header"
+                    },
+                    {
+                        "description": "Allowlisted settings",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.UpdateSettingsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/settings/public": {
+            "get": {
+                "description": "Returns display name, logo URL and default locale. No authentication.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Get public application branding",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.PublicSettingsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/users": {
             "get": {
                 "security": [
@@ -2096,12 +2262,14 @@
             "enum": [
                 "USERS",
                 "ROLES",
-                "AUDIT_EVENTS"
+                "AUDIT_EVENTS",
+                "SETTINGS"
             ],
             "x-enum-varnames": [
                 "USERS",
                 "ROLES",
-                "AUDIT_EVENTS"
+                "AUDIT_EVENTS",
+                "SETTINGS"
             ]
         },
         "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionResponse": {
@@ -2158,6 +2326,63 @@
                 },
                 "nextCursor": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.PublicSettingsResponse": {
+            "description": "Public branding fields available before and after login.",
+            "type": "object",
+            "properties": {
+                "defaultLocale": {
+                    "type": "string"
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "logoUrl": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse": {
+            "description": "Typed application settings including optimistic version.",
+            "type": "object",
+            "properties": {
+                "defaultLocale": {
+                    "type": "string"
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "logoUrl": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "updatedBy": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.UpdateSettingsRequest": {
+            "description": "Allowlisted application settings. Unknown or protected keys are rejected.",
+            "type": "object",
+            "properties": {
+                "defaultLocale": {
+                    "type": "string"
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "logoUrl": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
                 }
             }
         },

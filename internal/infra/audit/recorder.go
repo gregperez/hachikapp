@@ -30,6 +30,7 @@ func NewRecorder(log *slog.Logger, store ports.AuditEventPort) (Recorder, error)
 var (
 	_ authBaseCore.SecurityEventSink = Recorder{}
 	_ ports.PrivilegeAuditor         = Recorder{}
+	_ ports.SettingsAuditor          = Recorder{}
 	_ ports.OIDCAuditor              = Recorder{}
 )
 
@@ -68,6 +69,28 @@ func (r Recorder) Record(ctx context.Context, event authBaseCore.SecurityEvent) 
 			"provider": event.Provider,
 			"familyId": event.FamilyID,
 			"tokenId":  event.TokenID,
+		}),
+	})
+}
+
+func (r Recorder) SettingsChange(ctx context.Context, actorID string, fields []string) {
+	r.log.Info("privilege change",
+		"action", "update_settings",
+		"actor_id", domain.NormalizeAuditActor(actorID),
+		"subject_id", "app",
+		"fields", fields,
+	)
+	r.persist(ctx, domain.AuditEvent{
+		OccurredAt:  r.now().UTC(),
+		Category:    domain.AuditCategoryPrivilege,
+		Action:      "update_settings",
+		Outcome:     domain.AuditOutcomeSuccess,
+		ActorID:     actorID,
+		SubjectType: domain.AuditSubjectSettings,
+		SubjectID:   "app",
+		RequestID:   requestctx.ID(ctx),
+		Metadata: domain.SanitizeAuditMetadata(map[string]any{
+			"fields": fields,
 		}),
 	})
 }

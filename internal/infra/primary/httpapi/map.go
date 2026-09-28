@@ -46,14 +46,14 @@ func MapError(err error, requestID string) Problem {
 		return Unauthorized("Federated login could not be completed", requestID)
 	case errors.Is(err, domain.ErrOIDCIdentityConflict):
 		return Conflict("This identity is already linked to another account", requestID)
-	case errors.Is(err, ErrInvalidJSON), errors.Is(err, ErrInvalidQuery), errors.Is(err, ErrUnknownField), errors.Is(err, ErrEmptyBody):
+	case errors.Is(err, domain.ErrInvalidAuditFilter), errors.Is(err, ErrInvalidJSON), errors.Is(err, ErrInvalidQuery), errors.Is(err, ErrUnknownField), errors.Is(err, ErrEmptyBody):
 		detail := "Invalid request"
 		switch {
 		case errors.Is(err, ErrEmptyBody):
 			detail = "Request body is required"
 		case errors.Is(err, ErrUnknownField):
 			detail = "Request contains unknown fields"
-		case errors.Is(err, ErrInvalidQuery):
+		case errors.Is(err, domain.ErrInvalidAuditFilter), errors.Is(err, ErrInvalidQuery):
 			detail = err.Error()
 		default:
 			detail = "Request body is not valid JSON"

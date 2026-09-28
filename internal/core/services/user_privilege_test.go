@@ -249,7 +249,7 @@ func (passwordValidation) CheckPassword(hashedPassword, password string) bool {
 	return hashedPassword == "hash" && password == "CurrentHorse1"
 }
 
-func (a *memAudit) PrivilegeChange(action, actorID, subjectID string, roleIDs []string, isAdmin *bool) {
+func (a *memAudit) PrivilegeChange(_ context.Context, action, actorID, subjectID string, _ []string, _ *bool) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.logs = append(a.logs, action+":"+actorID+":"+subjectID)

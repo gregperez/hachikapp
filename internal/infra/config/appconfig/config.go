@@ -77,6 +77,9 @@ type AuthConfig struct {
 	SessionPurgeInterval   time.Duration
 	SessionPurgeRetention  time.Duration
 	SessionPurgeMaxBatches int
+	AuditRetention         time.Duration
+	AuditPurgeInterval     time.Duration
+	AuditPurgeMaxBatches   int
 	OIDC                   OIDCConfig
 	TokenKeys              TokenKeysConfig
 }
@@ -154,6 +157,9 @@ func Defaults() Config {
 			SessionPurgeInterval:   time.Hour,
 			SessionPurgeRetention:  24 * time.Hour,
 			SessionPurgeMaxBatches: 10,
+			AuditRetention:         90 * 24 * time.Hour,
+			AuditPurgeInterval:     24 * time.Hour,
+			AuditPurgeMaxBatches:   10,
 			OIDC: OIDCConfig{
 				Enabled:        false,
 				HTTPTimeout:    10 * time.Second,

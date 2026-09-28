@@ -156,7 +156,7 @@ func (s *UserService) AssignRoles(ctx context.Context, actorID, userID string, r
 	if err := s.userRepository.Update(ctx, updated); err != nil {
 		return err
 	}
-	s.audit.PrivilegeChange("assign_roles", actorID, userID, roleIDs, nil)
+	s.audit.PrivilegeChange(ctx, "assign_roles", actorID, userID, roleIDs, nil)
 	return nil
 }
 
@@ -173,7 +173,7 @@ func (s *UserService) SetAdminFlag(ctx context.Context, actorID, userID string, 
 			return err
 		}
 		flag := false
-		s.audit.PrivilegeChange("set_admin_flag", actorID, userID, nil, &flag)
+		s.audit.PrivilegeChange(ctx, "set_admin_flag", actorID, userID, nil, &flag)
 		return nil
 	}
 	updated := domain.User{
@@ -190,7 +190,7 @@ func (s *UserService) SetAdminFlag(ctx context.Context, actorID, userID string, 
 		return err
 	}
 	flag := true
-	s.audit.PrivilegeChange("set_admin_flag", actorID, userID, nil, &flag)
+	s.audit.PrivilegeChange(ctx, "set_admin_flag", actorID, userID, nil, &flag)
 	return nil
 }
 
@@ -237,19 +237,19 @@ func (s *UserService) SetActive(ctx context.Context, actorID, userID string, act
 		if err := s.userRepository.DeactivateAdminAndRevokeSessions(ctx, userID); err != nil {
 			return err
 		}
-		s.audit.PrivilegeChange("set_active", actorID, userID, nil, nil)
+		s.audit.PrivilegeChange(ctx, "set_active", actorID, userID, nil, nil)
 		return nil
 	}
 	if !active {
 		if err := s.userRepository.DeactivateAndRevokeSessions(ctx, userID); err != nil {
 			return err
 		}
-		s.audit.PrivilegeChange("set_active", actorID, userID, nil, nil)
+		s.audit.PrivilegeChange(ctx, "set_active", actorID, userID, nil, nil)
 		return nil
 	}
 	if err := s.userRepository.SetActive(ctx, userID, active); err != nil {
 		return err
 	}
-	s.audit.PrivilegeChange("set_active", actorID, userID, nil, nil)
+	s.audit.PrivilegeChange(ctx, "set_active", actorID, userID, nil, nil)
 	return nil
 }

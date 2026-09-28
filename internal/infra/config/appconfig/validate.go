@@ -91,6 +91,15 @@ func (c Config) Validate() error {
 	if c.Auth.SessionPurgeMaxBatches <= 0 {
 		return RedactedError("auth.sessionPurgeMaxBatches", "must be positive")
 	}
+	if c.Auth.AuditRetention <= 0 {
+		return RedactedError("auth.auditRetention", "must be positive")
+	}
+	if c.Auth.AuditPurgeInterval <= 0 {
+		return RedactedError("auth.auditPurgeInterval", "must be positive")
+	}
+	if c.Auth.AuditPurgeMaxBatches <= 0 {
+		return RedactedError("auth.auditPurgeMaxBatches", "must be positive")
+	}
 	for _, raw := range c.Auth.TrustedProxyCIDRs {
 		if _, err := netip.ParsePrefix(raw); err != nil {
 			return RedactedError("auth.trustedProxyCIDRs", "contains an invalid CIDR")

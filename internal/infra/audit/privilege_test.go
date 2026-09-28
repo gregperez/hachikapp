@@ -2,6 +2,7 @@ package audit_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"log/slog"
 	"testing"
@@ -18,7 +19,7 @@ func TestPrivilegeChangeEmitsAttrs(t *testing.T) {
 		t.Fatal(err)
 	}
 	flag := true
-	auditor.PrivilegeChange("set_admin_flag", "actor-1", "subject-2", []string{"r1"}, &flag)
+	auditor.PrivilegeChange(context.Background(), "set_admin_flag", "actor-1", "subject-2", []string{"r1"}, &flag)
 
 	var m map[string]any
 	if err := json.Unmarshal(buf.Bytes(), &m); err != nil {

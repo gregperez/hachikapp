@@ -11,8 +11,9 @@ import (
 type RoutePathEnumDto string
 
 const (
-	USERS RoutePathEnumDto = RoutePathEnumDto(domain.USERS) // 🔥 Hereda el valor del paquete externo
-	ROLES RoutePathEnumDto = RoutePathEnumDto(domain.ROLES)
+	USERS        RoutePathEnumDto = RoutePathEnumDto(domain.USERS)
+	ROLES        RoutePathEnumDto = RoutePathEnumDto(domain.ROLES)
+	AUDIT_EVENTS RoutePathEnumDto = "AUDIT_EVENTS"
 )
 
 // RoleResponse represents a role response.

@@ -171,6 +171,45 @@ definitions:
     required:
     - name
     type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_audits.AuditEventResponse:
+    description: Sanitized administrative audit event. Never includes secrets or emails.
+    properties:
+      action:
+        type: string
+      actorId:
+        type: string
+      category:
+        type: string
+      id:
+        type: string
+      metadata:
+        additionalProperties: {}
+        type: object
+      occurredAt:
+        type: string
+      outcome:
+        type: string
+      requestId:
+        type: string
+      subjectId:
+        type: string
+      subjectType:
+        type: string
+    type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_audits.AuditEventsPageResponse:
+    description: Paginated list of administrative audit events
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_audits.AuditEventResponse'
+        type: array
+      hasNext:
+        type: boolean
+      limit:
+        type: integer
+      nextCursor:
+        type: string
+    type: object
   github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse:
     description: PermissionResponse represents a permission response.
     properties:
@@ -232,15 +271,12 @@ definitions:
     enum:
     - USERS
     - ROLES
+    - AUDIT_EVENTS
     type: string
-    x-enum-comments:
-      USERS: "\U0001F525 Hereda el valor del paquete externo"
-    x-enum-descriptions:
-    - "\U0001F525 Hereda el valor del paquete externo"
-    - ""
     x-enum-varnames:
     - USERS
     - ROLES
+    - AUDIT_EVENTS
   github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionResponse:
     description: Active session. Never includes hashes or JWTs.
     properties:
@@ -359,6 +395,74 @@ info:
   title: Mi API en Golang
   version: "1.0"
 paths:
+  /v1/audit-events:
+    get:
+      description: Returns a keyset page of sanitized audit events. Filters are an
+        allowlist; SQL and JSONPath are rejected.
+      parameters:
+      - default: 10
+        description: Page size (1-100)
+        in: query
+        maximum: 100
+        name: limit
+        type: integer
+      - description: Opaque cursor returned by the previous page
+        in: query
+        name: cursor
+        type: string
+      - description: Closed action taxonomy
+        in: query
+        name: action
+        type: string
+      - description: success or failure
+        in: query
+        name: outcome
+        type: string
+      - description: Actor identifier or system
+        in: query
+        name: actorId
+        type: string
+      - description: Subject identifier
+        in: query
+        name: subjectId
+        type: string
+      - description: RFC 3339 lower bound
+        in: query
+        name: from
+        type: string
+      - description: RFC 3339 upper bound
+        in: query
+        name: to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_audits.AuditEventsPageResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: List administrative audit events
+      tags:
+      - Audit
   /v1/auth/login:
     post:
       consumes:

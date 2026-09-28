@@ -22,4 +22,7 @@ var (
 	// ErrConflict is returned when a unique/natural-key constraint would be violated
 	// (maps to HTTP 409).
 	ErrConflict = errors.New("conflict")
+
+	// ErrInvalidAuditFilter is returned when list filters are outside the allowlist.
+	ErrInvalidAuditFilter = errors.New("invalid audit filter")
 )

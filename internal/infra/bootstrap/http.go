@@ -14,6 +14,7 @@ import (
 
 	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
 	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
+	"github.com/WilsonSayago/base-golang/internal/infra/requestctx"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -128,6 +129,7 @@ func requestIDMiddleware() gin.HandlerFunc {
 		}
 		c.Writer.Header().Set("X-Request-ID", id)
 		c.Set("request_id", id)
+		c.Request = c.Request.WithContext(requestctx.WithID(c.Request.Context(), id))
 		c.Next()
 	}
 }

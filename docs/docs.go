@@ -15,6 +15,113 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/v1/audit-events": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a keyset page of sanitized audit events. Filters are an allowlist; SQL and JSONPath are rejected.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Audit"
+                ],
+                "summary": "List administrative audit events",
+                "parameters": [
+                    {
+                        "maximum": 100,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size (1-100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Opaque cursor returned by the previous page",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Closed action taxonomy",
+                        "name": "action",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "success or failure",
+                        "name": "outcome",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Actor identifier or system",
+                        "name": "actorId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Subject identifier",
+                        "name": "subjectId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC 3339 lower bound",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC 3339 upper bound",
+                        "name": "to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_audits.AuditEventsPageResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/auth/login": {
             "post": {
                 "description": "Authenticates a user and returns JWT access and refresh tokens",
@@ -1847,6 +1954,64 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_audits.AuditEventResponse": {
+            "description": "Sanitized administrative audit event. Never includes secrets or emails.",
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "actorId": {
+                    "type": "string"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "occurredAt": {
+                    "type": "string"
+                },
+                "outcome": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
+                },
+                "subjectId": {
+                    "type": "string"
+                },
+                "subjectType": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_audits.AuditEventsPageResponse": {
+            "description": "Paginated list of administrative audit events",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_audits.AuditEventResponse"
+                    }
+                },
+                "hasNext": {
+                    "type": "boolean"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "nextCursor": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse": {
             "description": "PermissionResponse represents a permission response.",
             "type": "object",
@@ -1936,18 +2101,13 @@ const docTemplate = `{
             "type": "string",
             "enum": [
                 "USERS",
-                "ROLES"
-            ],
-            "x-enum-comments": {
-                "USERS": "🔥 Hereda el valor del paquete externo"
-            },
-            "x-enum-descriptions": [
-                "🔥 Hereda el valor del paquete externo",
-                ""
+                "ROLES",
+                "AUDIT_EVENTS"
             ],
             "x-enum-varnames": [
                 "USERS",
-                "ROLES"
+                "ROLES",
+                "AUDIT_EVENTS"
             ]
         },
         "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionResponse": {

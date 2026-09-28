@@ -149,6 +149,15 @@ func applyEnv(cfg *Config) error {
 	if err := setInt(&cfg.Auth.SessionPurgeMaxBatches, "AUTH_SESSION_PURGE_MAX_BATCHES"); err != nil {
 		return err
 	}
+	if err := setDuration(&cfg.Auth.AuditRetention, "AUDIT_RETENTION"); err != nil {
+		return err
+	}
+	if err := setDuration(&cfg.Auth.AuditPurgeInterval, "AUDIT_PURGE_INTERVAL"); err != nil {
+		return err
+	}
+	if err := setInt(&cfg.Auth.AuditPurgeMaxBatches, "AUDIT_PURGE_MAX_BATCHES"); err != nil {
+		return err
+	}
 	if err := applyTokenKeysEnv(&cfg.Auth.TokenKeys); err != nil {
 		return err
 	}
@@ -294,6 +303,12 @@ func envField(envKey string) string {
 		return "auth.sessionPurgeRetention"
 	case "AUTH_SESSION_PURGE_MAX_BATCHES":
 		return "auth.sessionPurgeMaxBatches"
+	case "AUDIT_RETENTION":
+		return "auth.auditRetention"
+	case "AUDIT_PURGE_INTERVAL":
+		return "auth.auditPurgeInterval"
+	case "AUDIT_PURGE_MAX_BATCHES":
+		return "auth.auditPurgeMaxBatches"
 	case "OIDC_HTTP_TIMEOUT":
 		return "auth.oidc.httpTimeout"
 	case "OIDC_TRANSACTION_TTL":

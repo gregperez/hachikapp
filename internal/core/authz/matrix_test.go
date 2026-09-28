@@ -26,6 +26,7 @@ func TestPermissionMatrix(t *testing.T) {
 				{Entity: authz.EntityUsers, Create: true, Read: true, Update: true, Delete: true},
 				{Entity: authz.EntityRoles, Create: true, Read: true, Update: true, Delete: true},
 				{Entity: authz.EntityUsersPrivileges, Update: true},
+				{Entity: authz.EntityAuditEvents, Read: true},
 			},
 		},
 	}, false, true)
@@ -49,6 +50,8 @@ func TestPermissionMatrix(t *testing.T) {
 		{"admin roles create", admin, authz.EntityRoles, authz.Create, true},
 		{"admin users create", admin, authz.EntityUsers, authz.Create, true},
 		{"admin privileges", admin, authz.EntityUsersPrivileges, authz.Update, true},
+		{"admin audit read", admin, authz.EntityAuditEvents, authz.Read, true},
+		{"user audit read", user, authz.EntityAuditEvents, authz.Read, false},
 	}
 
 	for _, tc := range cases {

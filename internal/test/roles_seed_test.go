@@ -50,7 +50,7 @@ func TestTightenDefaultRolesSeed(t *testing.T) {
 		}
 	}
 	admin := perms["admin"]
-	for _, needle := range []string{"USERS", "ROLES", "USERS_PRIVILEGES"} {
+	for _, needle := range []string{"USERS", "ROLES", "USERS_PRIVILEGES", "AUDIT_EVENTS"} {
 		if !strings.Contains(admin, needle) {
 			t.Fatalf("admin missing %s in %s", needle, admin)
 		}

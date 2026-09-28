@@ -28,6 +28,7 @@ import (
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/passwordcheck"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/ratelimit"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories"
+	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/auditstore"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/dao"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/oidcstore"
 	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/refreshstore"
@@ -67,6 +68,7 @@ type Application struct {
 
 	refreshStore   *refreshstore.Store
 	sessionPurger  *applifecycle.ExpiredSessionPurger
+	auditPurger    *applifecycle.AuditEventPurger
 	oidcPurger     *applifecycle.OIDCTransactionPurger
 	oidcService    *services.OIDCService
 	lifecycleNames []string
@@ -161,22 +163,20 @@ func (a *Application) wire(opts Options) error {
 	if err != nil {
 		return fmt.Errorf("authentication service: %w", err)
 	}
-	sink, err := audit.NewSecuritySink(a.Logger)
+	auditStore := auditstore.New(a.DB)
+	recorder, err := audit.NewRecorder(a.Logger, auditStore)
 	if err != nil {
-		return fmt.Errorf("security sink: %w", err)
+		return fmt.Errorf("audit recorder: %w", err)
 	}
-	authn.WithSecurityEvents(sink)
+	authn.WithSecurityEvents(recorder)
 	authz, err := authBaseServices.NewAuthorization[domain.User, *ginadapter.Context](users, tokens)
 	if err != nil {
 		return fmt.Errorf("authorization service: %w", err)
 	}
-	auditor, err := audit.NewLogger(a.Logger)
-	if err != nil {
-		return err
-	}
 	blocklist := passwordcheck.NewOffline(opts.Config.Auth.PasswordBlocklist)
-	userUseCase := services.NewUserService(users, validation, auditor, blocklist)
+	userUseCase := services.NewUserService(users, validation, recorder, blocklist)
 	sessionUseCase := services.NewSessionService(refreshStore)
+	auditUseCase := services.NewAuditService(auditStore)
 	roleUseCase := authBaseServices.GetRoleServiceInstance(roles)
 
 	limiter, err := ratelimit.NewMemory(ratelimit.Config{
@@ -203,7 +203,7 @@ func (a *Application) wire(opts Options) error {
 	if err != nil {
 		return fmt.Errorf("client origin resolver: %w", err)
 	}
-	if err := a.wireOIDC(opts, users, authn, auditor, sink); err != nil {
+	if err := a.wireOIDC(opts, users, authn, recorder, recorder); err != nil {
 		return err
 	}
 
@@ -228,6 +228,7 @@ func (a *Application) wire(opts Options) error {
 				OIDCConfig:     opts.Config.Auth.OIDC,
 				SecureCookie:   opts.Config.IsProduction(),
 				Sessions:       sessionUseCase,
+				Audits:         auditUseCase,
 			})
 		},
 	})
@@ -252,6 +253,15 @@ func (a *Application) wire(opts Options) error {
 			return fmt.Errorf("session purger: %w", err)
 		}
 		a.sessionPurger = purger
+		auditPurger, err := applifecycle.NewAuditEventPurger(auditStore, applifecycle.AuditEventPurgerConfig{
+			Interval:   opts.Config.Auth.AuditPurgeInterval,
+			Retention:  opts.Config.Auth.AuditRetention,
+			MaxBatches: opts.Config.Auth.AuditPurgeMaxBatches,
+		}, a.Logger)
+		if err != nil {
+			return fmt.Errorf("audit purger: %w", err)
+		}
+		a.auditPurger = auditPurger
 	}
 	return nil
 }
@@ -266,6 +276,10 @@ func (a *Application) registerLifecycles(opts Options) {
 	if a.sessionPurger != nil {
 		a.App.Register(a.sessionPurger)
 		a.lifecycleNames = append(a.lifecycleNames, "session-purger")
+	}
+	if a.auditPurger != nil {
+		a.App.Register(a.auditPurger)
+		a.lifecycleNames = append(a.lifecycleNames, "audit-purger")
 	}
 	if a.oidcPurger != nil {
 		a.App.Register(a.oidcPurger)
@@ -309,6 +323,7 @@ type routeDeps struct {
 	OIDCConfig     appconfig.OIDCConfig
 	SecureCookie   bool
 	Sessions       core.SessionUseCase
+	Audits         core.AuditUseCase
 }
 
 func registerRoutes(r *gin.Engine, deps routeDeps) {
@@ -333,6 +348,7 @@ func registerRoutes(r *gin.Engine, deps routeDeps) {
 		deps.SecureCookie,
 	).RunController()
 	controller.NewSessionController(deps.Authz, deps.Sessions, deps.Tokens, r, deps.Translate).RunController()
+	controller.NewAuditController(deps.Authz, deps.Audits, r, deps.Translate).RunController()
 	controller.NewUserController(deps.Authz, deps.Users, r, deps.Translate).RunController()
 	controller.NewRoleController(deps.Authz, deps.Roles, r, deps.Translate).RunController()
 }

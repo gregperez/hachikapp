@@ -176,6 +176,7 @@ func (a *Application) wire(opts Options) error {
 	}
 	blocklist := passwordcheck.NewOffline(opts.Config.Auth.PasswordBlocklist)
 	userUseCase := services.NewUserService(users, validation, auditor, blocklist)
+	sessionUseCase := services.NewSessionService(refreshStore)
 	roleUseCase := authBaseServices.GetRoleServiceInstance(roles)
 
 	limiter, err := ratelimit.NewMemory(ratelimit.Config{
@@ -226,6 +227,7 @@ func (a *Application) wire(opts Options) error {
 				OIDC:           a.oidcService,
 				OIDCConfig:     opts.Config.Auth.OIDC,
 				SecureCookie:   opts.Config.IsProduction(),
+				Sessions:       sessionUseCase,
 			})
 		},
 	})
@@ -306,6 +308,7 @@ type routeDeps struct {
 	OIDC           *services.OIDCService
 	OIDCConfig     appconfig.OIDCConfig
 	SecureCookie   bool
+	Sessions       core.SessionUseCase
 }
 
 func registerRoutes(r *gin.Engine, deps routeDeps) {
@@ -329,6 +332,7 @@ func registerRoutes(r *gin.Engine, deps routeDeps) {
 		deps.OIDCConfig,
 		deps.SecureCookie,
 	).RunController()
+	controller.NewSessionController(deps.Authz, deps.Sessions, deps.Tokens, r, deps.Translate).RunController()
 	controller.NewUserController(deps.Authz, deps.Users, r, deps.Translate).RunController()
 	controller.NewRoleController(deps.Authz, deps.Roles, r, deps.Translate).RunController()
 }

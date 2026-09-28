@@ -190,6 +190,7 @@ func (oc *OIDCController) Exchange() gin.HandlerFunc {
 		if !handleBind(oc.t, c, &body) {
 			return
 		}
+		attachSessionMeta(c, oc.originResolver)
 		access, refresh, err := oc.service.ExchangeGrant(c.Request.Context(), body.Grant)
 		if err != nil {
 			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))

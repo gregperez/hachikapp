@@ -50,6 +50,8 @@ func TestOpenAPIContract(t *testing.T) {
 		"/v1/users",
 		"/v1/users/{id}",
 		"/v1/users/me",
+		"/v1/users/me/sessions",
+		"/v1/users/me/sessions/{familyId}",
 		"/v1/roles",
 		"/v1/roles/{id}",
 		"/v1/roles/{id}/change-status",

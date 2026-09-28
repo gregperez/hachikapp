@@ -241,6 +241,44 @@ definitions:
     x-enum-varnames:
     - USERS
     - ROLES
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionResponse:
+    description: Active session. Never includes hashes or JWTs.
+    properties:
+      clientLabel:
+        type: string
+      current:
+        type: boolean
+      expiresAt:
+        type: string
+      familyId:
+        type: string
+      ipPrefix:
+        type: string
+      issuedAt:
+        type: string
+      lastSeenAt:
+        type: string
+    type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionRevokeResponse:
+    description: Outcome of a self-service session revocation
+    properties:
+      revokedCurrent:
+        type: boolean
+    type: object
+  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionsPageResponse:
+    description: Paginated list of the caller's active sessions
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionResponse'
+        type: array
+      hasNext:
+        type: boolean
+      limit:
+        type: integer
+      nextCursor:
+        type: string
+    type: object
   github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse:
     description: UserResponse represents a user response.
     properties:
@@ -1201,6 +1239,109 @@ paths:
       security:
       - BearerAuth: []
       summary: Change own password
+      tags:
+      - Users
+  /v1/users/me/sessions:
+    delete:
+      description: Revokes all refresh families for the caller, including the current
+        one. The BFF must clear cookies.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionRevokeResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Revoke every own session
+      tags:
+      - Users
+    get:
+      description: Returns the caller's active refresh families. The current family
+        is derived from the validated refresh token, never from client-supplied IDs.
+      parameters:
+      - default: 10
+        description: Page size (1-100)
+        in: query
+        maximum: 100
+        name: limit
+        type: integer
+      - description: Opaque cursor returned by the previous page
+        in: query
+        name: cursor
+        type: string
+      - description: Current refresh JWT used only to mark this session
+        in: header
+        name: X-Refresh-Token
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionsPageResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: List own active sessions
+      tags:
+      - Users
+  /v1/users/me/sessions/{familyId}:
+    delete:
+      description: Revokes a single refresh family owned by the caller. Foreign family
+        IDs are treated as a successful no-op.
+      parameters:
+      - description: Refresh family identifier
+        in: path
+        name: familyId
+        required: true
+        type: string
+      - description: Current refresh JWT used only to detect signing out this device
+        in: header
+        name: X-Refresh-Token
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionRevokeResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Revoke one own session
       tags:
       - Users
 securityDefinitions:

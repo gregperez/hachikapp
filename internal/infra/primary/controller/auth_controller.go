@@ -110,6 +110,7 @@ func (authC *AuthController) Login() gin.HandlerFunc {
 		if !authC.allow(c, ports.LoginLimitAccount, accountKey) {
 			return
 		}
+		attachSessionMeta(c, authC.originResolver)
 		token, refreshToken, err := authC.authenticationService.Login(c.Request.Context(), loginData.Email, loginData.Password)
 		if err != nil {
 			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))
@@ -157,6 +158,7 @@ func (authC *AuthController) RefreshToken() gin.HandlerFunc {
 				return
 			}
 		}
+		attachSessionMeta(c, authC.originResolver)
 		token, refreshTokenNew, err := authC.authenticationService.RefreshToken(c.Request.Context(), body.RefreshToken)
 		if err != nil {
 			httpapi.WriteProblem(c, httpapi.MapError(err, httpapi.RequestID(c)))

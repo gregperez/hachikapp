@@ -274,3 +274,21 @@ func TestPermissionDtoJSONTags(t *testing.T) {
 		t.Fatalf("unexpected: %s", b)
 	}
 }
+
+func TestSessionCursorRoundTrip(t *testing.T) {
+	lastSeen := time.Date(2026, time.September, 28, 18, 0, 0, 0, time.UTC)
+	encoded, err := httpapi.EncodeSessionCursor(lastSeen, "family-base64url_id")
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotTime, gotFamily, err := httpapi.DecodeSessionCursor(encoded)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !gotTime.Equal(lastSeen) || gotFamily != "family-base64url_id" {
+		t.Fatalf("decoded=%s %s", gotTime, gotFamily)
+	}
+	if _, _, err := httpapi.DecodeSessionCursor("%%%"); err == nil {
+		t.Fatal("expected invalid cursor error")
+	}
+}

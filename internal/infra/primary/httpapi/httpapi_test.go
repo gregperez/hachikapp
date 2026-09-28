@@ -117,6 +117,9 @@ func TestMapError_Table(t *testing.T) {
 		if p.Status != tt.status || p.Code != tt.code {
 			t.Fatalf("err=%v -> %d/%s want %d/%s detail=%q", tt.err, p.Status, p.Code, tt.status, tt.code, p.Detail)
 		}
+		if tt.err == domain.ErrWeakPassword && strings.Contains(strings.ToLower(p.Detail), "complexity") {
+			t.Fatalf("weak password message still mentions complexity: %q", p.Detail)
+		}
 		if tt.status == 500 && (strings.Contains(strings.ToLower(p.Detail), "sql") || strings.Contains(p.Detail, "connection")) {
 			t.Fatalf("500 leaked internals: %q", p.Detail)
 		}

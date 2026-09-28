@@ -42,12 +42,13 @@ Estos documentos son instrucciones autocontenidas para que otro agente pueda eje
 | 009 | [Actualizar dependencias de terceros](./009-actualizar-dependencias.md) | P2 | M | 003–008 | Implementado — observaciones P1/P2 diferidas a 010 |
 | 010 | [Remediar observaciones de verificación y cierre](./010-remediar-observaciones-y-cierre.md) | P0/P1 | M | 001–009 | Implementado — residual O-014 (P2); O-030 cerrado con `authBase@v3.0.1` / `initModules@v2.0.0` |
 | 011 | [Migrar logging a log/slog](./011-migrar-logging-slog.md) | P2 | M | 009, 010 | Implementado — residual O-031 (inyección completa de `slog`) |
-| 012 | [Publicar authBase v4 y restaurar reproducibilidad](./012-publicar-authbase-v4-y-restaurar-reproducibilidad.md) | P0 | M | — | Verificado (`authBase/v4.0.1`; proxy, consumidor y gates verdes) |
+| 012 | [Publicar authBase v4 y restaurar reproducibilidad](./012-publicar-authbase-v4-y-restaurar-reproducibilidad.md) | P0 | M | — | Verificado — primer módulo proxy-resolvable `v4.0.1`; O-035 cerrado en 018 |
 | 013 | [Formalizar ciclo de sesiones](./013-formalizar-ciclo-de-sesiones.md) | P0 | L | 012 | Verificado (`authBase/v4.1.0`; revocación atómica y purger probado) |
 | 014 | [Endurecer credenciales y login](./014-endurecer-credenciales-y-login.md) | P0 | L | 012, 013 | Verificado (`authBase/v4.2.0`; política NIST, Argon2id y throttling) |
-| 015 | [Aislar composition root y lifecycle](./015-aislar-composition-root-y-lifecycle.md) | P1 | L | 012, 013 | Verificado (Application aislada; O-014 y O-031 cerrados) |
-| 016 | [Agregar login OIDC con Google](./016-agregar-login-oidc-google.md) | P1 | L | 012–015 | Verificado (OIDC Google, grant opaco y `EstablishSession`) |
-| 017 | [Agregar agilidad de claves JWT y eventos de seguridad](./017-agilidad-claves-jwt-y-eventos-seguridad.md) | P2 | L | 012, 013, 015 | Verificado (`authBase/v4.3.0`; JWKS, overlap y eventos) |
+| 015 | [Aislar composition root y lifecycle](./015-aislar-composition-root-y-lifecycle.md) | P1 | L | 012, 013 | Verificado — O-033 cerrado en 018 |
+| 016 | [Agregar login OIDC con Google](./016-agregar-login-oidc-google.md) | P1 | L | 012–015 | Verificado — O-036 cerrado en 018 |
+| 017 | [Agregar agilidad de claves JWT y eventos de seguridad](./017-agilidad-claves-jwt-y-eventos-seguridad.md) | P2 | L | 012, 013, 015 | Verificado (`authBase/v4.3.0`; O-032 y O-034 cerrados en 018) |
+| 018 | [Cerrar observaciones de los planes 012–017](./018-remediar-observaciones-012-017.md) | P1/P2 | L | 012–017 | Verificado (`codex/018-cierre-012-017`; O-032–O-039) |
 
 ```text
 001 -> 002 -> 003 -> 005 -> 006 -----> 007 -> 008 -> 009 -> 010
@@ -55,7 +56,7 @@ Estos documentos son instrucciones autocontenidas para que otro agente pueda eje
 
 012 -> 013 -> 014
         \------> 015 -> 016
-                  \---> 017
+                  \---> 017 -> 018
 ```
 
 Para la segunda ola, ejecutar 012 primero: elimina la dependencia local no
@@ -86,6 +87,11 @@ origen, prioridad, evidencia `archivo:línea` o comando, impacto, estado
 (`abierto`, `bloqueado externo` o `resuelto`) y prueba de cierre esperada. Los
 hallazgos P0/P1 siguen bloqueando producción aunque su corrección se programe al
 final.
+
+La verificación final de los planes 012–017 se consolidó en el
+[plan 018](./018-remediar-observaciones-012-017.md). Sus observaciones O-032–O-039
+reemplazan cualquier afirmación previa de que todos los gates de la segunda ola
+estaban verdes.
 
 ## Prompt de entrega a otro agente
 

@@ -138,6 +138,24 @@ RETURNING id, provider, state_hash, nonce, pkce_verifier_ciphertext, intent,
 		&tx.ActorUserID, &tx.ReturnTo, &tx.ExpiresAt, &tx.ResolvedUserID,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
+			var expiresAt *time.Time
+			var consumed *time.Time
+			lookup := s.db.QueryRow(ctx, `
+SELECT grant_expires_at, grant_consumed_at
+FROM public.oidc_transactions
+WHERE grant_hash = $1`, grantHash)
+			if scanErr := lookup.Scan(&expiresAt, &consumed); scanErr != nil {
+				if errors.Is(scanErr, pgx.ErrNoRows) {
+					return domain.OIDCTransaction{}, domain.ErrOIDCInvalidGrant
+				}
+				return domain.OIDCTransaction{}, scanErr
+			}
+			if consumed != nil {
+				return domain.OIDCTransaction{}, domain.ErrOIDCReplay
+			}
+			if expiresAt == nil || !expiresAt.After(at) {
+				return domain.OIDCTransaction{}, domain.ErrOIDCExpired
+			}
 			return domain.OIDCTransaction{}, domain.ErrOIDCInvalidGrant
 		}
 		return domain.OIDCTransaction{}, err

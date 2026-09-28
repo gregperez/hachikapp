@@ -23,7 +23,7 @@ func MapError(err error, requestID string) Problem {
 	case errors.Is(err, domain.ErrLastAdmin):
 		return Conflict("Cannot disable or demote the last administrator", requestID)
 	case errors.Is(err, domain.ErrWeakPassword):
-		return Validation("Password does not meet complexity requirements", requestID, nil)
+		return Validation("Password does not meet the current policy", requestID, nil)
 	case errors.Is(err, domain.ErrAdminExists), errors.Is(err, domain.ErrConflict):
 		return Conflict("The resource already exists or conflicts with current state", requestID)
 	case errors.Is(err, authBaseCore.ErrInvalidCredentials), errors.Is(err, authBaseCore.ErrInvalidRefresh):

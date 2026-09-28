@@ -19,4 +19,6 @@ regexes = [
   '''\$\{[A-Z0-9_]+\}''',
   # Incrementing hex used only as a 32-byte AES test vector in OIDC config tests.
   '''0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef''',
+  # Unequivocally fake PEM payload used only in jwtkeys load tests.
+  '''SECRETMATERIAL''',
 ]

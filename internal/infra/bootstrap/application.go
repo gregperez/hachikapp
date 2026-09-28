@@ -86,13 +86,21 @@ func NewApplication(opts Options) (*Application, error) {
 	}
 
 	db := opts.DB
+	ownedDB := false
 	if db == nil {
 		opened, err := database.OpenPool(context.Background(), opts.Config.Database)
 		if err != nil {
 			return nil, fmt.Errorf("open database: %w", err)
 		}
 		db = opened
+		ownedDB = true
 	}
+	released := false
+	defer func() {
+		if ownedDB && !released {
+			db.Close()
+		}
+	}()
 
 	if !opts.SkipMigrate {
 		dsn, err := opts.Config.Database.DSN()
@@ -118,6 +126,7 @@ func NewApplication(opts Options) (*Application, error) {
 		return nil, err
 	}
 	application.registerLifecycles(opts)
+	released = true
 	return application, nil
 }
 

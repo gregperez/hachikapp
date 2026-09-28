@@ -15,6 +15,9 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// MaxIDTokenIATLeeway is the accepted clock skew for ID-token iat claims.
+const MaxIDTokenIATLeeway = 2 * time.Minute
+
 // Client is a provider-neutral Authorization Code + PKCE S256 adapter.
 type Client struct {
 	name        string
@@ -98,11 +101,8 @@ func (c *Client) Exchange(ctx context.Context, code, verifier, nonce string) (do
 	if err != nil {
 		return domain.ExternalPrincipal{}, domain.ErrOIDCInvalidState
 	}
-	if idToken.Nonce != nonce {
-		return domain.ExternalPrincipal{}, domain.ErrOIDCInvalidState
-	}
-	if !strings.EqualFold(strings.TrimRight(idToken.Issuer, "/"), c.issuer) {
-		return domain.ExternalPrincipal{}, domain.ErrOIDCInvalidState
+	if err := validateIDTokenClaims(idToken, c.issuer, nonce); err != nil {
+		return domain.ExternalPrincipal{}, err
 	}
 	var claims struct {
 		Email         string `json:"email"`
@@ -118,6 +118,28 @@ func (c *Client) Exchange(ctx context.Context, code, verifier, nonce string) (do
 		Email:         claims.Email,
 		EmailVerified: claims.EmailVerified,
 	}, nil
+}
+
+func validateIDTokenClaims(idToken *oidc.IDToken, expectedIssuer, nonce string) error {
+	if idToken == nil {
+		return domain.ErrOIDCInvalidState
+	}
+	if strings.TrimSpace(idToken.Subject) == "" {
+		return domain.ErrOIDCInvalidState
+	}
+	if idToken.IssuedAt.IsZero() {
+		return domain.ErrOIDCInvalidState
+	}
+	if idToken.IssuedAt.After(time.Now().Add(MaxIDTokenIATLeeway)) {
+		return domain.ErrOIDCInvalidState
+	}
+	if idToken.Nonce != nonce {
+		return domain.ErrOIDCInvalidState
+	}
+	if !strings.EqualFold(strings.TrimRight(idToken.Issuer, "/"), expectedIssuer) {
+		return domain.ErrOIDCInvalidState
+	}
+	return nil
 }
 
 func (c *Client) ensureProvider(ctx context.Context) error {

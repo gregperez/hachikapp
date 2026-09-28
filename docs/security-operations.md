@@ -268,6 +268,13 @@ identity is `(issuer, subject)`, not the client secret.
 Expired OIDC transactions and grants are purged by the process lifecycle using
 the same interval/retention/batch settings as session cleanup.
 
+## Typed application settings
+
+`GET /v1/settings/public` and `PUT /v1/settings` only expose branding:
+display name, logo URL, and default locale. JWT material, DSNs, CORS, API keys,
+and timeouts stay in environment variables and this runbook. Mutations write an
+`update_settings` audit event with changed field names, never values.
+
 ## Adding a new sensitive setting
 
 1. Add the key to `properties.example.yml` and `.env.example` with a placeholder or `${ENV_VAR}`.

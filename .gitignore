@@ -40,3 +40,7 @@ id_rsa
 id_rsa.pub
 credentials.json
 secrets.json
+
+# Archify visual-check sidecars and delivery scratch (regenerate locally)
+docs/diagrams/*.visual-check.*
+docs/diagrams/.archify-delivery-*/

@@ -8,7 +8,7 @@
     "repository": {
       "url": "https://github.com/WilsonSayago/base-golang",
       "provider": "github",
-      "revision": "7c7f909a631771c0bc85a08ff723ac48b64a9ed8"
+      "revision": "a984805a14bed62fb22ca1915c45a08c682fee6f"
     },
     "views": [
       {
@@ -36,7 +36,7 @@
       "id": "client",
       "type": "external",
       "label": "Cliente",
-      "sublabel": "HTTP + Bearer",
+      "sublabel": "Next BFF · Mastra",
       "pos": [30, 300],
       "size": [120, 58]
     },
@@ -48,19 +48,19 @@
       "pos": [205, 300],
       "size": [140, 58],
       "sources": [
-        { "path": "internal/infra/bootstrap/http.go", "line": 31, "end_line": 61, "label": "NewEngine" }
+        { "path": "internal/infra/bootstrap/http.go", "line": 35, "end_line": 61, "label": "NewEngine" }
       ]
     },
     {
       "id": "controllers",
       "type": "frontend",
       "label": "Controllers",
-      "sublabel": "auth · users · roles",
+      "sublabel": "HTTP + JWT",
       "pos": [400, 300],
       "size": [150, 58],
       "sources": [
-        { "path": "internal/infra/config/instance/primary.go", "line": 23, "end_line": 47, "label": "registro" },
-        { "path": "internal/infra/primary/controller/auth_controller.go", "line": 49, "end_line": 56, "label": "auth routes" }
+        { "path": "internal/infra/bootstrap/application.go", "line": 334, "end_line": 359, "label": "registerRoutes" },
+        { "path": "internal/infra/primary/controller/auth_controller.go", "line": 78, "end_line": 90, "label": "auth routes" }
       ]
     },
     {
@@ -72,7 +72,7 @@
       "size": [150, 58],
       "tag": "library",
       "sources": [
-        { "path": "internal/infra/config/instance/usecase.go", "line": 23, "end_line": 66, "label": "auth wiring" }
+        { "path": "internal/infra/bootstrap/application.go", "line": 80, "end_line": 110, "label": "NewApplication" }
       ]
     },
     {
@@ -112,11 +112,12 @@
       "id": "bootstrap",
       "type": "backend",
       "label": "cmd/main.go",
-      "sublabel": "bootstrap explícito",
+      "sublabel": "composition root",
       "pos": [205, 510],
       "size": [150, 58],
       "sources": [
-        { "path": "cmd/main.go", "line": 40, "end_line": 121, "label": "run" }
+        { "path": "cmd/main.go", "line": 32, "end_line": 50, "label": "run" },
+        { "path": "internal/infra/bootstrap/application.go", "line": 80, "end_line": 90, "label": "NewApplication" }
       ]
     },
     {
@@ -128,8 +129,8 @@
       "size": [150, 58],
       "tag": "library",
       "sources": [
-        { "path": "cmd/main.go", "line": 41, "end_line": 58, "label": "config" },
-        { "path": "internal/infra/config/instance/usecase.go", "line": 19, "end_line": 37, "label": "Once" }
+        { "path": "cmd/main.go", "line": 32, "end_line": 50, "label": "config" },
+        { "path": "internal/infra/bootstrap/application.go", "line": 303, "end_line": 320, "label": "Run" }
       ]
     },
     {
@@ -253,7 +254,7 @@
       "title": "Camino principal",
       "items": [
         "Cliente → Gin → Controllers → Core services → Repositories → PostgreSQL",
-        "Las dependencias se cablean explícitamente en config/instance"
+        "Next y Mastra entran como clientes HTTP; el dominio no los conoce"
       ]
     },
     {

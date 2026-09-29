@@ -81,7 +81,9 @@ Rutas públicas:
 - `GET /.well-known/jwks.json` — solo si hay claves públicas de access
 
 Las rutas de usuarios y roles requieren access token; las operaciones
-administrativas además requieren permisos por entidad y acción.
+administrativas además requieren permisos por entidad y acción. `base-agent`
+puede llamar `GET /v1/roles` con el access token del usuario; Go no confía en
+el modelo y vuelve a aplicar `PoliciesGuard`.
 
 ## Paginación keyset
 

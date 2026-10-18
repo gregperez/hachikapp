@@ -191,3 +191,23 @@ func TestPetBirthDateRoundTrip(t *testing.T) {
 		t.Fatal("expected parse error")
 	}
 }
+
+func TestPetWeightIsRoundedToGrams(t *testing.T) {
+	in := validPetDetails()
+	weight := 12.567
+	in.WeightKg = &weight
+	out := NormalizePetDetails(in)
+	if out.WeightKg == nil || *out.WeightKg != 12.57 {
+		t.Fatalf("weight=%v, want 12.57 (the column stores 2 decimals)", out.WeightKg)
+	}
+}
+
+func TestPetWeightBelowColumnPrecisionIsInvalid(t *testing.T) {
+	in := validPetDetails()
+	tiny := 0.004
+	in.WeightKg = &tiny
+	codes := issueCodes(t, ValidatePetDetails(NormalizePetDetails(in), petNow))
+	if codes["weightKg"] != "range" {
+		t.Fatalf("0.004 kg must be rejected instead of becoming 0.00 in the database: %v", codes)
+	}
+}

@@ -132,7 +132,7 @@ func TestPetStoreCRUDIsOwnerScoped(t *testing.T) {
 	}
 }
 
-func TestPetStoreRejectsDuplicateChip(t *testing.T) {
+func TestPetStoreChipIsUniquePerAccount(t *testing.T) {
 	pool := testPool(t)
 	store := petstore.New(database.NewPostgresPgxForTest(pool))
 	ctx := context.Background()
@@ -142,8 +142,13 @@ func TestPetStoreRejectsDuplicateChip(t *testing.T) {
 	if _, err := store.Create(ctx, ownerA, details("900000000000002")); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.Create(ctx, ownerB, details("900000000000002")); !errors.Is(err, domain.ErrDuplicateChip) {
-		t.Fatalf("duplicate chip: %v", err)
+	if _, err := store.Create(ctx, ownerA, details("900000000000002")); !errors.Is(err, domain.ErrDuplicateChip) {
+		t.Fatalf("same account, same chip: %v", err)
+	}
+	// Another account may register the same chip: a global constraint would let
+	// anyone squat a chip and reveal whether it exists.
+	if _, err := store.Create(ctx, ownerB, details("900000000000002")); err != nil {
+		t.Fatalf("other account must not collide: %v", err)
 	}
 	if _, err := store.Create(ctx, ownerB, details("")); err != nil {
 		t.Fatalf("pets without chip must not collide: %v", err)

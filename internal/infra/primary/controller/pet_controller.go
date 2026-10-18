@@ -366,7 +366,7 @@ func writePetError(c *gin.Context, err error) {
 		httpapi.WriteProblem(c, httpapi.Validation("The photo must be a JPEG or PNG image up to 1 MiB and 4096 px per side", requestID,
 			[]httpapi.FieldError{{Field: "photo", Code: "image"}}))
 	case errors.Is(err, domain.ErrDuplicateChip):
-		httpapi.WriteProblem(c, httpapi.Conflict("The chip number is already registered", requestID))
+		httpapi.WriteProblem(c, httpapi.Conflict("Another pet of this account already uses this chip number", requestID))
 	case errors.Is(err, domain.ErrPetLimitReached):
 		httpapi.WriteProblem(c, httpapi.Conflict("The pet limit for this account was reached", requestID))
 	case errors.Is(err, domain.ErrStaleVersion):

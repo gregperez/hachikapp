@@ -3,6 +3,7 @@ package domain
 import (
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"time"
@@ -27,6 +28,7 @@ const (
 	MinPetChipDigits            = 9
 	MaxPetChipDigits            = 15
 	MaxPetWeightKg              = 150.0
+	MinPetWeightKg              = 0.01
 	MaxPetsPerOwner             = 50
 	MaxPetPhotoBytes            = 1 << 20
 	earliestPetBirthYear        = 1980
@@ -43,8 +45,8 @@ const (
 // ErrInvalidPet is the sentinel wrapped by PetValidationError (maps to HTTP 422).
 var ErrInvalidPet = errors.New("invalid pet")
 
-// ErrDuplicateChip is returned when another pet already uses the chip number (maps to HTTP 409).
-var ErrDuplicateChip = errors.New("chip number already registered")
+// ErrDuplicateChip is returned when another pet of the same account already uses the chip number (maps to HTTP 409).
+var ErrDuplicateChip = errors.New("chip number already used by another pet of this account")
 
 // ErrPetLimitReached is returned when an owner already has MaxPetsPerOwner pets (maps to HTTP 409).
 var ErrPetLimitReached = errors.New("pet limit reached")
@@ -282,6 +284,10 @@ func NormalizePetDetails(in PetDetails) PetDetails {
 		out.BirthDate = &date
 	}
 	out.ChipNumber = stripChipSeparators(in.ChipNumber)
+	if in.WeightKg != nil {
+		rounded := math.Round(*in.WeightKg*100) / 100
+		out.WeightKg = &rounded
+	}
 	out.Size = PetSize(strings.ToLower(strings.TrimSpace(string(in.Size))))
 	out.DistinctiveFeatures = strings.TrimSpace(in.DistinctiveFeatures)
 	out.Health = PetHealth{
@@ -346,7 +352,7 @@ func ValidatePetDetails(details PetDetails, now time.Time) error {
 			add("chipNumber", "length")
 		}
 	}
-	if details.WeightKg != nil && (*details.WeightKg <= 0 || *details.WeightKg > MaxPetWeightKg) {
+	if details.WeightKg != nil && (*details.WeightKg < MinPetWeightKg || *details.WeightKg > MaxPetWeightKg) {
 		add("weightKg", "range")
 	}
 	switch details.Size {

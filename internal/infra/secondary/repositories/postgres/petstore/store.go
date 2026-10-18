@@ -22,7 +22,7 @@ temperament, owner_full_name, owner_address, owner_comuna, owner_phone, owner_ph
 second_owner_full_name, second_owner_phone, public_visibility, photo_updated_at,
 version, created_at, updated_at`
 
-const chipUniqueIndex = "pets_chip_number_uq"
+const chipUniqueIndex = "pets_owner_chip_number_uq"
 
 // Store persists pet records.
 type Store struct {

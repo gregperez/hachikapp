@@ -11,6 +11,9 @@
   and per-field public visibility (`hidden` / `lost_only` / `always`) with
   defaults from the brand manual. Exact address, chip number and phone
   numbers are never public fields. Migration `000017_pets`.
+- A chip number is unique per account (migration `000018`), so nobody can
+  squat another owner's chip or probe whether a chip is registered.
+  Updates keep the stored visibility of keys the request omits.
 - Pet photos (JPEG/PNG up to 1 MiB and 4096 px per side, type sniffed from
   bytes) are re-encoded on the server: EXIF orientation is applied and every
   metadata block (EXIF/GPS, comments) is dropped so a photo cannot reveal the

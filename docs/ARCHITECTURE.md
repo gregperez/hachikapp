@@ -96,6 +96,11 @@ por entidad: como `/v1/users/me/sessions`, el recurso pertenece al usuario y
   manual de marca. Dirección exacta, chip, teléfonos y fecha de nacimiento no
   son campos públicos.
 - `PetPort` (`petstore.Store`) persiste la ficha con versión optimista.
+  El número de chip es único por cuenta (no global) para evitar que alguien
+  registre el chip ajeno y para no revelar si un chip existe; los duplicados
+  entre cuentas quedarán para un flujo de transferencia.
+- Las fotos se re-codifican en el servidor (`domain.SanitizePetPhoto`): se
+  aplica la orientación EXIF y se descartan todos los metadatos (GPS incluido).
 - `PetPhotoPort` (`petstore.PhotoStore`) guarda los bytes en `pet_photos`; la
   ficha solo conoce `photo_updated_at`, así que la foto puede migrar a S3/GCS
   cambiando el adaptador.

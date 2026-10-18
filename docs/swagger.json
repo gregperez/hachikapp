@@ -873,8 +873,7 @@
                 ],
                 "produces": [
                     "image/jpeg",
-                    "image/png",
-                    "image/webp"
+                    "image/png"
                 ],
                 "tags": [
                     "Pets"
@@ -916,11 +915,10 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Raw image body (JPEG, PNG or WebP) up to 1 MiB. The type is detected from the bytes.",
+                "description": "Raw image body (JPEG or PNG) up to 1 MiB and 4096 px per side. The type is detected from the bytes; the image is re-encoded without metadata (EXIF/GPS) and with its EXIF orientation applied.",
                 "consumes": [
                     "image/jpeg",
-                    "image/png",
-                    "image/webp"
+                    "image/png"
                 ],
                 "produces": [
                     "application/json"

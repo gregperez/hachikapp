@@ -33,6 +33,7 @@ import (
 	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/auditstore"
 	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/dao"
 	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/oidcstore"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/petstore"
 	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/refreshstore"
 	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/settingsstore"
 )
@@ -180,6 +181,7 @@ func (a *Application) wire(opts Options) error {
 	sessionUseCase := services.NewSessionService(refreshStore)
 	auditUseCase := services.NewAuditService(auditStore)
 	settingsUseCase := services.NewSettingsService(settingsStore, recorder)
+	petUseCase := services.NewPetService(petstore.New(a.DB), petstore.NewPhotoStore(a.DB))
 	roleUseCase := authBaseServices.GetRoleServiceInstance(roles)
 
 	limiter, err := ratelimit.NewMemory(ratelimit.Config{
@@ -233,6 +235,7 @@ func (a *Application) wire(opts Options) error {
 				Sessions:       sessionUseCase,
 				Audits:         auditUseCase,
 				Settings:       settingsUseCase,
+				Pets:           petUseCase,
 			})
 		},
 	})
@@ -329,6 +332,7 @@ type routeDeps struct {
 	Sessions       core.SessionUseCase
 	Audits         core.AuditUseCase
 	Settings       core.SettingsUseCase
+	Pets           core.PetUseCase
 }
 
 func registerRoutes(r *gin.Engine, deps routeDeps) {
@@ -357,6 +361,7 @@ func registerRoutes(r *gin.Engine, deps routeDeps) {
 	controller.NewSettingsController(deps.Authz, deps.Settings, r, deps.Translate).RunController()
 	controller.NewUserController(deps.Authz, deps.Users, r, deps.Translate).RunController()
 	controller.NewRoleController(deps.Authz, deps.Roles, r, deps.Translate).RunController()
+	controller.NewPetController(deps.Authz, deps.Pets, r, deps.Translate).RunController()
 }
 
 func (a *Application) wireOIDC(

@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Added
+
+- Pet records ("Ficha Mascota"): `GET/POST /v1/pets`, `GET/PUT/DELETE
+  /v1/pets/{id}` and `GET/PUT/DELETE /v1/pets/{id}/photo` for the
+  authenticated account. Records store identification, health conditions,
+  the chip-registered owner and an optional second owner as contact data,
+  and per-field public visibility (`hidden` / `lost_only` / `always`) with
+  defaults from the brand manual. Exact address, chip number and phone
+  numbers are never public fields. Migration `000017_pets`.
+- Pet photos (JPEG/PNG/WebP up to 1 MiB, type sniffed from bytes) are stored
+  in PostgreSQL behind `PetPhotoPort`, ready to move to object storage.
+
 ### Breaking
 
 - HTTP error responses now use `application/problem+json` with stable `code`

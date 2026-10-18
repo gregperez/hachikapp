@@ -85,6 +85,21 @@ administrativas además requieren permisos por entidad y acción. `base-agent`
 puede llamar `GET /v1/roles` con el access token del usuario; Go no confía en
 el modelo y vuelve a aplicar `PoliciesGuard`.
 
+## Fichas de mascotas
+
+`/v1/pets` expone las fichas de la cuenta autenticada. No usa `PoliciesGuard`
+por entidad: como `/v1/users/me/sessions`, el recurso pertenece al usuario y
+`PetService` filtra siempre por `owner_id`; una ficha ajena responde 404.
+
+- `domain/pet.go` normaliza y valida (errores por campo con código estable) y
+  define la visibilidad pública por campo con los valores por defecto del
+  manual de marca. Dirección exacta, chip, teléfonos y fecha de nacimiento no
+  son campos públicos.
+- `PetPort` (`petstore.Store`) persiste la ficha con versión optimista.
+- `PetPhotoPort` (`petstore.PhotoStore`) guarda los bytes en `pet_photos`; la
+  ficha solo conoce `photo_updated_at`, así que la foto puede migrar a S3/GCS
+  cambiando el adaptador.
+
 ## Paginación keyset
 
 Los listados `GET /v1/users` y `GET /v1/roles` aceptan `limit` y un `cursor`

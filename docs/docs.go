@@ -88,13 +88,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_audits.AuditEventsPageResponse"
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_audits.AuditEventsPageResponse"
                                         }
                                     }
                                 }
@@ -104,19 +104,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -142,7 +142,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.LoginRequestDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.LoginRequestDto"
                         }
                     }
                 ],
@@ -152,13 +152,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.AuthDto"
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.AuthDto"
                                         }
                                     }
                                 }
@@ -168,25 +168,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Malformed JSON or empty body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "401": {
                         "description": "Invalid credentials",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "422": {
                         "description": "Validation failed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "429": {
                         "description": "Authentication rate limit exceeded",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -212,7 +212,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto"
                         }
                     }
                 ],
@@ -223,7 +223,7 @@ const docTemplate = `{
                     "422": {
                         "description": "Validation failed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -254,7 +254,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCUnlinkRequestDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.OIDCUnlinkRequestDto"
                         }
                     }
                 ],
@@ -265,19 +265,19 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -315,25 +315,25 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "503": {
                         "description": "Service Unavailable",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -359,7 +359,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCExchangeRequestDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.OIDCExchangeRequestDto"
                         }
                     }
                 ],
@@ -369,13 +369,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.AuthDto"
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.AuthDto"
                                         }
                                     }
                                 }
@@ -385,19 +385,19 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "503": {
                         "description": "Service Unavailable",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -428,7 +428,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCLinkRequestDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.OIDCLinkRequestDto"
                         }
                     }
                 ],
@@ -439,25 +439,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "503": {
                         "description": "Service Unavailable",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -488,19 +488,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Destination is not allowlisted",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "429": {
                         "description": "Authentication rate limit exceeded",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "503": {
                         "description": "OIDC is disabled or unavailable",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -526,7 +526,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto"
                         }
                     }
                 ],
@@ -536,13 +536,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.AuthDto"
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.AuthDto"
                                         }
                                     }
                                 }
@@ -552,19 +552,494 @@ const docTemplate = `{
                     "401": {
                         "description": "Invalid refresh",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "422": {
                         "description": "Validation failed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "429": {
                         "description": "Authentication rate limit exceeded",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/pets": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the pet records managed by the authenticated account, newest first.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pets"
+                ],
+                "summary": "List my pets",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a pet managed by the authenticated account. Public visibility keys default to the brand manual recommendations.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pets"
+                ],
+                "summary": "Create a pet record",
+                "parameters": [
+                    {
+                        "description": "Pet record",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/pets/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pets"
+                ],
+                "summary": "Get one of my pets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pet ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Replaces the pet record. The version from the last read is required; a stale version returns 409.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pets"
+                ],
+                "summary": "Update one of my pets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pet ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Pet record with version",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes the pet record and its photo.",
+                "tags": [
+                    "Pets"
+                ],
+                "summary": "Delete one of my pets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pet ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/pets/{id}/photo": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "image/jpeg",
+                    "image/png",
+                    "image/webp"
+                ],
+                "tags": [
+                    "Pets"
+                ],
+                "summary": "Get the photo of one of my pets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pet ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Raw image body (JPEG, PNG or WebP) up to 1 MiB. The type is detected from the bytes.",
+                "consumes": [
+                    "image/jpeg",
+                    "image/png",
+                    "image/webp"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pets"
+                ],
+                "summary": "Upload or replace the photo of one of my pets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pet ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pets"
+                ],
+                "summary": "Remove the photo of one of my pets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pet ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -610,13 +1085,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RolesPageResponse"
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.RolesPageResponse"
                                         }
                                     }
                                 }
@@ -626,19 +1101,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -667,7 +1142,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.RoleDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.RoleDto"
                         }
                     }
                 ],
@@ -675,31 +1150,31 @@ const docTemplate = `{
                     "201": {
                         "description": "Role created successfully",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "422": {
                         "description": "Unprocessable Entity",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -738,13 +1213,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse"
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.RoleResponse"
                                         }
                                     }
                                 }
@@ -754,19 +1229,19 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -802,7 +1277,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.RoleDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.RoleDto"
                         }
                     }
                 ],
@@ -810,31 +1285,31 @@ const docTemplate = `{
                     "200": {
                         "description": "Role updated successfully",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "422": {
                         "description": "Unprocessable Entity",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -872,7 +1347,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest"
                         }
                     }
                 ],
@@ -880,25 +1355,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Status changed successfully",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -925,13 +1400,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse"
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse"
                                         }
                                     }
                                 }
@@ -941,13 +1416,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -982,7 +1457,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.UpdateSettingsRequest"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_settings.UpdateSettingsRequest"
                         }
                     }
                 ],
@@ -992,13 +1467,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse"
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse"
                                         }
                                     }
                                 }
@@ -1008,25 +1483,25 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "422": {
                         "description": "Unprocessable Entity",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -1048,13 +1523,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.PublicSettingsResponse"
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_settings.PublicSettingsResponse"
                                         }
                                     }
                                 }
@@ -1064,7 +1539,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -1110,13 +1585,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UsersPageResponse"
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_users.UsersPageResponse"
                                         }
                                     }
                                 }
@@ -1126,19 +1601,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -1166,7 +1641,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.CreateUserRequest"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.CreateUserRequest"
                         }
                     }
                 ],
@@ -1174,31 +1649,31 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "422": {
                         "description": "Unprocessable Entity",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -1224,13 +1699,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse"
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_users.UserResponse"
                                         }
                                     }
                                 }
@@ -1240,7 +1715,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -1266,13 +1741,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse"
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_users.UserResponse"
                                         }
                                     }
                                 }
@@ -1282,7 +1757,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -1310,7 +1785,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.UpdateOwnProfileRequest"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.UpdateOwnProfileRequest"
                         }
                     }
                 ],
@@ -1318,19 +1793,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "422": {
                         "description": "Unprocessable Entity",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -1360,7 +1835,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.ChangePasswordRequest"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.ChangePasswordRequest"
                         }
                     }
                 ],
@@ -1368,19 +1843,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "422": {
                         "description": "Unprocessable Entity",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -1429,13 +1904,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionsPageResponse"
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_sessions.SessionsPageResponse"
                                         }
                                     }
                                 }
@@ -1445,13 +1920,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -1476,13 +1951,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionRevokeResponse"
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_sessions.SessionRevokeResponse"
                                         }
                                     }
                                 }
@@ -1492,7 +1967,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -1534,13 +2009,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionRevokeResponse"
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_sessions.SessionRevokeResponse"
                                         }
                                     }
                                 }
@@ -1550,7 +2025,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -1585,13 +2060,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse"
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_users.UserResponse"
                                         }
                                     }
                                 }
@@ -1601,19 +2076,19 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -1648,7 +2123,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.AdminUpdateUserRequest"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.AdminUpdateUserRequest"
                         }
                     }
                 ],
@@ -1656,31 +2131,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "422": {
                         "description": "Unprocessable Entity",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -1717,7 +2192,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetAdminFlagRequest"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.SetAdminFlagRequest"
                         }
                     }
                 ],
@@ -1725,25 +2200,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -1780,7 +2255,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest"
                         }
                     }
                 ],
@@ -1788,25 +2263,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -1843,7 +2318,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.AssignUserRolesRequest"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.AssignUserRolesRequest"
                         }
                     }
                 ],
@@ -1851,19 +2326,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem"
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
                     }
                 }
@@ -1883,7 +2358,7 @@ const docTemplate = `{
                 "ROLES"
             ]
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.AuthDto": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.AuthDto": {
             "description": "Authentication response model containing JWT tokens for user authentication",
             "type": "object",
             "properties": {
@@ -1898,7 +2373,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.PermissionDto": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.PermissionDto": {
             "description": "PermissionDto defines the CRUD permissions for a specific entity",
             "type": "object",
             "properties": {
@@ -1919,7 +2394,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto": {
             "description": "Standard response model used across all API endpoints",
             "type": "object",
             "properties": {
@@ -1938,7 +2413,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.RoleDto": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.RoleDto": {
             "description": "RoleDto contains the information about a role including its name, routes, and permissions",
             "type": "object",
             "required": [
@@ -1951,7 +2426,7 @@ const docTemplate = `{
                 "permissions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.PermissionDto"
+                        "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.PermissionDto"
                     }
                 },
                 "routes": {
@@ -1962,7 +2437,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.LoginRequestDto": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.LoginRequestDto": {
             "description": "Estructura esperada para autenticación de usuario",
             "type": "object",
             "required": [
@@ -1982,7 +2457,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCExchangeRequestDto": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.OIDCExchangeRequestDto": {
             "type": "object",
             "properties": {
                 "grant": {
@@ -1990,7 +2465,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCLinkRequestDto": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.OIDCLinkRequestDto": {
             "type": "object",
             "properties": {
                 "password": {
@@ -2001,7 +2476,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCUnlinkRequestDto": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.OIDCUnlinkRequestDto": {
             "type": "object",
             "properties": {
                 "password": {
@@ -2009,7 +2484,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto": {
             "description": "Estructura esperada para refrescar un token JWT",
             "type": "object",
             "required": [
@@ -2023,7 +2498,163 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.AdminUpdateUserRequest": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetHealthRequest": {
+            "type": "object",
+            "properties": {
+                "allergies": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Atún"
+                    ]
+                },
+                "specialConditions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Sorda"
+                    ]
+                },
+                "surgeries": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Esterilizada"
+                    ]
+                },
+                "temperament": {
+                    "type": "string",
+                    "example": "Tímida con extraños"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetOwnerRequest": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "Av. Siempre Viva 742"
+                },
+                "comuna": {
+                    "type": "string",
+                    "example": "Ñuñoa"
+                },
+                "fullName": {
+                    "type": "string",
+                    "example": "Wilson Sayago"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "+56 9 1234 5678"
+                },
+                "phoneAlt": {
+                    "type": "string",
+                    "example": ""
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetRequest": {
+            "description": "Pet record. Version is required on update.",
+            "type": "object",
+            "properties": {
+                "birthDate": {
+                    "type": "string",
+                    "example": "2021-03-14"
+                },
+                "breed": {
+                    "type": "string",
+                    "example": "Mestiza"
+                },
+                "chipNumber": {
+                    "type": "string",
+                    "example": "900123456789012"
+                },
+                "color": {
+                    "type": "string",
+                    "example": "Café con blanco"
+                },
+                "distinctiveFeatures": {
+                    "type": "string",
+                    "example": "Mancha blanca en el pecho"
+                },
+                "health": {
+                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetHealthRequest"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Luna"
+                },
+                "owner": {
+                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetOwnerRequest"
+                },
+                "publicVisibility": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "secondOwner": {
+                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetSecondOwnerRequest"
+                },
+                "sex": {
+                    "type": "string",
+                    "enum": [
+                        "male",
+                        "female",
+                        "unknown"
+                    ],
+                    "example": "female"
+                },
+                "size": {
+                    "type": "string",
+                    "enum": [
+                        "",
+                        "small",
+                        "medium",
+                        "large",
+                        "giant"
+                    ],
+                    "example": "medium"
+                },
+                "species": {
+                    "type": "string",
+                    "enum": [
+                        "dog",
+                        "cat",
+                        "other"
+                    ],
+                    "example": "dog"
+                },
+                "version": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "weightKg": {
+                    "type": "number",
+                    "example": 12.5
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetSecondOwnerRequest": {
+            "type": "object",
+            "properties": {
+                "fullName": {
+                    "type": "string",
+                    "example": "Andrea Alastre"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "+56 9 8765 4321"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.AdminUpdateUserRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -2038,7 +2669,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.AssignUserRolesRequest": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.AssignUserRolesRequest": {
             "type": "object",
             "required": [
                 "roleIds"
@@ -2053,7 +2684,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.ChangePasswordRequest": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.ChangePasswordRequest": {
             "type": "object",
             "required": [
                 "currentPassword",
@@ -2068,7 +2699,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.CreateUserRequest": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.CreateUserRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -2087,7 +2718,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest": {
             "type": "object",
             "required": [
                 "active"
@@ -2098,7 +2729,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetAdminFlagRequest": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.SetAdminFlagRequest": {
             "type": "object",
             "required": [
                 "isAdmin"
@@ -2109,7 +2740,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.UpdateOwnProfileRequest": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.UpdateOwnProfileRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -2120,7 +2751,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_audits.AuditEventResponse": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_audits.AuditEventResponse": {
             "description": "Sanitized administrative audit event. Never includes secrets or emails.",
             "type": "object",
             "properties": {
@@ -2157,14 +2788,14 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_audits.AuditEventsPageResponse": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_audits.AuditEventsPageResponse": {
             "description": "Paginated list of administrative audit events",
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_audits.AuditEventResponse"
+                        "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_audits.AuditEventResponse"
                     }
                 },
                 "hasNext": {
@@ -2178,7 +2809,143 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetHealthResponse": {
+            "type": "object",
+            "properties": {
+                "allergies": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "specialConditions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "surgeries": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "temperament": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetOwnerResponse": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "comuna": {
+                    "type": "string"
+                },
+                "fullName": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "phoneAlt": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetResponse": {
+            "type": "object",
+            "properties": {
+                "birthDate": {
+                    "type": "string",
+                    "example": "2021-03-14"
+                },
+                "breed": {
+                    "type": "string",
+                    "example": "Mestiza"
+                },
+                "chipNumber": {
+                    "type": "string",
+                    "example": "900123456789012"
+                },
+                "color": {
+                    "type": "string",
+                    "example": "Café con blanco"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-18T21:00:00Z"
+                },
+                "distinctiveFeatures": {
+                    "type": "string"
+                },
+                "health": {
+                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetHealthResponse"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "2f1c5a0e-6a43-4f8e-9a51-0c2f3f9b7d11"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Luna"
+                },
+                "owner": {
+                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetOwnerResponse"
+                },
+                "photoUrl": {
+                    "type": "string",
+                    "example": "/v1/pets/2f1c5a0e-6a43-4f8e-9a51-0c2f3f9b7d11/photo?v=1760820000000"
+                },
+                "publicVisibility": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "secondOwner": {
+                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetSecondOwnerResponse"
+                },
+                "sex": {
+                    "type": "string",
+                    "example": "female"
+                },
+                "size": {
+                    "type": "string",
+                    "example": "medium"
+                },
+                "species": {
+                    "type": "string",
+                    "example": "dog"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2026-10-18T21:00:00Z"
+                },
+                "version": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "weightKg": {
+                    "type": "number",
+                    "example": 12.5
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetSecondOwnerResponse": {
+            "type": "object",
+            "properties": {
+                "fullName": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse": {
             "description": "PermissionResponse represents a permission response.",
             "type": "object",
             "properties": {
@@ -2199,7 +2966,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.RoleResponse": {
             "description": "RoleResponse represents a role response.",
             "type": "object",
             "properties": {
@@ -2224,13 +2991,13 @@ const docTemplate = `{
                 "permissions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse"
+                        "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse"
                     }
                 },
                 "routes": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoutePathEnumDto"
+                        "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.RoutePathEnumDto"
                     }
                 },
                 "updatedAt": {
@@ -2241,14 +3008,14 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RolesPageResponse": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.RolesPageResponse": {
             "description": "RolesPageResponse represents a paginated response of roles.",
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse"
+                        "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.RoleResponse"
                     }
                 },
                 "hasNext": {
@@ -2262,7 +3029,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoutePathEnumDto": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.RoutePathEnumDto": {
             "description": "Enumeración de rutas en el sistema",
             "type": "string",
             "enum": [
@@ -2278,7 +3045,7 @@ const docTemplate = `{
                 "SETTINGS"
             ]
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionResponse": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_sessions.SessionResponse": {
             "description": "Active session. Never includes hashes or JWTs.",
             "type": "object",
             "properties": {
@@ -2305,7 +3072,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionRevokeResponse": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_sessions.SessionRevokeResponse": {
             "description": "Outcome of a self-service session revocation",
             "type": "object",
             "properties": {
@@ -2314,14 +3081,14 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionsPageResponse": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_sessions.SessionsPageResponse": {
             "description": "Paginated list of the caller's active sessions",
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionResponse"
+                        "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_sessions.SessionResponse"
                     }
                 },
                 "hasNext": {
@@ -2335,7 +3102,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.PublicSettingsResponse": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_settings.PublicSettingsResponse": {
             "description": "Public branding fields available before and after login.",
             "type": "object",
             "properties": {
@@ -2350,7 +3117,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse": {
             "description": "Typed application settings including optimistic version.",
             "type": "object",
             "properties": {
@@ -2374,7 +3141,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.UpdateSettingsRequest": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_settings.UpdateSettingsRequest": {
             "description": "Allowlisted application settings. Unknown or protected keys are rejected.",
             "type": "object",
             "properties": {
@@ -2392,7 +3159,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_users.UserResponse": {
             "description": "UserResponse represents a user response.",
             "type": "object",
             "properties": {
@@ -2423,13 +3190,13 @@ const docTemplate = `{
                 "permissions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse"
+                        "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse"
                     }
                 },
                 "roles": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse"
+                        "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.RoleResponse"
                     }
                 },
                 "updatedAt": {
@@ -2440,14 +3207,14 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UsersPageResponse": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_users.UsersPageResponse": {
             "description": "UserResponse represents a user response.",
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse"
+                        "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_users.UserResponse"
                     }
                 },
                 "hasNext": {
@@ -2461,7 +3228,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.FieldError": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.FieldError": {
             "type": "object",
             "properties": {
                 "code": {
@@ -2472,7 +3239,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem": {
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem": {
             "type": "object",
             "properties": {
                 "code": {
@@ -2484,7 +3251,7 @@ const docTemplate = `{
                 "errors": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.FieldError"
+                        "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.FieldError"
                     }
                 },
                 "requestId": {

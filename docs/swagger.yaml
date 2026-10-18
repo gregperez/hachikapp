@@ -9,7 +9,7 @@ definitions:
     x-enum-varnames:
     - USERS
     - ROLES
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.AuthDto:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.AuthDto:
     description: Authentication response model containing JWT tokens for user authentication
     properties:
       accessToken:
@@ -20,7 +20,7 @@ definitions:
         example: eyJhbGciOiJIUzI1...
         type: string
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.PermissionDto:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.PermissionDto:
     description: PermissionDto defines the CRUD permissions for a specific entity
     properties:
       create:
@@ -34,7 +34,7 @@ definitions:
       update:
         type: boolean
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto:
     description: Standard response model used across all API endpoints
     properties:
       data:
@@ -48,7 +48,7 @@ definitions:
         example: 200
         type: integer
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.RoleDto:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.RoleDto:
     description: RoleDto contains the information about a role including its name,
       routes, and permissions
     properties:
@@ -56,7 +56,7 @@ definitions:
         type: string
       permissions:
         items:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.PermissionDto'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.PermissionDto'
         type: array
       routes:
         items:
@@ -65,7 +65,7 @@ definitions:
     required:
     - name
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.LoginRequestDto:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.LoginRequestDto:
     description: Estructura esperada para autenticación de usuario
     properties:
       email:
@@ -80,24 +80,24 @@ definitions:
     - email
     - password
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCExchangeRequestDto:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.OIDCExchangeRequestDto:
     properties:
       grant:
         type: string
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCLinkRequestDto:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.OIDCLinkRequestDto:
     properties:
       password:
         type: string
       returnTo:
         type: string
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCUnlinkRequestDto:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.OIDCUnlinkRequestDto:
     properties:
       password:
         type: string
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto:
     description: Estructura esperada para refrescar un token JWT
     properties:
       refreshToken:
@@ -107,7 +107,119 @@ definitions:
     required:
     - refreshToken
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.AdminUpdateUserRequest:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetHealthRequest:
+    properties:
+      allergies:
+        example:
+        - Atún
+        items:
+          type: string
+        type: array
+      specialConditions:
+        example:
+        - Sorda
+        items:
+          type: string
+        type: array
+      surgeries:
+        example:
+        - Esterilizada
+        items:
+          type: string
+        type: array
+      temperament:
+        example: Tímida con extraños
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetOwnerRequest:
+    properties:
+      address:
+        example: Av. Siempre Viva 742
+        type: string
+      comuna:
+        example: Ñuñoa
+        type: string
+      fullName:
+        example: Wilson Sayago
+        type: string
+      phone:
+        example: +56 9 1234 5678
+        type: string
+      phoneAlt:
+        example: ""
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetRequest:
+    description: Pet record. Version is required on update.
+    properties:
+      birthDate:
+        example: "2021-03-14"
+        type: string
+      breed:
+        example: Mestiza
+        type: string
+      chipNumber:
+        example: "900123456789012"
+        type: string
+      color:
+        example: Café con blanco
+        type: string
+      distinctiveFeatures:
+        example: Mancha blanca en el pecho
+        type: string
+      health:
+        $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetHealthRequest'
+      name:
+        example: Luna
+        type: string
+      owner:
+        $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetOwnerRequest'
+      publicVisibility:
+        additionalProperties:
+          type: string
+        type: object
+      secondOwner:
+        $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetSecondOwnerRequest'
+      sex:
+        enum:
+        - male
+        - female
+        - unknown
+        example: female
+        type: string
+      size:
+        enum:
+        - ""
+        - small
+        - medium
+        - large
+        - giant
+        example: medium
+        type: string
+      species:
+        enum:
+        - dog
+        - cat
+        - other
+        example: dog
+        type: string
+      version:
+        example: 3
+        type: integer
+      weightKg:
+        example: 12.5
+        type: number
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetSecondOwnerRequest:
+    properties:
+      fullName:
+        example: Andrea Alastre
+        type: string
+      phone:
+        example: +56 9 8765 4321
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.AdminUpdateUserRequest:
     properties:
       email:
         type: string
@@ -117,7 +229,7 @@ definitions:
     - email
     - name
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.AssignUserRolesRequest:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.AssignUserRolesRequest:
     properties:
       roleIds:
         items:
@@ -127,7 +239,7 @@ definitions:
     required:
     - roleIds
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.ChangePasswordRequest:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.ChangePasswordRequest:
     properties:
       currentPassword:
         type: string
@@ -137,7 +249,7 @@ definitions:
     - currentPassword
     - newPassword
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.CreateUserRequest:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.CreateUserRequest:
     properties:
       email:
         type: string
@@ -150,28 +262,28 @@ definitions:
     - name
     - password
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest:
     properties:
       active:
         type: boolean
     required:
     - active
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetAdminFlagRequest:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.SetAdminFlagRequest:
     properties:
       isAdmin:
         type: boolean
     required:
     - isAdmin
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.UpdateOwnProfileRequest:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.UpdateOwnProfileRequest:
     properties:
       name:
         type: string
     required:
     - name
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_audits.AuditEventResponse:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_audits.AuditEventResponse:
     description: Sanitized administrative audit event. Never includes secrets or emails.
     properties:
       action:
@@ -196,12 +308,12 @@ definitions:
       subjectType:
         type: string
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_audits.AuditEventsPageResponse:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_audits.AuditEventsPageResponse:
     description: Paginated list of administrative audit events
     properties:
       data:
         items:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_audits.AuditEventResponse'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_audits.AuditEventResponse'
         type: array
       hasNext:
         type: boolean
@@ -210,7 +322,101 @@ definitions:
       nextCursor:
         type: string
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetHealthResponse:
+    properties:
+      allergies:
+        items:
+          type: string
+        type: array
+      specialConditions:
+        items:
+          type: string
+        type: array
+      surgeries:
+        items:
+          type: string
+        type: array
+      temperament:
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetOwnerResponse:
+    properties:
+      address:
+        type: string
+      comuna:
+        type: string
+      fullName:
+        type: string
+      phone:
+        type: string
+      phoneAlt:
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetResponse:
+    properties:
+      birthDate:
+        example: "2021-03-14"
+        type: string
+      breed:
+        example: Mestiza
+        type: string
+      chipNumber:
+        example: "900123456789012"
+        type: string
+      color:
+        example: Café con blanco
+        type: string
+      createdAt:
+        example: "2026-10-18T21:00:00Z"
+        type: string
+      distinctiveFeatures:
+        type: string
+      health:
+        $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetHealthResponse'
+      id:
+        example: 2f1c5a0e-6a43-4f8e-9a51-0c2f3f9b7d11
+        type: string
+      name:
+        example: Luna
+        type: string
+      owner:
+        $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetOwnerResponse'
+      photoUrl:
+        example: /v1/pets/2f1c5a0e-6a43-4f8e-9a51-0c2f3f9b7d11/photo?v=1760820000000
+        type: string
+      publicVisibility:
+        additionalProperties:
+          type: string
+        type: object
+      secondOwner:
+        $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetSecondOwnerResponse'
+      sex:
+        example: female
+        type: string
+      size:
+        example: medium
+        type: string
+      species:
+        example: dog
+        type: string
+      updatedAt:
+        example: "2026-10-18T21:00:00Z"
+        type: string
+      version:
+        example: 1
+        type: integer
+      weightKg:
+        example: 12.5
+        type: number
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetSecondOwnerResponse:
+    properties:
+      fullName:
+        type: string
+      phone:
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse:
     description: PermissionResponse represents a permission response.
     properties:
       create:
@@ -224,7 +430,7 @@ definitions:
       update:
         type: boolean
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.RoleResponse:
     description: RoleResponse represents a role response.
     properties:
       active:
@@ -241,23 +447,23 @@ definitions:
         type: string
       permissions:
         items:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse'
         type: array
       routes:
         items:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoutePathEnumDto'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.RoutePathEnumDto'
         type: array
       updatedAt:
         type: string
       updatedBy:
         type: string
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RolesPageResponse:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.RolesPageResponse:
     description: RolesPageResponse represents a paginated response of roles.
     properties:
       data:
         items:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.RoleResponse'
         type: array
       hasNext:
         type: boolean
@@ -266,7 +472,7 @@ definitions:
       nextCursor:
         type: string
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoutePathEnumDto:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.RoutePathEnumDto:
     description: Enumeración de rutas en el sistema
     enum:
     - USERS
@@ -279,7 +485,7 @@ definitions:
     - ROLES
     - AUDIT_EVENTS
     - SETTINGS
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionResponse:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_sessions.SessionResponse:
     description: Active session. Never includes hashes or JWTs.
     properties:
       clientLabel:
@@ -297,18 +503,18 @@ definitions:
       lastSeenAt:
         type: string
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionRevokeResponse:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_sessions.SessionRevokeResponse:
     description: Outcome of a self-service session revocation
     properties:
       revokedCurrent:
         type: boolean
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionsPageResponse:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_sessions.SessionsPageResponse:
     description: Paginated list of the caller's active sessions
     properties:
       data:
         items:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionResponse'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_sessions.SessionResponse'
         type: array
       hasNext:
         type: boolean
@@ -317,7 +523,7 @@ definitions:
       nextCursor:
         type: string
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.PublicSettingsResponse:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_settings.PublicSettingsResponse:
     description: Public branding fields available before and after login.
     properties:
       defaultLocale:
@@ -327,7 +533,7 @@ definitions:
       logoUrl:
         type: string
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse:
     description: Typed application settings including optimistic version.
     properties:
       defaultLocale:
@@ -343,7 +549,7 @@ definitions:
       version:
         type: integer
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.UpdateSettingsRequest:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_settings.UpdateSettingsRequest:
     description: Allowlisted application settings. Unknown or protected keys are rejected.
     properties:
       defaultLocale:
@@ -355,7 +561,7 @@ definitions:
       version:
         type: integer
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_users.UserResponse:
     description: UserResponse represents a user response.
     properties:
       active:
@@ -376,23 +582,23 @@ definitions:
         type: string
       permissions:
         items:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.PermissionResponse'
         type: array
       roles:
         items:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.RoleResponse'
         type: array
       updatedAt:
         type: string
       updatedBy:
         type: string
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UsersPageResponse:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_users.UsersPageResponse:
     description: UserResponse represents a user response.
     properties:
       data:
         items:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_users.UserResponse'
         type: array
       hasNext:
         type: boolean
@@ -401,14 +607,14 @@ definitions:
       nextCursor:
         type: string
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.FieldError:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.FieldError:
     properties:
       code:
         type: string
       field:
         type: string
     type: object
-  github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem:
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem:
     properties:
       code:
         type: string
@@ -416,7 +622,7 @@ definitions:
         type: string
       errors:
         items:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.FieldError'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.FieldError'
         type: array
       requestId:
         type: string
@@ -481,23 +687,23 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_audits.AuditEventsPageResponse'
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_audits.AuditEventsPageResponse'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: List administrative audit events
@@ -514,7 +720,7 @@ paths:
         name: loginData
         required: true
         schema:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.LoginRequestDto'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.LoginRequestDto'
       produces:
       - application/json
       responses:
@@ -522,27 +728,27 @@ paths:
           description: Tokens
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.AuthDto'
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.AuthDto'
               type: object
         "400":
           description: Malformed JSON or empty body
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "401":
           description: Invalid credentials
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "422":
           description: Validation failed
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "429":
           description: Authentication rate limit exceeded
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       summary: User login
       tags:
       - Authentication
@@ -557,7 +763,7 @@ paths:
         name: refreshToken
         required: true
         schema:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto'
       produces:
       - application/json
       responses:
@@ -566,7 +772,7 @@ paths:
         "422":
           description: Validation failed
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       summary: Logout / revoke refresh family
       tags:
       - Authentication
@@ -582,7 +788,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCUnlinkRequestDto'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.OIDCUnlinkRequestDto'
       produces:
       - application/json
       responses:
@@ -591,15 +797,15 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "429":
           description: Too Many Requests
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Unlink a Google identity
@@ -627,19 +833,19 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "429":
           description: Too Many Requests
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "503":
           description: Service Unavailable
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       summary: Complete Google OIDC callback
       tags:
       - Authentication
@@ -655,7 +861,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCExchangeRequestDto'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.OIDCExchangeRequestDto'
       produces:
       - application/json
       responses:
@@ -663,23 +869,23 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.AuthDto'
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.AuthDto'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "429":
           description: Too Many Requests
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "503":
           description: Service Unavailable
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       summary: Exchange an OIDC grant for local tokens
       tags:
       - Authentication
@@ -695,7 +901,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.OIDCLinkRequestDto'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.OIDCLinkRequestDto'
       produces:
       - application/json
       responses:
@@ -704,19 +910,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "429":
           description: Too Many Requests
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "503":
           description: Service Unavailable
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Start explicit Google account linking
@@ -739,15 +945,15 @@ paths:
         "400":
           description: Destination is not allowlisted
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "429":
           description: Authentication rate limit exceeded
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "503":
           description: OIDC is disabled or unavailable
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       summary: Start Google OIDC login
       tags:
       - Authentication
@@ -762,7 +968,7 @@ paths:
         name: refreshToken
         required: true
         schema:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_auth.RefreshTokenRequestDto'
       produces:
       - application/json
       responses:
@@ -770,26 +976,317 @@ paths:
           description: New tokens
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.AuthDto'
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.AuthDto'
               type: object
         "401":
           description: Invalid refresh
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "422":
           description: Validation failed
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "429":
           description: Authentication rate limit exceeded
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       summary: Refresh JWT token
       tags:
       - Authentication
+  /v1/pets:
+    get:
+      description: Returns the pet records managed by the authenticated account, newest
+        first.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: List my pets
+      tags:
+      - Pets
+    post:
+      consumes:
+      - application/json
+      description: Creates a pet managed by the authenticated account. Public visibility
+        keys default to the brand manual recommendations.
+      parameters:
+      - description: Pet record
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Create a pet record
+      tags:
+      - Pets
+  /v1/pets/{id}:
+    delete:
+      description: Deletes the pet record and its photo.
+      parameters:
+      - description: Pet ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Delete one of my pets
+      tags:
+      - Pets
+    get:
+      parameters:
+      - description: Pet ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Get one of my pets
+      tags:
+      - Pets
+    put:
+      consumes:
+      - application/json
+      description: Replaces the pet record. The version from the last read is required;
+        a stale version returns 409.
+      parameters:
+      - description: Pet ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Pet record with version
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_pets.PetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Update one of my pets
+      tags:
+      - Pets
+  /v1/pets/{id}/photo:
+    delete:
+      parameters:
+      - description: Pet ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Remove the photo of one of my pets
+      tags:
+      - Pets
+    get:
+      parameters:
+      - description: Pet ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - image/jpeg
+      - image/png
+      - image/webp
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Get the photo of one of my pets
+      tags:
+      - Pets
+    put:
+      consumes:
+      - image/jpeg
+      - image/png
+      - image/webp
+      description: Raw image body (JPEG, PNG or WebP) up to 1 MiB. The type is detected
+        from the bytes.
+      parameters:
+      - description: Pet ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Upload or replace the photo of one of my pets
+      tags:
+      - Pets
   /v1/roles:
     get:
       consumes:
@@ -813,23 +1310,23 @@ paths:
           description: List of roles
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RolesPageResponse'
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.RolesPageResponse'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Get all roles
@@ -845,30 +1342,30 @@ paths:
         name: role
         required: true
         schema:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.RoleDto'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.RoleDto'
       produces:
       - application/json
       responses:
         "201":
           description: Role created successfully
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "422":
           description: Unprocessable Entity
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Create new role
@@ -892,23 +1389,23 @@ paths:
           description: Role details
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_roles.RoleResponse'
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_roles.RoleResponse'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Get role by ID
@@ -929,30 +1426,30 @@ paths:
         name: role
         required: true
         schema:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.RoleDto'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.RoleDto'
       produces:
       - application/json
       responses:
         "200":
           description: Role updated successfully
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "422":
           description: Unprocessable Entity
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Update role
@@ -974,26 +1471,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Status changed successfully
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Change role status
@@ -1009,19 +1506,19 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse'
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Get administrative application settings
@@ -1042,7 +1539,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.UpdateSettingsRequest'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_settings.UpdateSettingsRequest'
       produces:
       - application/json
       responses:
@@ -1050,27 +1547,27 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse'
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_settings.SettingsResponse'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "422":
           description: Unprocessable Entity
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Update application settings
@@ -1086,15 +1583,15 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_settings.PublicSettingsResponse'
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_settings.PublicSettingsResponse'
               type: object
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       summary: Get public application branding
       tags:
       - Settings
@@ -1121,23 +1618,23 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UsersPageResponse'
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_users.UsersPageResponse'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: List users
@@ -1152,30 +1649,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.CreateUserRequest'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.CreateUserRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "422":
           description: Unprocessable Entity
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Create user
@@ -1196,23 +1693,23 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse'
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_users.UserResponse'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Get user by ID
@@ -1232,30 +1729,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.AdminUpdateUserRequest'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.AdminUpdateUserRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "422":
           description: Unprocessable Entity
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Admin update user
@@ -1276,26 +1773,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetAdminFlagRequest'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.SetAdminFlagRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Set admin flag
@@ -1316,26 +1813,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.SetActiveRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Change user active status
@@ -1356,22 +1853,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.AssignUserRolesRequest'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.AssignUserRolesRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Assign roles to user
@@ -1386,15 +1883,15 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse'
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_users.UserResponse'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Get current user profile
@@ -1409,15 +1906,15 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_users.UserResponse'
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_users.UserResponse'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Get current user profile
@@ -1432,22 +1929,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.UpdateOwnProfileRequest'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.UpdateOwnProfileRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "422":
           description: Unprocessable Entity
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Update own profile
@@ -1463,22 +1960,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_inputs_users.ChangePasswordRequest'
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.ChangePasswordRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "422":
           description: Unprocessable Entity
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Change own password
@@ -1495,15 +1992,15 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionRevokeResponse'
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_sessions.SessionRevokeResponse'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Revoke every own session
@@ -1534,19 +2031,19 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionsPageResponse'
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_sessions.SessionsPageResponse'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: List own active sessions
@@ -1573,15 +2070,15 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto.ResponseDto'
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_controller_dto_outputs_sessions.SessionRevokeResponse'
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_sessions.SessionRevokeResponse'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_WilsonSayago_base-golang_internal_infra_primary_httpapi.Problem'
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       security:
       - BearerAuth: []
       summary: Revoke one own session

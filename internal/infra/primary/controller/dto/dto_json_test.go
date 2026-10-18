@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/controller/dto"
 )
 
 func TestPermissionDto_UsesJSONTags(t *testing.T) {

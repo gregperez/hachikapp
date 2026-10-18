@@ -4,8 +4,8 @@ import (
 	"context"
 
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/ports"
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/dao"
+	"github.com/gregperez/hachikapp-backend/internal/core/ports"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/dao"
 )
 
 type PermissionRepository struct {

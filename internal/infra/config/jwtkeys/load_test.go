@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/WilsonSayago/base-golang/internal/infra/config/jwtkeys"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/jwtkeys"
 )
 
 func TestLoadPrivateRejectsOpenPermissions(t *testing.T) {

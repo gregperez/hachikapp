@@ -1,9 +1,9 @@
 package userout
 
 import (
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/outputs/roles"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/controller/dto"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/controller/dto/outputs/roles"
 )
 
 // UserResponse represents a user response.

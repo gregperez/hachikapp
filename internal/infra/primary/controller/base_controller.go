@@ -2,9 +2,9 @@ package controller
 
 import (
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/infra/config"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
 	"github.com/gin-gonic/gin"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/httpapi"
 )
 
 // handleBind decodes and validates JSON without panicking.

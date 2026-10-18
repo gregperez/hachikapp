@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/WilsonSayago/authBase/v4/infra/config/properties"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/appconfig"
 )
 
 func TestNewTokenMaterialHMACHasNoJWKS(t *testing.T) {

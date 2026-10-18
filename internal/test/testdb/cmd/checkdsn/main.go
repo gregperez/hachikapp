@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/WilsonSayago/base-golang/internal/test/testdb"
+	"github.com/gregperez/hachikapp-backend/internal/test/testdb"
 )
 
 func main() {

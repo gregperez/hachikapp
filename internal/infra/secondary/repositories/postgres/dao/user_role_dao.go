@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/database"
 )
 
 type IUserRoleDao interface {

@@ -5,16 +5,16 @@ import (
 	"strings"
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/ports"
-	"github.com/WilsonSayago/base-golang/internal/core/services"
-	"github.com/WilsonSayago/base-golang/internal/infra/config"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/inputs/auth"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/ginadapter"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
 	"github.com/gin-gonic/gin"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/ports"
+	"github.com/gregperez/hachikapp-backend/internal/core/services"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/appconfig"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/controller/dto"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/controller/dto/inputs/auth"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/ginadapter"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/httpapi"
 )
 
 const googleProvider = appconfig.OIDCProviderGoogle

@@ -12,9 +12,9 @@ import (
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	authBaseServices "github.com/WilsonSayago/authBase/v4/core/services"
-	"github.com/WilsonSayago/base-golang/internal/core/ports"
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/ratelimit"
 	"github.com/gin-gonic/gin"
+	"github.com/gregperez/hachikapp-backend/internal/core/ports"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/ratelimit"
 )
 
 type rateAuthUC struct{}

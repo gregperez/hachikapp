@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	_ "github.com/WilsonSayago/base-golang/docs"
-	"github.com/WilsonSayago/base-golang/internal/infra/bootstrap"
-	"github.com/WilsonSayago/base-golang/internal/infra/logging"
+	_ "github.com/gregperez/hachikapp-backend/docs"
+	"github.com/gregperez/hachikapp-backend/internal/infra/bootstrap"
+	"github.com/gregperez/hachikapp-backend/internal/infra/logging"
 )
 
 const propertiesFile = "internal/resources/properties.yml"

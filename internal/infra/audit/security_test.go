@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
-	"github.com/WilsonSayago/base-golang/internal/infra/audit"
+	"github.com/gregperez/hachikapp-backend/internal/infra/audit"
 )
 
 func TestSecuritySinkOmitsSecrets(t *testing.T) {

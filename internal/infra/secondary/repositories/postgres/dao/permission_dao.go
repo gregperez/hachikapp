@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/database"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/dto"
 )
 
 type IPermissionDao interface {

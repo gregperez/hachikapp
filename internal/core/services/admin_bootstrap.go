@@ -4,8 +4,8 @@ import (
 	"context"
 
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/ports"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/ports"
 )
 
 const adminRoleName = "admin"

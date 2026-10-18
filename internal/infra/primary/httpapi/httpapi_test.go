@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	userout "github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/outputs/users"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	userout "github.com/gregperez/hachikapp-backend/internal/infra/primary/controller/dto/outputs/users"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/httpapi"
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"

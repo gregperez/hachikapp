@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/WilsonSayago/base-golang/internal/infra/config"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
 	initModules "github.com/WilsonSayago/initModules/v2"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/database"
 )
 
 // DatabaseLifecycle pings on start and closes the pool on stop.

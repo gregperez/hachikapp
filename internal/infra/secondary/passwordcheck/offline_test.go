@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/passwordcheck"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/passwordcheck"
 )
 
 func TestOfflineNormalizesAndHonorsCancellation(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
 )
 
 // PrivilegeAuditor records privileged mutations without secrets or PII.

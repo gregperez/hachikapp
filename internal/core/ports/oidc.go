@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
 )
 
 // OIDCTransactionStore persists single-use Authorization Code transactions and grants.

@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/WilsonSayago/base-golang/internal/core"
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/ports"
+	"github.com/gregperez/hachikapp-backend/internal/core"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/ports"
 )
 
 type SettingsService struct {

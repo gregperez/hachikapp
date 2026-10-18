@@ -3,7 +3,7 @@ package domain_test
 import (
 	"testing"
 
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
 )
 
 func TestNormalizeReturnToExactAllowlist(t *testing.T) {

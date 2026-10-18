@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/oidccrypto"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/oidccrypto"
 )
 
 func TestBoxRoundTrip(t *testing.T) {

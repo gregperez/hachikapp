@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/WilsonSayago/authBase/v4/infra/config/properties"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/prop"
 	initModules "github.com/WilsonSayago/initModules/v2"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/appconfig"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/prop"
 )
 
 const DefaultPropertiesFile = "internal/resources/properties.yml"

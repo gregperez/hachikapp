@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/oidcclient"
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/appconfig"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/oidcclient"
 )
 
 func TestClientExchangeVerifiesIDToken(t *testing.T) {

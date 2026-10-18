@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core"
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/ports"
+	"github.com/gregperez/hachikapp-backend/internal/core"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/ports"
 )
 
 type SessionService struct {

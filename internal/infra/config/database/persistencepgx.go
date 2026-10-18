@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/prop"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/appconfig"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/prop"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"

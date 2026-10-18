@@ -15,8 +15,8 @@ import (
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 	authBasePorts "github.com/WilsonSayago/authBase/v4/core/port"
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/ports"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/ports"
 )
 
 // OIDCService orchestrates provider-neutral login and explicit account linking.

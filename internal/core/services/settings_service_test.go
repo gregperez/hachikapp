@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/services"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/services"
 )
 
 type memSettings struct {

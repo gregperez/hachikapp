@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/WilsonSayago/base-golang/internal/core/ports"
 	initModules "github.com/WilsonSayago/initModules/v2"
+	"github.com/gregperez/hachikapp-backend/internal/core/ports"
 )
 
 type OIDCTransactionPurgerConfig struct {

@@ -9,10 +9,10 @@ import (
 	"time"
 
 	authDomain "github.com/WilsonSayago/authBase/v4/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories"
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/dao"
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/refreshstore"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/database"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/dao"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/refreshstore"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

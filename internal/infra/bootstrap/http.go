@@ -12,11 +12,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
-	"github.com/WilsonSayago/base-golang/internal/infra/requestctx"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/appconfig"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/httpapi"
+	"github.com/gregperez/hachikapp-backend/internal/infra/requestctx"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )

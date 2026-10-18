@@ -3,14 +3,14 @@ package controller
 import (
 	"net/http"
 
-	"github.com/WilsonSayago/base-golang/internal/core"
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/ports"
-	"github.com/WilsonSayago/base-golang/internal/infra/config"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/inputs/auth"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/ginadapter"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
+	"github.com/gregperez/hachikapp-backend/internal/core"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/ports"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/controller/dto"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/controller/dto/inputs/auth"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/ginadapter"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/httpapi"
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 	authBaseServices "github.com/WilsonSayago/authBase/v4/core/services"

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/authz"
+	"github.com/gregperez/hachikapp-backend/internal/core/authz"
 )
 
 func TestPermissionMatrix(t *testing.T) {

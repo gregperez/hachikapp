@@ -7,9 +7,9 @@ import (
 	"time"
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/ports"
-	"github.com/WilsonSayago/base-golang/internal/infra/requestctx"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/ports"
+	"github.com/gregperez/hachikapp-backend/internal/infra/requestctx"
 )
 
 // Recorder writes one slog line and one sanitized row per event.

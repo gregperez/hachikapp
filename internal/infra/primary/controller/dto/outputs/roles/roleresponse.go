@@ -1,7 +1,7 @@
 package roles
 
 import (
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/controller/dto"
 
 	"github.com/WilsonSayago/authBase/v4/core/domain"
 )

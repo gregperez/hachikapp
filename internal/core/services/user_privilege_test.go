@@ -9,9 +9,9 @@ import (
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	authBasePorts "github.com/WilsonSayago/authBase/v4/core/port"
 	"github.com/WilsonSayago/authBase/v4/infra/secundary"
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/ports"
-	"github.com/WilsonSayago/base-golang/internal/core/services"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/ports"
+	"github.com/gregperez/hachikapp-backend/internal/core/services"
 )
 
 type memUsers struct {

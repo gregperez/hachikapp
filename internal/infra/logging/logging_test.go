@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/WilsonSayago/base-golang/internal/infra/logging"
+	"github.com/gregperez/hachikapp-backend/internal/infra/logging"
 )
 
 func TestParseLevel(t *testing.T) {

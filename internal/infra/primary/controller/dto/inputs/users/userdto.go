@@ -1,6 +1,6 @@
 package users
 
-import "github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
+import "github.com/gregperez/hachikapp-backend/internal/infra/primary/controller/dto"
 
 // UseDto is retained for generated swagger compatibility.
 // Prefer CreateUserRequest — privileged fields are intentionally absent.

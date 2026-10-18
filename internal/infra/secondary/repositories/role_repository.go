@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/dao"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/dto"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/dao"
 
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	authBasePorts "github.com/WilsonSayago/authBase/v4/core/port"

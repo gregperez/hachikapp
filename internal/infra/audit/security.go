@@ -4,7 +4,7 @@ import (
 	"context"
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
-	"github.com/WilsonSayago/base-golang/internal/core/ports"
+	"github.com/gregperez/hachikapp-backend/internal/core/ports"
 )
 
 // FanoutOIDC maps OIDC audit strings onto the typed security sink once.

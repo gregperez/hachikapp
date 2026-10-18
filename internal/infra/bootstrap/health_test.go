@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/WilsonSayago/base-golang/internal/infra/bootstrap"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
 	"github.com/gin-gonic/gin"
+	"github.com/gregperez/hachikapp-backend/internal/infra/bootstrap"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/appconfig"
 )
 
 func discardLogger() *slog.Logger {

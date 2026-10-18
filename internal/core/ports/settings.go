@@ -3,7 +3,7 @@ package ports
 import (
 	"context"
 
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
 )
 
 // SettingsPort loads and updates the singleton application settings row.

@@ -8,11 +8,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/services"
-	"github.com/WilsonSayago/base-golang/internal/infra/bootstrap"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/sql"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/services"
+	"github.com/gregperez/hachikapp-backend/internal/infra/bootstrap"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/database"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/sql"
 	"golang.org/x/term"
 )
 

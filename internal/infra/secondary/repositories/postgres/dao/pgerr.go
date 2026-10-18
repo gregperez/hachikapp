@@ -3,7 +3,7 @@ package dao
 import (
 	"errors"
 
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 

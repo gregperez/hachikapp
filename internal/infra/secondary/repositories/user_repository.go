@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/ports"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/dto"
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/dao"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/ports"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/database"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/dto"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/dao"
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"

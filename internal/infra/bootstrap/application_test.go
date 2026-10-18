@@ -16,12 +16,12 @@ import (
 	"time"
 
 	"github.com/WilsonSayago/authBase/v4/infra/config/properties"
-	"github.com/WilsonSayago/base-golang/internal/infra/bootstrap"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
-	"github.com/WilsonSayago/base-golang/internal/test/testdb"
 	initModules "github.com/WilsonSayago/initModules/v2"
 	"github.com/gin-gonic/gin"
+	"github.com/gregperez/hachikapp-backend/internal/infra/bootstrap"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/appconfig"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/database"
+	"github.com/gregperez/hachikapp-backend/internal/test/testdb"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

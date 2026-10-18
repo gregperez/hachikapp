@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/WilsonSayago/base-golang/internal/core/ports"
+	"github.com/gregperez/hachikapp-backend/internal/core/ports"
 )
 
 type ScopeConfig struct {

@@ -12,9 +12,9 @@ import (
 
 	"github.com/WilsonSayago/authBase/v4/core"
 	"github.com/WilsonSayago/authBase/v4/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/refreshstore"
-	"github.com/WilsonSayago/base-golang/internal/test/testdb"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/database"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/refreshstore"
+	"github.com/gregperez/hachikapp-backend/internal/test/testdb"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

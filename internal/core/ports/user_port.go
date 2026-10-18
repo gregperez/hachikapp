@@ -5,7 +5,7 @@ import (
 
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	"github.com/WilsonSayago/authBase/v4/core/port"
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
 )
 
 // UserPort is the application persistence port for users.

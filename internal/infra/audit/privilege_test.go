@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/WilsonSayago/base-golang/internal/infra/audit"
+	"github.com/gregperez/hachikapp-backend/internal/infra/audit"
 )
 
 func TestPrivilegeChangeEmitsAttrs(t *testing.T) {

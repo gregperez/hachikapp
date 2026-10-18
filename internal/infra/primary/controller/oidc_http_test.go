@@ -12,14 +12,14 @@ import (
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	authBasePorts "github.com/WilsonSayago/authBase/v4/core/port"
 	"github.com/WilsonSayago/authBase/v4/infra/secundary"
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/ports"
-	"github.com/WilsonSayago/base-golang/internal/core/services"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/oidccrypto"
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/ratelimit"
 	"github.com/gin-gonic/gin"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/ports"
+	"github.com/gregperez/hachikapp-backend/internal/core/services"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/appconfig"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/httpapi"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/oidccrypto"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/ratelimit"
 )
 
 func TestOIDCLoginRedirectSetsHttpOnlyCookie(t *testing.T) {

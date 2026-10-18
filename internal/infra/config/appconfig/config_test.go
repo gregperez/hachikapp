@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/appconfig"
 )
 
 func TestLoadFromEnv(t *testing.T) {

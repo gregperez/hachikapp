@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/WilsonSayago/base-golang/internal/test/testdb"
+	"github.com/gregperez/hachikapp-backend/internal/test/testdb"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

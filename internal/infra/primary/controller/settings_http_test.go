@@ -10,12 +10,12 @@ import (
 	"time"
 
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/authz"
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
-	settingsdto "github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/outputs/settings"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/ginadapter"
 	"github.com/gin-gonic/gin"
+	"github.com/gregperez/hachikapp-backend/internal/core/authz"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/controller/dto"
+	settingsdto "github.com/gregperez/hachikapp-backend/internal/infra/primary/controller/dto/outputs/settings"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/ginadapter"
 )
 
 type stubSettingsUC struct {

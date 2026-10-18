@@ -5,8 +5,8 @@ import (
 
 	authBaseServices "github.com/WilsonSayago/authBase/v4/core/services"
 	"github.com/WilsonSayago/authBase/v4/infra/config/properties"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/appconfig"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/jwtkeys"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/appconfig"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/jwtkeys"
 )
 
 type tokenMaterial struct {

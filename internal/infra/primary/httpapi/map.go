@@ -3,7 +3,7 @@ package httpapi
 import (
 	"errors"
 
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 )

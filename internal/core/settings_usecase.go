@@ -3,7 +3,7 @@ package core
 import (
 	"context"
 
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
 )
 
 // SettingsUseCase reads and updates typed application settings.

@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/WilsonSayago/base-golang/internal/core/ports"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
 	"github.com/gin-gonic/gin"
+	"github.com/gregperez/hachikapp-backend/internal/core/ports"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/httpapi"
 )
 
 func authenticationLimitKey(value string) string {

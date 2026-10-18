@@ -11,13 +11,13 @@ import (
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/core/authz"
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto"
-	auditout "github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/outputs/audits"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/ginadapter"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
 	"github.com/gin-gonic/gin"
+	"github.com/gregperez/hachikapp-backend/internal/core/authz"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/controller/dto"
+	auditout "github.com/gregperez/hachikapp-backend/internal/infra/primary/controller/dto/outputs/audits"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/ginadapter"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/httpapi"
 )
 
 type stubAuditUC struct {

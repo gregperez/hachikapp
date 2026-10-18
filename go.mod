@@ -1,4 +1,4 @@
-module github.com/WilsonSayago/base-golang
+module github.com/gregperez/hachikapp-backend
 
 go 1.26.6
 

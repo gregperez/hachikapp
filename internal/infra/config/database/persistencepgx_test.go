@@ -3,7 +3,7 @@ package database
 import (
 	"testing"
 
-	"github.com/WilsonSayago/base-golang/internal/infra/config/prop"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/prop"
 )
 
 func TestNewPostgresPgxForTest_WrapsPool(t *testing.T) {

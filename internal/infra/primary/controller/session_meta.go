@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/sessionmeta"
 	"github.com/gin-gonic/gin"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/sessionmeta"
 )
 
 func attachSessionMeta(c *gin.Context, resolver *ClientOriginResolver) {

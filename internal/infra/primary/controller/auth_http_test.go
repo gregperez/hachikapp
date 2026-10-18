@@ -16,10 +16,10 @@ import (
 	authBaseServices "github.com/WilsonSayago/authBase/v4/core/services"
 	"github.com/WilsonSayago/authBase/v4/infra/config/properties"
 	"github.com/WilsonSayago/authBase/v4/infra/secundary"
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	usersin "github.com/WilsonSayago/base-golang/internal/infra/primary/controller/dto/inputs/users"
-	"github.com/WilsonSayago/base-golang/internal/infra/primary/httpapi"
 	"github.com/gin-gonic/gin"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	usersin "github.com/gregperez/hachikapp-backend/internal/infra/primary/controller/dto/inputs/users"
+	"github.com/gregperez/hachikapp-backend/internal/infra/primary/httpapi"
 )
 
 func TestBindRejectsOmittedPrivilegedBools(t *testing.T) {

@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/WilsonSayago/base-golang/internal/core/domain"
-	"github.com/WilsonSayago/base-golang/internal/infra/config/database"
-	"github.com/WilsonSayago/base-golang/internal/infra/secondary/repositories/postgres/oidcstore"
-	"github.com/WilsonSayago/base-golang/internal/test/testdb"
+	"github.com/gregperez/hachikapp-backend/internal/core/domain"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/database"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/oidcstore"
+	"github.com/gregperez/hachikapp-backend/internal/test/testdb"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

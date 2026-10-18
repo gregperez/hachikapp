@@ -11,8 +11,11 @@
   and per-field public visibility (`hidden` / `lost_only` / `always`) with
   defaults from the brand manual. Exact address, chip number and phone
   numbers are never public fields. Migration `000017_pets`.
-- Pet photos (JPEG/PNG/WebP up to 1 MiB, type sniffed from bytes) are stored
-  in PostgreSQL behind `PetPhotoPort`, ready to move to object storage.
+- Pet photos (JPEG/PNG up to 1 MiB and 4096 px per side, type sniffed from
+  bytes) are re-encoded on the server: EXIF orientation is applied and every
+  metadata block (EXIF/GPS, comments) is dropped so a photo cannot reveal the
+  owner's location. They are stored in PostgreSQL behind `PetPhotoPort`, ready
+  to move to object storage.
 
 ### Breaking
 

@@ -191,18 +191,3 @@ func TestPetBirthDateRoundTrip(t *testing.T) {
 		t.Fatal("expected parse error")
 	}
 }
-
-func TestDetectPetPhotoType(t *testing.T) {
-	if _, err := DetectPetPhotoType(nil, "image/png"); !errors.Is(err, ErrInvalidPetPhoto) {
-		t.Fatalf("empty: %v", err)
-	}
-	if _, err := DetectPetPhotoType(make([]byte, MaxPetPhotoBytes+1), "image/png"); !errors.Is(err, ErrInvalidPetPhoto) {
-		t.Fatalf("oversized: %v", err)
-	}
-	if _, err := DetectPetPhotoType([]byte("<svg/>"), "text/xml; charset=utf-8"); !errors.Is(err, ErrInvalidPetPhoto) {
-		t.Fatalf("svg must be rejected: %v", err)
-	}
-	if ct, err := DetectPetPhotoType([]byte{1}, "image/webp"); err != nil || ct != "image/webp" {
-		t.Fatalf("webp: %q %v", ct, err)
-	}
-}

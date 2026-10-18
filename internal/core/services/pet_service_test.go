@@ -5,6 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"image"
+	"image/color"
+	"image/jpeg"
+	"image/png"
 	"testing"
 	"time"
 
@@ -134,7 +138,30 @@ func sampleDetails() domain.PetDetails {
 	}
 }
 
-var pngBytes = append([]byte("\x89PNG\r\n\x1a\n"), bytes.Repeat([]byte{0}, 32)...)
+var pngBytes = func() []byte {
+	img := image.NewRGBA(image.Rect(0, 0, 8, 8))
+	img.Set(1, 1, color.RGBA{255, 0, 0, 255})
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		panic(err)
+	}
+	return buf.Bytes()
+}()
+
+// jpegWithComment returns a JPEG carrying a COM segment, standing in for any
+// metadata a client may send along with the pixels.
+func jpegWithComment(comment string) []byte {
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, image.NewRGBA(image.Rect(0, 0, 8, 8)), nil); err != nil {
+		panic(err)
+	}
+	raw := buf.Bytes()
+	segment := []byte{0xFF, 0xFE, 0, byte(len(comment) + 2)}
+	out := append([]byte{}, raw[:2]...)
+	out = append(out, segment...)
+	out = append(out, comment...)
+	return append(out, raw[2:]...)
+}
 
 func TestPetServiceCreateNormalizesAndScopesToOwner(t *testing.T) {
 	svc, _, _ := newTestPetService()
@@ -276,5 +303,28 @@ func TestPetServiceUpdateKeepsStoredVisibilityWhenOmitted(t *testing.T) {
 	}
 	if got := updated.PublicVisibility[domain.PetPublicBreed]; got != domain.PetVisibilityHidden {
 		t.Fatalf("sent keys must still apply, breed=%q", got)
+	}
+}
+
+func TestPetServiceStoresPhotosWithoutMetadata(t *testing.T) {
+	svc, _, photos := newTestPetService()
+	ctx := context.Background()
+	pet, err := svc.Create(ctx, ownerA, sampleDetails())
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw := jpegWithComment("GPS -33.4489,-70.6693")
+	if _, err := svc.PutPhoto(ctx, ownerA, pet.ID, raw); err != nil {
+		t.Fatal(err)
+	}
+	stored := photos.photos[pet.ID]
+	if stored.ContentType != "image/jpeg" {
+		t.Fatalf("content type=%q", stored.ContentType)
+	}
+	if bytes.Contains(stored.Data, []byte("GPS -33.4489")) {
+		t.Fatal("stored photo still carries client metadata")
+	}
+	if _, err := jpeg.Decode(bytes.NewReader(stored.Data)); err != nil {
+		t.Fatalf("stored photo must be a valid JPEG: %v", err)
 	}
 }

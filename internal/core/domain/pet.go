@@ -391,22 +391,6 @@ func ValidatePetDetails(details PetDetails, now time.Time) error {
 	return &PetValidationError{Issues: issues}
 }
 
-// DetectPetPhotoType validates image bytes and returns the sniffed content type.
-func DetectPetPhotoType(data []byte, sniffed string) (string, error) {
-	if len(data) == 0 {
-		return "", fmt.Errorf("%w: empty image", ErrInvalidPetPhoto)
-	}
-	if len(data) > MaxPetPhotoBytes {
-		return "", fmt.Errorf("%w: image exceeds %d bytes", ErrInvalidPetPhoto, MaxPetPhotoBytes)
-	}
-	switch sniffed {
-	case "image/jpeg", "image/png", "image/webp":
-		return sniffed, nil
-	default:
-		return "", fmt.Errorf("%w: only JPEG, PNG or WebP images are allowed", ErrInvalidPetPhoto)
-	}
-}
-
 func checkText(value, field string, maxLen int, required bool, add func(string, string)) {
 	if value == "" {
 		if required {

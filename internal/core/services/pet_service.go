@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
@@ -125,12 +124,13 @@ func (s *PetService) PutPhoto(ctx context.Context, ownerID, petID string, data [
 	if err != nil {
 		return domain.Pet{}, err
 	}
-	contentType, err := domain.DetectPetPhotoType(data, http.DetectContentType(data))
+	photo, err := domain.SanitizePetPhoto(data)
 	if err != nil {
 		return domain.Pet{}, err
 	}
 	at := s.now().UTC().Truncate(time.Microsecond)
-	if err := s.photos.Put(ctx, pet.ID, domain.PetPhoto{ContentType: contentType, Data: data, UpdatedAt: at}); err != nil {
+	photo.UpdatedAt = at
+	if err := s.photos.Put(ctx, pet.ID, photo); err != nil {
 		return domain.Pet{}, fmt.Errorf("store pet photo: %w", err)
 	}
 	return s.pets.SetPhotoUpdatedAt(ctx, ownerID, pet.ID, &at)

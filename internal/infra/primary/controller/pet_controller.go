@@ -209,7 +209,6 @@ func (pc *PetController) Delete() gin.HandlerFunc {
 // @Security BearerAuth
 // @Produce image/jpeg
 // @Produce image/png
-// @Produce image/webp
 // @Param id path string true "Pet ID"
 // @Success 200 {file} binary
 // @Failure 401 {object} httpapi.Problem
@@ -235,12 +234,11 @@ func (pc *PetController) GetPhoto() gin.HandlerFunc {
 
 // PutPhoto godoc
 // @Summary Upload or replace the photo of one of my pets
-// @Description Raw image body (JPEG, PNG or WebP) up to 1 MiB. The type is detected from the bytes.
+// @Description Raw image body (JPEG or PNG) up to 1 MiB and 4096 px per side. The type is detected from the bytes; the image is re-encoded without metadata (EXIF/GPS) and with its EXIF orientation applied.
 // @Tags Pets
 // @Security BearerAuth
 // @Accept image/jpeg
 // @Accept image/png
-// @Accept image/webp
 // @Produce json
 // @Param id path string true "Pet ID"
 // @Success 200 {object} dto.ResponseDto{data=petout.PetResponse}
@@ -365,7 +363,7 @@ func writePetError(c *gin.Context, err error) {
 		}
 		httpapi.WriteProblem(c, httpapi.Validation("Pet contains invalid fields", requestID, fields))
 	case errors.Is(err, domain.ErrInvalidPetPhoto):
-		httpapi.WriteProblem(c, httpapi.Validation("The photo must be a JPEG, PNG or WebP image up to 1 MiB", requestID,
+		httpapi.WriteProblem(c, httpapi.Validation("The photo must be a JPEG or PNG image up to 1 MiB and 4096 px per side", requestID,
 			[]httpapi.FieldError{{Field: "photo", Code: "image"}}))
 	case errors.Is(err, domain.ErrDuplicateChip):
 		httpapi.WriteProblem(c, httpapi.Conflict("The chip number is already registered", requestID))

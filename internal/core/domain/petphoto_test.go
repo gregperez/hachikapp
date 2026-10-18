@@ -183,3 +183,49 @@ func TestSanitizePetPhotoOtherOrientations(t *testing.T) {
 		}
 	}
 }
+
+func TestSanitizePetPhotoCapsDimensionsAt2048(t *testing.T) {
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, image.NewGray(image.Rect(0, 0, 2049, 4))); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := SanitizePetPhoto(buf.Bytes()); !errors.Is(err, ErrInvalidPetPhoto) {
+		t.Fatalf("2049px wide must be rejected to bound decode memory, got %v", err)
+	}
+	buf.Reset()
+	if err := png.Encode(&buf, image.NewGray(image.Rect(0, 0, 2048, 4))); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := SanitizePetPhoto(buf.Bytes()); err != nil {
+		t.Fatalf("2048px must be accepted: %v", err)
+	}
+}
+
+// A compressed (low-quality) JPEG under 1 MiB grows when re-encoded at high
+// quality; it must still be accepted by stepping the quality down.
+func TestSanitizePetPhotoKeepsLowQualityJPEGUnderTheLimit(t *testing.T) {
+	const side = 1200
+	img := image.NewRGBA(image.Rect(0, 0, side, side))
+	seed := uint32(1)
+	for i := range img.Pix {
+		seed = seed*1664525 + 1013904223
+		img.Pix[i] = uint8(seed >> 24)
+		if i%4 == 3 {
+			img.Pix[i] = 255
+		}
+	}
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 50}); err != nil {
+		t.Fatal(err)
+	}
+	if buf.Len() > MaxPetPhotoBytes {
+		t.Fatalf("fixture must start under the limit, got %d bytes", buf.Len())
+	}
+	photo, err := SanitizePetPhoto(buf.Bytes())
+	if err != nil {
+		t.Fatalf("a %d-byte JPEG within the limit was rejected: %v", buf.Len(), err)
+	}
+	if len(photo.Data) > MaxPetPhotoBytes {
+		t.Fatalf("output %d bytes exceeds the limit", len(photo.Data))
+	}
+}

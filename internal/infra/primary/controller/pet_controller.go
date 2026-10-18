@@ -146,7 +146,7 @@ func (pc *PetController) Get() gin.HandlerFunc {
 
 // Update godoc
 // @Summary Update one of my pets
-// @Description Replaces the pet record. The version from the last read is required; a stale version returns 409.
+// @Description Replaces the pet record. The version from the last read is required; a stale version returns 409. publicVisibility keys left out keep their stored value.
 // @Tags Pets
 // @Security BearerAuth
 // @Accept json
@@ -234,7 +234,7 @@ func (pc *PetController) GetPhoto() gin.HandlerFunc {
 
 // PutPhoto godoc
 // @Summary Upload or replace the photo of one of my pets
-// @Description Raw image body (JPEG or PNG) up to 1 MiB and 4096 px per side. The type is detected from the bytes; the image is re-encoded without metadata (EXIF/GPS) and with its EXIF orientation applied.
+// @Description Raw image body (JPEG or PNG) up to 1 MiB and 2048 px per side. The type is detected from the bytes; the image is re-encoded without metadata (EXIF/GPS) and with its EXIF orientation applied.
 // @Tags Pets
 // @Security BearerAuth
 // @Accept image/jpeg
@@ -363,7 +363,7 @@ func writePetError(c *gin.Context, err error) {
 		}
 		httpapi.WriteProblem(c, httpapi.Validation("Pet contains invalid fields", requestID, fields))
 	case errors.Is(err, domain.ErrInvalidPetPhoto):
-		httpapi.WriteProblem(c, httpapi.Validation("The photo must be a JPEG or PNG image up to 1 MiB and 4096 px per side", requestID,
+		httpapi.WriteProblem(c, httpapi.Validation("The photo must be a JPEG or PNG image up to 1 MiB and 2048 px per side", requestID,
 			[]httpapi.FieldError{{Field: "photo", Code: "image"}}))
 	case errors.Is(err, domain.ErrDuplicateChip):
 		httpapi.WriteProblem(c, httpapi.Conflict("Another pet of this account already uses this chip number", requestID))

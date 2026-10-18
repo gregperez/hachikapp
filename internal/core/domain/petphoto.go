@@ -11,10 +11,13 @@ import (
 )
 
 // MaxPetPhotoSide caps each image dimension so a small file cannot expand into
-// a huge bitmap (decompression bomb).
-const MaxPetPhotoSide = 4096
+// a huge bitmap (decompression bomb). The web client uploads at most 1280 px;
+// 2048 keeps the worst-case decode around 16 MiB per request.
+const MaxPetPhotoSide = 2048
 
-const petPhotoJPEGQuality = 88
+// petPhotoJPEGQualities are tried in order until the re-encoded JPEG fits in
+// MaxPetPhotoBytes: low-quality inputs grow when re-encoded at high quality.
+var petPhotoJPEGQualities = []int{88, 80, 70, 60, 50}
 
 // SanitizePetPhoto validates an uploaded image and re-encodes it so no
 // metadata survives: EXIF (including GPS coordinates that could reveal the
@@ -42,23 +45,27 @@ func SanitizePetPhoto(data []byte) (PetPhoto, error) {
 	}
 
 	var out bytes.Buffer
-	photo := PetPhoto{}
-	if format == "jpeg" {
-		img = applyOrientation(img, jpegOrientation(data))
-		err = jpeg.Encode(&out, img, &jpeg.Options{Quality: petPhotoJPEGQuality})
-		photo.ContentType = "image/jpeg"
-	} else {
-		err = png.Encode(&out, img)
-		photo.ContentType = "image/png"
+	if format == "png" {
+		if err := png.Encode(&out, img); err != nil {
+			return PetPhoto{}, fmt.Errorf("encode pet photo: %w", err)
+		}
+		if out.Len() > MaxPetPhotoBytes {
+			return PetPhoto{}, fmt.Errorf("%w: image exceeds %d bytes", ErrInvalidPetPhoto, MaxPetPhotoBytes)
+		}
+		return PetPhoto{ContentType: "image/png", Data: out.Bytes()}, nil
 	}
-	if err != nil {
-		return PetPhoto{}, fmt.Errorf("encode pet photo: %w", err)
+
+	img = applyOrientation(img, jpegOrientation(data))
+	for _, quality := range petPhotoJPEGQualities {
+		out.Reset()
+		if err := jpeg.Encode(&out, img, &jpeg.Options{Quality: quality}); err != nil {
+			return PetPhoto{}, fmt.Errorf("encode pet photo: %w", err)
+		}
+		if out.Len() <= MaxPetPhotoBytes {
+			return PetPhoto{ContentType: "image/jpeg", Data: out.Bytes()}, nil
+		}
 	}
-	if out.Len() > MaxPetPhotoBytes {
-		return PetPhoto{}, fmt.Errorf("%w: image exceeds %d bytes", ErrInvalidPetPhoto, MaxPetPhotoBytes)
-	}
-	photo.Data = out.Bytes()
-	return photo, nil
+	return PetPhoto{}, fmt.Errorf("%w: image exceeds %d bytes", ErrInvalidPetPhoto, MaxPetPhotoBytes)
 }
 
 // jpegOrientation returns the EXIF orientation (1-8) of a JPEG, or 1 when it
@@ -98,10 +105,11 @@ func tiffOrientation(tiff []byte) int {
 	default:
 		return 1
 	}
-	ifd := int(order.Uint32(tiff[4:8]))
-	if ifd+2 > len(tiff) {
+	offset := order.Uint32(tiff[4:8])
+	if offset < 8 || uint64(offset)+2 > uint64(len(tiff)) {
 		return 1
 	}
+	ifd := int(offset)
 	entries := int(order.Uint16(tiff[ifd : ifd+2]))
 	for n := 0; n < entries; n++ {
 		entry := ifd + 2 + n*12
@@ -126,6 +134,8 @@ func applyOrientation(src image.Image, orientation int) image.Image {
 	}
 	b := src.Bounds()
 	w, h := b.Dx(), b.Dy()
+	// One RGBA copy keeps the per-pixel loop allocation-free; at 2048 px per
+	// side source and destination together stay around 32 MiB.
 	rgba := image.NewRGBA(image.Rect(0, 0, w, h))
 	draw.Draw(rgba, rgba.Bounds(), src, b.Min, draw.Src)
 

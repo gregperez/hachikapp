@@ -1129,7 +1129,8 @@ paths:
       consumes:
       - application/json
       description: Replaces the pet record. The version from the last read is required;
-        a stale version returns 409.
+        a stale version returns 409. publicVisibility keys left out keep their stored
+        value.
       parameters:
       - description: Pet ID
         in: path
@@ -1244,7 +1245,7 @@ paths:
       consumes:
       - image/jpeg
       - image/png
-      description: Raw image body (JPEG or PNG) up to 1 MiB and 4096 px per side.
+      description: Raw image body (JPEG or PNG) up to 1 MiB and 2048 px per side.
         The type is detected from the bytes; the image is re-encoded without metadata
         (EXIF/GPS) and with its EXIF orientation applied.
       parameters:

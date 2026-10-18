@@ -751,7 +751,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Replaces the pet record. The version from the last read is required; a stale version returns 409.",
+                "description": "Replaces the pet record. The version from the last read is required; a stale version returns 409. publicVisibility keys left out keep their stored value.",
                 "consumes": [
                     "application/json"
                 ],
@@ -921,7 +921,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Raw image body (JPEG or PNG) up to 1 MiB and 4096 px per side. The type is detected from the bytes; the image is re-encoded without metadata (EXIF/GPS) and with its EXIF orientation applied.",
+                "description": "Raw image body (JPEG or PNG) up to 1 MiB and 2048 px per side. The type is detected from the bytes; the image is re-encoded without metadata (EXIF/GPS) and with its EXIF orientation applied.",
                 "consumes": [
                     "image/jpeg",
                     "image/png"

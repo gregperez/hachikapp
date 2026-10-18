@@ -14,10 +14,11 @@
 - A chip number is unique per account (migration `000018`), so nobody can
   squat another owner's chip or probe whether a chip is registered.
   Updates keep the stored visibility of keys the request omits.
-- Pet photos (JPEG/PNG up to 1 MiB and 4096 px per side, type sniffed from
+- Pet photos (JPEG/PNG up to 1 MiB and 2048 px per side, type sniffed from
   bytes) are re-encoded on the server: EXIF orientation is applied and every
-  metadata block (EXIF/GPS, comments) is dropped so a photo cannot reveal the
-  owner's location. They are stored in PostgreSQL behind `PetPhotoPort`, ready
+  metadata block (EXIF/GPS, comments, ICC color profiles) is dropped so a
+  photo cannot reveal the owner's location. JPEG quality steps down from 88
+  until the result fits in 1 MiB. They are stored in PostgreSQL behind `PetPhotoPort`, ready
   to move to object storage.
 
 ### Breaking

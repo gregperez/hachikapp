@@ -33,8 +33,8 @@
 datasource:
   host: localhost
   port: "5432"
-  database: base_golang
-  user: postgres
+  database: ${DB_NAME}
+  user: ${DB_USER}
   password: ${DB_PASSWORD}
   # Local docker often uses disable; production validation rejects disable/allow/prefer.
   sslmode: disable

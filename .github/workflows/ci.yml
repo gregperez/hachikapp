@@ -57,7 +57,7 @@ jobs:
 
       # actions/setup-go@v5.4.0
       - name: Set up Go ${{ matrix.go-version }}
-        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
         with:
           go-version: ${{ matrix.go-version }}
           cache-dependency-path: go.sum

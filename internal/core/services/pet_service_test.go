@@ -247,3 +247,34 @@ func TestPetServicePhotoLifecycle(t *testing.T) {
 		t.Fatalf("delete must remove pet and photo: pets=%d photos=%d", len(pets.pets), len(photos.photos))
 	}
 }
+
+func TestPetServiceUpdateKeepsStoredVisibilityWhenOmitted(t *testing.T) {
+	svc, _, _ := newTestPetService()
+	ctx := context.Background()
+	details := sampleDetails()
+	details.PublicVisibility = map[domain.PetPublicField]domain.PetVisibility{
+		domain.PetPublicAllergies: domain.PetVisibilityHidden,
+		domain.PetPublicComuna:    domain.PetVisibilityAlways,
+	}
+	pet, err := svc.Create(ctx, ownerA, details)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rename := sampleDetails()
+	rename.Name = "Luna Bella"
+	rename.PublicVisibility = map[domain.PetPublicField]domain.PetVisibility{domain.PetPublicBreed: domain.PetVisibilityHidden}
+	updated, err := svc.Update(ctx, ownerA, pet.ID, pet.Version, rename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := updated.PublicVisibility[domain.PetPublicAllergies]; got != domain.PetVisibilityHidden {
+		t.Fatalf("allergies visibility reset to %q; omitted keys must keep the stored value", got)
+	}
+	if got := updated.PublicVisibility[domain.PetPublicComuna]; got != domain.PetVisibilityAlways {
+		t.Fatalf("comuna visibility reset to %q", got)
+	}
+	if got := updated.PublicVisibility[domain.PetPublicBreed]; got != domain.PetVisibilityHidden {
+		t.Fatalf("sent keys must still apply, breed=%q", got)
+	}
+}

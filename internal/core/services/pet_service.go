@@ -76,6 +76,13 @@ func (s *PetService) Update(ctx context.Context, ownerID, petID string, version 
 	if version <= 0 {
 		return domain.Pet{}, &domain.PetValidationError{Issues: []domain.PetFieldIssue{{Field: "version", Code: "required"}}}
 	}
+	stored, err := s.pets.GetForOwner(ctx, ownerID, petID)
+	if err != nil {
+		return domain.Pet{}, err
+	}
+	// Visibility keys left out of the request keep their stored value, never
+	// the defaults: a partial edit must not make hidden data public again.
+	details.PublicVisibility = mergeVisibility(stored.PublicVisibility, details.PublicVisibility)
 	normalized, err := s.validate(details)
 	if err != nil {
 		return domain.Pet{}, err
@@ -159,6 +166,17 @@ func (s *PetService) ready(ownerID string) error {
 		return domain.ErrForbidden
 	}
 	return nil
+}
+
+func mergeVisibility(stored, sent map[domain.PetPublicField]domain.PetVisibility) map[domain.PetPublicField]domain.PetVisibility {
+	merged := make(map[domain.PetPublicField]domain.PetVisibility, len(stored)+len(sent))
+	for field, value := range stored {
+		merged[field] = value
+	}
+	for field, value := range sent {
+		merged[field] = value
+	}
+	return merged
 }
 
 // isPetID accepts canonical UUIDs so malformed ids never reach SQL casts.

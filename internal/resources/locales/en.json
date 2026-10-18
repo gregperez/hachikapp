@@ -1,0 +1,37 @@
+{
+  "errors": {
+    "generals": {
+      "errors": "General error"
+    },
+    "transaction": {
+      "begin": "Error starting transaction",
+      "commit": "Error committing transaction"
+    },
+    "no-data-form": "No data provided",
+    "invalid-email": "Invalid email",
+    "invalid-field-required": "Field {{.Field}} required",
+    "token-login": "Error generating token",
+    "refresh-token": "Error refreshing token",
+    "roles": {
+      "get-all": "Error getting roles",
+      "get-by-id": "Error getting role by id",
+      "save": "Error saving role",
+      "update": "Error updating role",
+      "change-status": "Error changing role status",
+      "not-found": "Role not found",
+      "already-exists": "Role already exists"
+    },
+    "users": {
+      "get-all": "Error getting users",
+      "get-by-id": "Error getting user by id",
+      "save": "Error saving user",
+      "update": "Error updating user",
+      "change-status": "Error changing user status",
+      "already-exists": "User already exists",
+      "hash-password": "Error hashing password",
+      "save-user-role": "Error setting role to user",
+      "delete-user-role": "Error deleting roles from user",
+      "not-found": "User not found"
+    }
+  }
+}

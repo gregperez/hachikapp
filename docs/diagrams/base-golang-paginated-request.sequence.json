@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "base-golang — Listado protegido con cursor",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 560],
+    "column_fit": "spread",
+    "views": [
+      {
+        "id": "authorization",
+        "label": "Autorización",
+        "focus": ["client", "gin", "authbase", "controller"],
+        "note": "AuthorizeJWT valida el access token y PoliciesGuard exige permiso de lectura."
+      },
+      {
+        "id": "pagination",
+        "label": "Paginación",
+        "focus": ["controller", "service", "repository", "postgres"],
+        "note": "El cursor opaco se traduce a PageRequest y la consulta usa keyset descendente."
+      },
+      {
+        "id": "response",
+        "label": "Respuesta",
+        "focus": ["postgres", "repository", "service", "controller", "client"],
+        "note": "LIMIT+1 determina HasNext; el último elemento produce nextCursor."
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "client",
+      "type": "external",
+      "label": "Cliente",
+      "sublabel": "Bearer + cursor"
+    },
+    {
+      "id": "gin",
+      "type": "frontend",
+      "label": "Gin",
+      "sublabel": "middleware"
+    },
+    {
+      "id": "authbase",
+      "type": "security",
+      "label": "authBase/v4",
+      "sublabel": "JWT + policies"
+    },
+    {
+      "id": "controller",
+      "type": "frontend",
+      "label": "UserController",
+      "sublabel": "HTTP adapter"
+    },
+    {
+      "id": "service",
+      "type": "backend",
+      "label": "UserService",
+      "sublabel": "use case"
+    },
+    {
+      "id": "repository",
+      "type": "backend",
+      "label": "UserRepository",
+      "sublabel": "secondary adapter"
+    },
+    {
+      "id": "postgres",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "source of truth"
+    }
+  ],
+  "segments": [
+    { "from": 150, "to": 270, "label": "Autenticación y permiso" },
+    { "from": 275, "to": 390, "label": "Consulta keyset" },
+    { "from": 395, "to": 475, "label": "Página y siguiente cursor" }
+  ],
+  "messages": [
+    {
+      "id": "request",
+      "from": "client",
+      "to": "gin",
+      "y": 160,
+      "label": "GET /v1/users?limit&cursor",
+      "variant": "emphasis"
+    },
+    {
+      "id": "authorize",
+      "from": "gin",
+      "to": "authbase",
+      "y": 190,
+      "label": "AuthorizeJWT(Bearer)",
+      "variant": "security"
+    },
+    {
+      "id": "identity",
+      "from": "authbase",
+      "to": "gin",
+      "y": 220,
+      "label": "identidad activa",
+      "variant": "return"
+    },
+    {
+      "id": "policy",
+      "from": "gin",
+      "to": "authbase",
+      "y": 250,
+      "label": "PoliciesGuard(users, read)",
+      "variant": "security"
+    },
+    {
+      "id": "dispatch",
+      "from": "gin",
+      "to": "controller",
+      "y": 280,
+      "label": "GetAll()",
+      "variant": "emphasis"
+    },
+    {
+      "id": "findall",
+      "from": "controller",
+      "to": "service",
+      "y": 310,
+      "label": "DecodeCursor → FindAll(ctx, PageRequest)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "port",
+      "from": "service",
+      "to": "repository",
+      "y": 340,
+      "label": "FindAll(request)",
+      "variant": "default"
+    },
+    {
+      "id": "query",
+      "from": "repository",
+      "to": "postgres",
+      "y": 370,
+      "label": "WHERE (created_at,id) < cursor · LIMIT+1",
+      "variant": "emphasis"
+    },
+    {
+      "id": "rows",
+      "from": "postgres",
+      "to": "repository",
+      "y": 400,
+      "label": "filas ordenadas DESC",
+      "variant": "return"
+    },
+    {
+      "id": "page",
+      "from": "repository",
+      "to": "service",
+      "y": 430,
+      "label": "Page{Items, HasNext}",
+      "variant": "return"
+    },
+    {
+      "id": "response",
+      "from": "controller",
+      "to": "client",
+      "y": 460,
+      "label": "EncodeCursor → 200 {data, hasNext, nextCursor}",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    { "participant": "gin", "from": 155, "to": 290, "type": "frontend" },
+    { "participant": "authbase", "from": 185, "to": 260, "type": "security" },
+    { "participant": "controller", "from": 275, "to": 470, "type": "frontend" },
+    { "participant": "service", "from": 305, "to": 440, "type": "backend" },
+    { "participant": "repository", "from": 335, "to": 440, "type": "backend" },
+    { "participant": "postgres", "from": 365, "to": 410, "type": "database" }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Seguridad",
+      "items": [
+        "La petición solo llega al controller tras JWT válido y permiso users:read",
+        "401 y 403 se mantienen separados por el adaptador HTTP"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Keyset estable",
+      "items": [
+        "Orden total por (created_at, id) descendente",
+        "Se consulta limit+1 para calcular HasNext sin COUNT ni OFFSET"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+# Dependabot — conservative weekly updates for base-golang
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      go-patch:
+        applies-to: version-updates
+        update-types:
+          - patch
+    # Minors stay ungrouped so each is reviewed. Majors never auto-merge.
+    labels:
+      - dependencies
+      - go
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - github-actions

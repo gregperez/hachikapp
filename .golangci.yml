@@ -1,0 +1,47 @@
+run:
+  timeout: 5m
+  tests: true
+  go: "1.26"
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - misspell
+    - bodyclose
+    - rowserrcheck
+    - sqlclosecheck
+    - contextcheck
+
+linters-settings:
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+  errcheck:
+    check-type-assertions: true
+  staticcheck:
+    checks: ["all"]
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-rules:
+    # Generated swagger docs are not maintained by hand.
+    - path: docs/
+      linters: ["all"]
+    # Legacy singleton/process adapters still called from wiring; cleaned in later plans.
+    - path: internal/infra/config/translate\.go
+      linters: [staticcheck]
+      text: "SA1019"
+    - path: internal/infra/secondary/repositories/
+      linters: [staticcheck]
+      text: "SA1019"
+    - path: internal/infra/secondary/repositories/postgres/dao/
+      linters: [staticcheck]
+      text: "SA1019"

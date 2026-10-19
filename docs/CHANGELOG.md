@@ -20,6 +20,34 @@
   photo cannot reveal the owner's location. JPEG quality steps down from 88
   until the result fits in 1 MiB. They are stored in PostgreSQL behind `PetPhotoPort`, ready
   to move to object storage.
+- Pet tags ("Ficha pública", part 1). Migrations `000019_pet_tags` (tags,
+  batches, scans and finder messages) and `000020_tags_permission`, which
+  gives the `admin` role the new `TAGS` route and permission (create, read).
+  - Public routes without login: `GET /v1/public/tags/{code}` and its
+    `/photo`, `POST /v1/public/tags/{code}/scans {visitorId}`, and
+    `POST /v1/public/scans/{scanId}/messages` and `/contact` with the
+    `X-Scan-Token` header. The profile only carries the fields the owner made
+    public (first names only, `ageMonths` instead of the birth date, comuna
+    never with digits). Address, chip number, surnames and phone numbers are
+    never returned; `/contact` returns only the main phone and only when the
+    contact button is visible (else 404). Unknown tags, scans and invalid
+    tokens are the same 404. Every public response is `Cache-Control:
+    no-store` and `X-Robots-Tag: noindex`. A filled `website` honeypot is
+    answered 202 and dropped.
+  - Per-IP quotas (429 with `Retry-After`): profile and photo 60/min, scans
+    20/h, messages 5/h, contact 3/h. The limiter is in memory; with more than
+    one instance it must move to Redis.
+  - Owner routes: `GET/POST /v1/pets/{id}/tags` (POST creates a digital tag),
+    `POST /v1/pets/{id}/tags/{tagId}/disable`, `POST /v1/tags/{code}/activate
+    {petId}` (409 when the tag is already linked or the pet has 5 active tags)
+    and `GET /v1/pets/{id}/scans` (keyset paginated, with finder messages).
+  - Admin routes (`TAGS`): `GET/POST /v1/admin/tag-batches` (1 to 1000 codes)
+    and `GET /v1/admin/tag-batches/{id}/codes.csv` (`code,url` with
+    `PUBLIC_BASE_URL/t/<code>`).
+  - New configuration: `PUBLIC_BASE_URL` (public site origin for tag links)
+    and `TAG_VISITOR_PEPPER` (keys visitor, scan-token and rate-limit hashes).
+    Production requires an `https://` base URL and a pepper of at least 32
+    characters other than the development default.
 
 ### Breaking
 

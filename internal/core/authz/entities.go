@@ -9,6 +9,7 @@ const (
 	EntityUsersPrivileges = "USERS_PRIVILEGES" // assign roles / is_admin
 	EntityAuditEvents     = "AUDIT_EVENTS"
 	EntitySettings        = "SETTINGS"
+	EntityTags            = "TAGS" // tag batches (generation and CSV export)
 )
 
 // Re-export operations for controllers without scattering string literals.

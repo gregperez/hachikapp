@@ -219,6 +219,46 @@ definitions:
         example: +56 9 8765 4321
         type: string
     type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.ActivateTagRequest:
+    properties:
+      petId:
+        example: 2f1c5a0e-6a43-4f8e-9a51-0c2f3f9b7d11
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.CreateTagBatchRequest:
+    description: Batch of physical tags to generate (1 to 1000 codes).
+    properties:
+      label:
+        example: Lote octubre 2026
+        type: string
+      quantity:
+        example: 100
+        type: integer
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.FinderMessageRequest:
+    description: Message left by whoever found the pet. website is a honeypot and
+      must stay empty.
+    properties:
+      body:
+        example: Encontré a Luna en la plaza, está bien.
+        type: string
+      finderName:
+        example: Camila
+        type: string
+      finderPhone:
+        example: +56 9 1111 2222
+        type: string
+      website:
+        example: ""
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.ScanRequest:
+    description: Anonymous scan registration. visitorId is a UUID kept by the browser.
+    properties:
+      visitorId:
+        example: 6f1d2a8e-3b4c-4d5e-8f90-1a2b3c4d5e6f
+        type: string
+    type: object
   github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.AdminUpdateUserRequest:
     properties:
       email:
@@ -479,12 +519,14 @@ definitions:
     - ROLES
     - AUDIT_EVENTS
     - SETTINGS
+    - TAGS
     type: string
     x-enum-varnames:
     - USERS
     - ROLES
     - AUDIT_EVENTS
     - SETTINGS
+    - TAGS
   github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_sessions.SessionResponse:
     description: Active session. Never includes hashes or JWTs.
     properties:
@@ -560,6 +602,214 @@ definitions:
         type: string
       version:
         type: integer
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.PublicContactResponse:
+    properties:
+      phone:
+        example: +56 9 1234 5678
+        type: string
+      whatsappUrl:
+        example: https://wa.me/56912345678
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.PublicProfileResponse:
+    properties:
+      ageMonths:
+        example: 67
+        type: integer
+      allergies:
+        items:
+          type: string
+        type: array
+      breed:
+        example: Mestiza
+        type: string
+      canContact:
+        example: true
+        type: boolean
+      color:
+        example: Café con blanco
+        type: string
+      comuna:
+        example: Ñuñoa
+        type: string
+      distinctiveFeatures:
+        type: string
+      lost:
+        example: false
+        type: boolean
+      name:
+        example: Luna
+        type: string
+      ownerFirstName:
+        example: Wilson
+        type: string
+      photoUrl:
+        example: /v1/public/tags/K7M2Q9XR4P/photo?v=1760820000000
+        type: string
+      secondOwnerFirstName:
+        example: Andrea
+        type: string
+      sex:
+        example: female
+        type: string
+      size:
+        example: medium
+        type: string
+      specialConditions:
+        items:
+          type: string
+        type: array
+      species:
+        example: dog
+        type: string
+      surgeries:
+        items:
+          type: string
+        type: array
+      temperament:
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.PublicTagViewResponse:
+    description: Public tag page. Hidden or empty fields are omitted.
+    properties:
+      profile:
+        $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.PublicProfileResponse'
+      state:
+        enum:
+        - active
+        - unassigned
+        - disabled
+        example: active
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanMessageResponse:
+    properties:
+      body:
+        example: Encontré a Luna en la plaza.
+        type: string
+      createdAt:
+        example: "2026-10-18T21:05:00Z"
+        type: string
+      finderName:
+        example: Camila
+        type: string
+      finderPhone:
+        example: +56 9 1111 2222
+        type: string
+      id:
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanReceiptResponse:
+    properties:
+      scanId:
+        example: 3c0b7f8e-1d2e-4f5a-9b6c-7d8e9f0a1b2c
+        type: string
+      scanToken:
+        example: q0bW9z...
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanResponse:
+    properties:
+      id:
+        type: string
+      messages:
+        items:
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanMessageResponse'
+        type: array
+      phoneRevealedAt:
+        type: string
+      scannedAt:
+        example: "2026-10-18T21:00:00Z"
+        type: string
+      tagCode:
+        example: K7M2Q9XR4P
+        type: string
+      userAgentFamily:
+        enum:
+        - ios
+        - android
+        - desktop
+        - other
+        example: ios
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScansPageResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanResponse'
+        type: array
+      hasNext:
+        type: boolean
+      limit:
+        type: integer
+      nextCursor:
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagBatchResponse:
+    properties:
+      createdAt:
+        example: "2026-10-18T21:00:00Z"
+        type: string
+      id:
+        example: 5b6c7d8e-9f0a-4b1c-8d2e-3f4a5b6c7d8e
+        type: string
+      label:
+        example: Lote octubre 2026
+        type: string
+      quantity:
+        example: 100
+        type: integer
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagBatchesPageResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagBatchResponse'
+        type: array
+      hasNext:
+        type: boolean
+      limit:
+        type: integer
+      nextCursor:
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagResponse:
+    properties:
+      activatedAt:
+        example: "2026-10-18T21:00:00Z"
+        type: string
+      code:
+        example: K7M2Q9XR4P
+        type: string
+      createdAt:
+        example: "2026-10-18T21:00:00Z"
+        type: string
+      disabledAt:
+        type: string
+      id:
+        example: 7a9e2c1d-0b3f-4e5d-8c7b-6a5f4e3d2c1b
+        type: string
+      kind:
+        enum:
+        - physical
+        - digital
+        example: digital
+        type: string
+      petId:
+        example: 2f1c5a0e-6a43-4f8e-9a51-0c2f3f9b7d11
+        type: string
+      status:
+        enum:
+        - unassigned
+        - active
+        - disabled
+        example: active
+        type: string
+      url:
+        example: https://hachikapp.cl/t/K7M2Q9XR4P
+        type: string
     type: object
   github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_users.UserResponse:
     description: UserResponse represents a user response.
@@ -641,6 +891,128 @@ info:
   title: Mi API en Golang
   version: "1.0"
 paths:
+  /v1/admin/tag-batches:
+    get:
+      description: Newest first, keyset paginated. Requires TAGS.read.
+      parameters:
+      - default: 10
+        description: Page size (1-100)
+        in: query
+        maximum: 100
+        name: limit
+        type: integer
+      - description: Opaque cursor returned by the previous page
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagBatchesPageResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: List tag batches
+      tags:
+      - Tag batches
+    post:
+      consumes:
+      - application/json
+      description: Creates quantity (1-1000) unassigned tags with random codes. Requires
+        TAGS.create.
+      parameters:
+      - description: Batch
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.CreateTagBatchRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagBatchResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Generate a batch of physical tags
+      tags:
+      - Tag batches
+  /v1/admin/tag-batches/{id}/codes.csv:
+    get:
+      description: CSV with header `code,url`, one row per tag; url is PUBLIC_BASE_URL/t/<code>.
+        Requires TAGS.read.
+      parameters:
+      - description: Batch ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Download the codes of a tag batch
+      tags:
+      - Tag batches
   /v1/audit-events:
     get:
       description: Returns a keyset page of sanitized audit events. Filters are an
@@ -1287,6 +1659,378 @@ paths:
       summary: Upload or replace the photo of one of my pets
       tags:
       - Pets
+  /v1/pets/{id}/scans:
+    get:
+      description: Newest first, each with the messages finders left (oldest first).
+        Visitor and token hashes and IP prefixes are never returned.
+      parameters:
+      - description: Pet ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 10
+        description: Page size (1-100)
+        in: query
+        maximum: 100
+        name: limit
+        type: integer
+      - description: Opaque cursor returned by the previous page
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScansPageResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: List the scans of one of my pets' tags
+      tags:
+      - Tags
+  /v1/pets/{id}/tags:
+    get:
+      parameters:
+      - description: Pet ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: List the tags of one of my pets
+      tags:
+      - Tags
+    post:
+      description: Creates an already active digital tag (QR) linked to the pet. A
+        pet can have up to 5 active tags.
+      parameters:
+      - description: Pet ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Create a digital tag for one of my pets
+      tags:
+      - Tags
+  /v1/pets/{id}/tags/{tagId}/disable:
+    post:
+      description: The public page of a disabled tag shows no data. There is no reactivation.
+      parameters:
+      - description: Pet ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Tag ID
+        in: path
+        name: tagId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Disable a tag of one of my pets
+      tags:
+      - Tags
+  /v1/public/scans/{scanId}/contact:
+    post:
+      description: No login; requires the X-Scan-Token of the scan. Returns only the
+        main owner phone and a WhatsApp link, and only when the owner shows the contact
+        button; otherwise 404. This is the only public route that returns a phone.
+        Rate limited per IP (3/hour).
+      parameters:
+      - description: Scan ID
+        in: path
+        name: scanId
+        required: true
+        type: string
+      - description: Token returned when the scan was registered
+        in: header
+        name: X-Scan-Token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.PublicContactResponse'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      summary: Reveal the family's phone
+      tags:
+      - Public tags
+  /v1/public/scans/{scanId}/messages:
+    post:
+      consumes:
+      - application/json
+      description: 'No login; requires the X-Scan-Token of the scan. body 1-500 characters,
+        finderName up to 80, finderPhone with the pet record phone rules. website
+        is a honeypot: when filled the request is accepted and nothing is stored.
+        Rate limited per IP (5/hour).'
+      parameters:
+      - description: Scan ID
+        in: path
+        name: scanId
+        required: true
+        type: string
+      - description: Token returned when the scan was registered
+        in: header
+        name: X-Scan-Token
+        required: true
+        type: string
+      - description: Message
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.FinderMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      summary: Leave a message for the pet's family
+      tags:
+      - Public tags
+  /v1/public/tags/{code}:
+    get:
+      description: 'No login. Returns the tag state and, when active, only the fields
+        the owner made public (hidden fields are omitted). Never returns phone numbers,
+        address, chip number or surnames. Responses are `Cache-Control: no-store`
+        and `X-Robots-Tag: noindex`. Rate limited per IP (60/min, shared with the
+        photo).'
+      parameters:
+      - description: Tag code (case-insensitive; spaces and hyphens ignored)
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.PublicTagViewResponse'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      summary: Get the public page of a tag
+      tags:
+      - Public tags
+  /v1/public/tags/{code}/photo:
+    get:
+      description: No login. Only when the tag is active and the owner made the photo
+        public; otherwise 404. Rate limited per IP (60/min, shared with the profile).
+      parameters:
+      - description: Tag code
+        in: path
+        name: code
+        required: true
+        type: string
+      - description: Photo version (cache buster)
+        in: query
+        name: v
+        type: string
+      produces:
+      - image/jpeg
+      - image/png
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      summary: Get the public photo of a tag's pet
+      tags:
+      - Public tags
+  /v1/public/tags/{code}/scans:
+    post:
+      consumes:
+      - application/json
+      description: No login. Called by the page once loaded (not on server render).
+        visitorId is a UUID kept by the browser; repeated scans by the same visitor
+        within 10 minutes reuse the scan and return a new token. Rate limited per
+        IP (20/hour).
+      parameters:
+      - description: Tag code
+        in: path
+        name: code
+        required: true
+        type: string
+      - description: Visitor
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.ScanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanReceiptResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      summary: Register a scan of a tag
+      tags:
+      - Public tags
   /v1/roles:
     get:
       consumes:
@@ -1595,6 +2339,58 @@ paths:
       summary: Get public application branding
       tags:
       - Settings
+  /v1/tags/{code}/activate:
+    post:
+      consumes:
+      - application/json
+      description: Links an unassigned tag to the pet. 409 when the tag is already
+        linked or disabled, or when the pet already has 5 active tags; 404 when the
+        pet is not mine or the code does not exist.
+      parameters:
+      - description: Tag code (case-insensitive; spaces and hyphens ignored)
+        in: path
+        name: code
+        required: true
+        type: string
+      - description: Pet to link
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.ActivateTagRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Activate a physical tag for one of my pets
+      tags:
+      - Tags
   /v1/users:
     get:
       consumes:

@@ -37,10 +37,23 @@ func (authC *AuthController) allow(
 	scope ports.LoginLimitScope,
 	key string,
 ) bool {
-	if authC.limiter == nil {
+	return allowRate(c, authC.limiter, scope, key, "")
+}
+
+// allowRate consumes one unit of scope for key. When the quota is exhausted it
+// writes 429 with Retry-After (and detail, when not empty) and returns false;
+// a limiter error is a 500. A nil limiter allows everything.
+func allowRate(
+	c *gin.Context,
+	limiter ports.LoginLimiter,
+	scope ports.LoginLimitScope,
+	key string,
+	detail string,
+) bool {
+	if limiter == nil {
 		return true
 	}
-	result, err := authC.limiter.Allow(c.Request.Context(), scope, key)
+	result, err := limiter.Allow(c.Request.Context(), scope, key)
 	if err != nil {
 		httpapi.WriteProblem(c, httpapi.Internal(httpapi.RequestID(c)))
 		return false
@@ -53,7 +66,11 @@ func (authC *AuthController) allow(
 		seconds = int(time.Second.Seconds())
 	}
 	c.Header("Retry-After", strconv.Itoa(seconds))
-	httpapi.WriteProblem(c, httpapi.TooManyRequests(httpapi.RequestID(c)))
+	problem := httpapi.TooManyRequests(httpapi.RequestID(c))
+	if detail != "" {
+		problem.Detail = detail
+	}
+	httpapi.WriteProblem(c, problem)
 	return false
 }
 

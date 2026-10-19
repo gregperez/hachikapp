@@ -2,11 +2,11 @@ package bootstrap
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
-	"time"
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 	authBaseServices "github.com/WilsonSayago/authBase/v4/core/services"
@@ -37,6 +37,7 @@ import (
 	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/petstore"
 	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/refreshstore"
 	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/settingsstore"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/tagstore"
 )
 
 // Options configures one isolated Application instance.
@@ -182,7 +183,12 @@ func (a *Application) wire(opts Options) error {
 	sessionUseCase := services.NewSessionService(refreshStore)
 	auditUseCase := services.NewAuditService(auditStore)
 	settingsUseCase := services.NewSettingsService(settingsStore, recorder)
-	petUseCase := services.NewPetService(petstore.New(a.DB), petstore.NewPhotoStore(a.DB))
+	petStore := petstore.New(a.DB)
+	photoStore := petstore.NewPhotoStore(a.DB)
+	petUseCase := services.NewPetService(petStore, photoStore)
+	tagStore := tagstore.New(a.DB)
+	tagUseCase := services.NewTagService(tagStore, petStore, rand.Reader)
+	publicTagUseCase := services.NewPublicTagService(tagStore, tagStore, petStore, photoStore, []byte(opts.Config.Public.VisitorPepper), rand.Reader)
 	roleUseCase := authBaseServices.GetRoleServiceInstance(roles)
 
 	limiter, err := ratelimit.NewMemory(ratelimit.Config{
@@ -208,12 +214,7 @@ func (a *Application) wire(opts Options) error {
 	// Separate instance: anonymous public traffic must never evict login/refresh
 	// entries through the shared MaxEntries LRU. Limits are fixed (per IP).
 	publicLimiter, err := ratelimit.NewMemory(ratelimit.Config{
-		Scopes: map[ports.LoginLimitScope]ratelimit.ScopeConfig{
-			ports.PublicTagViewLimit:    {Limit: 60, Window: time.Minute},
-			ports.PublicTagScanLimit:    {Limit: 20, Window: time.Hour},
-			ports.PublicTagMessageLimit: {Limit: 5, Window: time.Hour},
-			ports.PublicTagContactLimit: {Limit: 3, Window: time.Hour},
-		},
+		Scopes:     ratelimit.PublicTagScopes(),
 		MaxEntries: opts.Config.Auth.RateLimitMaxEntries,
 	})
 	if err != nil {
@@ -252,6 +253,10 @@ func (a *Application) wire(opts Options) error {
 				Audits:         auditUseCase,
 				Settings:       settingsUseCase,
 				Pets:           petUseCase,
+				Tags:           tagUseCase,
+				PublicTags:     publicTagUseCase,
+				PublicBaseURL:  opts.Config.Public.BaseURL,
+				VisitorPepper:  []byte(opts.Config.Public.VisitorPepper),
 			})
 		},
 	})
@@ -350,6 +355,10 @@ type routeDeps struct {
 	Audits         core.AuditUseCase
 	Settings       core.SettingsUseCase
 	Pets           core.PetUseCase
+	Tags           core.TagUseCase
+	PublicTags     core.PublicTagUseCase
+	PublicBaseURL  string
+	VisitorPepper  []byte
 }
 
 func registerRoutes(r *gin.Engine, deps routeDeps) {
@@ -379,6 +388,9 @@ func registerRoutes(r *gin.Engine, deps routeDeps) {
 	controller.NewUserController(deps.Authz, deps.Users, r, deps.Translate).RunController()
 	controller.NewRoleController(deps.Authz, deps.Roles, r, deps.Translate).RunController()
 	controller.NewPetController(deps.Authz, deps.Pets, r, deps.Translate).RunController()
+	controller.NewTagController(deps.Authz, deps.Tags, deps.PublicTags, deps.PublicBaseURL, r).RunController()
+	controller.NewTagAdminController(deps.Authz, deps.Tags, deps.PublicBaseURL, r).RunController()
+	controller.NewPublicTagController(deps.PublicTags, deps.PublicLimiter, deps.OriginResolver, deps.VisitorPepper, r).RunController()
 }
 
 func (a *Application) wireOIDC(

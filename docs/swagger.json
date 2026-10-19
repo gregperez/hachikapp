@@ -9,6 +9,202 @@
     "host": "localhost:8080",
     "basePath": "/",
     "paths": {
+        "/v1/admin/tag-batches": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Newest first, keyset paginated. Requires TAGS.read.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tag batches"
+                ],
+                "summary": "List tag batches",
+                "parameters": [
+                    {
+                        "maximum": 100,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size (1-100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Opaque cursor returned by the previous page",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagBatchesPageResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates quantity (1-1000) unassigned tags with random codes. Requires TAGS.create.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tag batches"
+                ],
+                "summary": "Generate a batch of physical tags",
+                "parameters": [
+                    {
+                        "description": "Batch",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.CreateTagBatchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagBatchResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/admin/tag-batches/{id}/codes.csv": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "CSV with header `code,url`, one row per tag; url is PUBLIC_BASE_URL/t/\u003ccode\u003e. Requires TAGS.read.",
+                "produces": [
+                    "text/csv"
+                ],
+                "tags": [
+                    "Tag batches"
+                ],
+                "summary": "Download the codes of a tag batch",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Batch ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/audit-events": {
             "get": {
                 "security": [
@@ -1037,6 +1233,581 @@
                 }
             }
         },
+        "/v1/pets/{id}/scans": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Newest first, each with the messages finders left (oldest first). Visitor and token hashes and IP prefixes are never returned.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tags"
+                ],
+                "summary": "List the scans of one of my pets' tags",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pet ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "maximum": 100,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size (1-100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Opaque cursor returned by the previous page",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScansPageResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/pets/{id}/tags": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tags"
+                ],
+                "summary": "List the tags of one of my pets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pet ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates an already active digital tag (QR) linked to the pet. A pet can have up to 5 active tags.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tags"
+                ],
+                "summary": "Create a digital tag for one of my pets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pet ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/pets/{id}/tags/{tagId}/disable": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The public page of a disabled tag shows no data. There is no reactivation.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tags"
+                ],
+                "summary": "Disable a tag of one of my pets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pet ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Tag ID",
+                        "name": "tagId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/public/scans/{scanId}/contact": {
+            "post": {
+                "description": "No login; requires the X-Scan-Token of the scan. Returns only the main owner phone and a WhatsApp link, and only when the owner shows the contact button; otherwise 404. This is the only public route that returns a phone. Rate limited per IP (3/hour).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public tags"
+                ],
+                "summary": "Reveal the family's phone",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Scan ID",
+                        "name": "scanId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token returned when the scan was registered",
+                        "name": "X-Scan-Token",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.PublicContactResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/public/scans/{scanId}/messages": {
+            "post": {
+                "description": "No login; requires the X-Scan-Token of the scan. body 1-500 characters, finderName up to 80, finderPhone with the pet record phone rules. website is a honeypot: when filled the request is accepted and nothing is stored. Rate limited per IP (5/hour).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public tags"
+                ],
+                "summary": "Leave a message for the pet's family",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Scan ID",
+                        "name": "scanId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token returned when the scan was registered",
+                        "name": "X-Scan-Token",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Message",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.FinderMessageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/public/tags/{code}": {
+            "get": {
+                "description": "No login. Returns the tag state and, when active, only the fields the owner made public (hidden fields are omitted). Never returns phone numbers, address, chip number or surnames. Responses are `Cache-Control: no-store` and `X-Robots-Tag: noindex`. Rate limited per IP (60/min, shared with the photo).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public tags"
+                ],
+                "summary": "Get the public page of a tag",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tag code (case-insensitive; spaces and hyphens ignored)",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.PublicTagViewResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/public/tags/{code}/photo": {
+            "get": {
+                "description": "No login. Only when the tag is active and the owner made the photo public; otherwise 404. Rate limited per IP (60/min, shared with the profile).",
+                "produces": [
+                    "image/jpeg",
+                    "image/png"
+                ],
+                "tags": [
+                    "Public tags"
+                ],
+                "summary": "Get the public photo of a tag's pet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tag code",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Photo version (cache buster)",
+                        "name": "v",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/public/tags/{code}/scans": {
+            "post": {
+                "description": "No login. Called by the page once loaded (not on server render). visitorId is a UUID kept by the browser; repeated scans by the same visitor within 10 minutes reuse the scan and return a new token. Rate limited per IP (20/hour).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public tags"
+                ],
+                "summary": "Register a scan of a tag",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tag code",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Visitor",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.ScanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanReceiptResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/roles": {
             "get": {
                 "security": [
@@ -1530,6 +2301,88 @@
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/tags/{code}/activate": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Links an unassigned tag to the pet. 409 when the tag is already linked or disabled, or when the pet already has 5 active tags; 404 when the pet is not mine or the code does not exist.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tags"
+                ],
+                "summary": "Activate a physical tag for one of my pets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tag code (case-insensitive; spaces and hyphens ignored)",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Pet to link",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.ActivateTagRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
                         }
@@ -2646,6 +3499,61 @@
                 }
             }
         },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.ActivateTagRequest": {
+            "type": "object",
+            "properties": {
+                "petId": {
+                    "type": "string",
+                    "example": "2f1c5a0e-6a43-4f8e-9a51-0c2f3f9b7d11"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.CreateTagBatchRequest": {
+            "description": "Batch of physical tags to generate (1 to 1000 codes).",
+            "type": "object",
+            "properties": {
+                "label": {
+                    "type": "string",
+                    "example": "Lote octubre 2026"
+                },
+                "quantity": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.FinderMessageRequest": {
+            "description": "Message left by whoever found the pet. website is a honeypot and must stay empty.",
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "example": "Encontré a Luna en la plaza, está bien."
+                },
+                "finderName": {
+                    "type": "string",
+                    "example": "Camila"
+                },
+                "finderPhone": {
+                    "type": "string",
+                    "example": "+56 9 1111 2222"
+                },
+                "website": {
+                    "type": "string",
+                    "example": ""
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.ScanRequest": {
+            "description": "Anonymous scan registration. visitorId is a UUID kept by the browser.",
+            "type": "object",
+            "properties": {
+                "visitorId": {
+                    "type": "string",
+                    "example": "6f1d2a8e-3b4c-4d5e-8f90-1a2b3c4d5e6f"
+                }
+            }
+        },
         "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.AdminUpdateUserRequest": {
             "type": "object",
             "required": [
@@ -3028,13 +3936,15 @@
                 "USERS",
                 "ROLES",
                 "AUDIT_EVENTS",
-                "SETTINGS"
+                "SETTINGS",
+                "TAGS"
             ],
             "x-enum-varnames": [
                 "USERS",
                 "ROLES",
                 "AUDIT_EVENTS",
-                "SETTINGS"
+                "SETTINGS",
+                "TAGS"
             ]
         },
         "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_sessions.SessionResponse": {
@@ -3148,6 +4058,300 @@
                 },
                 "version": {
                     "type": "integer"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.PublicContactResponse": {
+            "type": "object",
+            "properties": {
+                "phone": {
+                    "type": "string",
+                    "example": "+56 9 1234 5678"
+                },
+                "whatsappUrl": {
+                    "type": "string",
+                    "example": "https://wa.me/56912345678"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.PublicProfileResponse": {
+            "type": "object",
+            "properties": {
+                "ageMonths": {
+                    "type": "integer",
+                    "example": 67
+                },
+                "allergies": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "breed": {
+                    "type": "string",
+                    "example": "Mestiza"
+                },
+                "canContact": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "color": {
+                    "type": "string",
+                    "example": "Café con blanco"
+                },
+                "comuna": {
+                    "type": "string",
+                    "example": "Ñuñoa"
+                },
+                "distinctiveFeatures": {
+                    "type": "string"
+                },
+                "lost": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Luna"
+                },
+                "ownerFirstName": {
+                    "type": "string",
+                    "example": "Wilson"
+                },
+                "photoUrl": {
+                    "type": "string",
+                    "example": "/v1/public/tags/K7M2Q9XR4P/photo?v=1760820000000"
+                },
+                "secondOwnerFirstName": {
+                    "type": "string",
+                    "example": "Andrea"
+                },
+                "sex": {
+                    "type": "string",
+                    "example": "female"
+                },
+                "size": {
+                    "type": "string",
+                    "example": "medium"
+                },
+                "specialConditions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "species": {
+                    "type": "string",
+                    "example": "dog"
+                },
+                "surgeries": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "temperament": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.PublicTagViewResponse": {
+            "description": "Public tag page. Hidden or empty fields are omitted.",
+            "type": "object",
+            "properties": {
+                "profile": {
+                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.PublicProfileResponse"
+                },
+                "state": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "unassigned",
+                        "disabled"
+                    ],
+                    "example": "active"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanMessageResponse": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "example": "Encontré a Luna en la plaza."
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-18T21:05:00Z"
+                },
+                "finderName": {
+                    "type": "string",
+                    "example": "Camila"
+                },
+                "finderPhone": {
+                    "type": "string",
+                    "example": "+56 9 1111 2222"
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanReceiptResponse": {
+            "type": "object",
+            "properties": {
+                "scanId": {
+                    "type": "string",
+                    "example": "3c0b7f8e-1d2e-4f5a-9b6c-7d8e9f0a1b2c"
+                },
+                "scanToken": {
+                    "type": "string",
+                    "example": "q0bW9z..."
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanMessageResponse"
+                    }
+                },
+                "phoneRevealedAt": {
+                    "type": "string"
+                },
+                "scannedAt": {
+                    "type": "string",
+                    "example": "2026-10-18T21:00:00Z"
+                },
+                "tagCode": {
+                    "type": "string",
+                    "example": "K7M2Q9XR4P"
+                },
+                "userAgentFamily": {
+                    "type": "string",
+                    "enum": [
+                        "ios",
+                        "android",
+                        "desktop",
+                        "other"
+                    ],
+                    "example": "ios"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScansPageResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanResponse"
+                    }
+                },
+                "hasNext": {
+                    "type": "boolean"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "nextCursor": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagBatchResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-18T21:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "5b6c7d8e-9f0a-4b1c-8d2e-3f4a5b6c7d8e"
+                },
+                "label": {
+                    "type": "string",
+                    "example": "Lote octubre 2026"
+                },
+                "quantity": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagBatchesPageResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagBatchResponse"
+                    }
+                },
+                "hasNext": {
+                    "type": "boolean"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "nextCursor": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.TagResponse": {
+            "type": "object",
+            "properties": {
+                "activatedAt": {
+                    "type": "string",
+                    "example": "2026-10-18T21:00:00Z"
+                },
+                "code": {
+                    "type": "string",
+                    "example": "K7M2Q9XR4P"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-18T21:00:00Z"
+                },
+                "disabledAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "7a9e2c1d-0b3f-4e5d-8c7b-6a5f4e3d2c1b"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "physical",
+                        "digital"
+                    ],
+                    "example": "digital"
+                },
+                "petId": {
+                    "type": "string",
+                    "example": "2f1c5a0e-6a43-4f8e-9a51-0c2f3f9b7d11"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "unassigned",
+                        "active",
+                        "disabled"
+                    ],
+                    "example": "active"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://hachikapp.cl/t/K7M2Q9XR4P"
                 }
             }
         },

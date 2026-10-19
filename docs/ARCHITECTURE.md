@@ -79,6 +79,10 @@ Rutas públicas:
 - `GET /health/live`
 - `GET /health/ready`
 - `GET /.well-known/jwks.json` — solo si hay claves públicas de access
+- `GET /v1/public/tags/{code}` y `GET /v1/public/tags/{code}/photo`
+- `POST /v1/public/tags/{code}/scans`
+- `POST /v1/public/scans/{scanId}/messages` y `.../contact` (cabecera
+  `X-Scan-Token`)
 
 Las rutas de usuarios y roles requieren access token; las operaciones
 administrativas además requieren permisos por entidad y acción. `base-agent`
@@ -104,6 +108,30 @@ por entidad: como `/v1/users/me/sessions`, el recurso pertenece al usuario y
 - `PetPhotoPort` (`petstore.PhotoStore`) guarda los bytes en `pet_photos`; la
   ficha solo conoce `photo_updated_at`, así que la foto puede migrar a S3/GCS
   cambiando el adaptador.
+
+## Placas y ficha pública
+
+Una placa (`pet_tags`, física o digital) enlaza a `PUBLIC_BASE_URL/t/<code>`.
+`TagService` genera lotes (admin) y activa, crea y desactiva placas (dueño);
+`PublicTagService` atiende la página pública sin login y el historial de
+escaneos del dueño. `tagstore.Store` implementa `TagPort` y `TagScanPort`.
+
+- **Rutas públicas** (`PublicTagController`): sin JWT. Responden con
+  `Cache-Control: no-store` y `X-Robots-Tag: noindex`, incluso en errores y
+  429. El perfil sale solo de `domain.PublicProfileOf`: nunca lleva teléfono,
+  dirección, número de chip ni apellidos. `/contact` es la única ruta que
+  devuelve un teléfono (solo el principal y solo si el botón de contacto es
+  visible). Placa, escaneo o token desconocidos responden el mismo 404.
+- **Límites por IP**: un `ratelimit.Memory` propio (`ratelimit.PublicTagScopes`),
+  separado del de login para que el tráfico anónimo no desaloje esas
+  entradas. La clave es `KeyedHash(pepper, ip)`. Es memoria del proceso: **con
+  varias instancias hay que reemplazarlo por Redis**.
+- **Dueño** (`TagController`): `/v1/pets/{id}/tags`, `/v1/tags/{code}/activate`
+  y `/v1/pets/{id}/scans`, solo con JWT; la propiedad la valida el caso de uso.
+  El historial nunca expone los hashes de visitante y token ni el prefijo IP.
+- **Admin** (`TagAdminController`): `/v1/admin/tag-batches` con
+  `PoliciesGuard` sobre la entidad `TAGS` (crear para POST, leer para GET).
+  La migración `000020_tags_permission` da ese permiso al rol `admin`.
 
 ## Paginación keyset
 

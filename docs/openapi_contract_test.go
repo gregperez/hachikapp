@@ -58,6 +58,17 @@ func TestOpenAPIContract(t *testing.T) {
 		"/v1/roles",
 		"/v1/roles/{id}",
 		"/v1/roles/{id}/change-status",
+		"/v1/public/tags/{code}",
+		"/v1/public/tags/{code}/photo",
+		"/v1/public/tags/{code}/scans",
+		"/v1/public/scans/{scanId}/messages",
+		"/v1/public/scans/{scanId}/contact",
+		"/v1/pets/{id}/tags",
+		"/v1/pets/{id}/tags/{tagId}/disable",
+		"/v1/pets/{id}/scans",
+		"/v1/tags/{code}/activate",
+		"/v1/admin/tag-batches",
+		"/v1/admin/tag-batches/{id}/codes.csv",
 	}
 	for _, p := range required {
 		if _, ok := paths[p]; !ok {
@@ -66,13 +77,18 @@ func TestOpenAPIContract(t *testing.T) {
 	}
 
 	publicNoAuth := map[string]bool{
-		"post /v1/auth/login":                true,
-		"post /v1/auth/refresh-token":        true,
-		"post /v1/auth/logout":               true,
-		"get /v1/auth/oidc/google/login":     true,
-		"get /v1/auth/oidc/google/callback":  true,
-		"post /v1/auth/oidc/google/exchange": true,
-		"get /v1/settings/public":            true,
+		"post /v1/auth/login":                     true,
+		"post /v1/auth/refresh-token":             true,
+		"post /v1/auth/logout":                    true,
+		"get /v1/auth/oidc/google/login":          true,
+		"get /v1/auth/oidc/google/callback":       true,
+		"post /v1/auth/oidc/google/exchange":      true,
+		"get /v1/settings/public":                 true,
+		"get /v1/public/tags/{code}":              true,
+		"get /v1/public/tags/{code}/photo":        true,
+		"post /v1/public/tags/{code}/scans":       true,
+		"post /v1/public/scans/{scanId}/messages": true,
+		"post /v1/public/scans/{scanId}/contact":  true,
 	}
 	for path, methods := range paths {
 		methodMap, _ := methods.(map[string]any)
@@ -96,6 +112,8 @@ func TestOpenAPIContract(t *testing.T) {
 			}
 			if strings.HasPrefix(path, "/v1/users") || strings.HasPrefix(path, "/v1/roles") ||
 				strings.HasPrefix(path, "/v1/audit-events") || strings.HasPrefix(path, "/v1/settings") ||
+				strings.HasPrefix(path, "/v1/pets") || strings.HasPrefix(path, "/v1/tags") ||
+				strings.HasPrefix(path, "/v1/admin") ||
 				key == "post /v1/auth/oidc/google/link" || key == "delete /v1/auth/oidc/google" {
 				if !hasBearer {
 					t.Fatalf("private route %s missing BearerAuth", key)
@@ -116,6 +134,20 @@ func TestOpenAPIContract(t *testing.T) {
 		if strings.Contains(lname, "response") || strings.Contains(lname, "userresponse") ||
 			strings.Contains(lname, "pageresponse") || strings.Contains(lname, "authdto") {
 			t.Fatalf("response schema %s exposes password", name)
+		}
+	}
+
+	// The public profile schema never documents private owner data.
+	for name, defAny := range defs {
+		if !strings.Contains(name, "PublicTagViewResponse") && !strings.Contains(name, "PublicProfileResponse") {
+			continue
+		}
+		def, _ := defAny.(map[string]any)
+		props, _ := def["properties"].(map[string]any)
+		for _, private := range []string{"phone", "phoneAlt", "address", "chipNumber", "fullName", "owner", "secondOwner"} {
+			if _, ok := props[private]; ok {
+				t.Fatalf("public schema %s exposes %s", name, private)
+			}
 		}
 	}
 

@@ -15,6 +15,7 @@ const (
 	ROLES        RoutePathEnumDto = RoutePathEnumDto(domain.ROLES)
 	AUDIT_EVENTS RoutePathEnumDto = "AUDIT_EVENTS"
 	SETTINGS     RoutePathEnumDto = "SETTINGS"
+	TAGS         RoutePathEnumDto = "TAGS"
 )
 
 // RoleResponse represents a role response.

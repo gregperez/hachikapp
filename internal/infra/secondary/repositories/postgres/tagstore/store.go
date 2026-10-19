@@ -54,7 +54,7 @@ func (s *Store) CreateBatch(ctx context.Context, batch domain.TagBatch, codes []
 	}
 	row := tx.QueryRow(ctx, `INSERT INTO public.tag_batches (label, quantity, created_by)
 VALUES ($1, $2, $3::uuid)
-RETURNING `+batchColumns, strings.TrimSpace(batch.Label), batch.Quantity, createdBy)
+RETURNING `+batchColumns, strings.TrimSpace(batch.Label), len(codes), createdBy)
 	created, err := scanBatch(row)
 	if err != nil {
 		return domain.TagBatch{}, fmt.Errorf("insert tag batch: %w", err)
@@ -137,38 +137,84 @@ WHERE pet_id = $2::uuid AND owner_id = $1::uuid
 ORDER BY created_at DESC, id DESC`, ownerID, petID)
 }
 
-func (s *Store) CountActiveByPet(ctx context.Context, petID string) (int, error) {
-	var count int
-	if err := s.db.QueryRow(ctx, `SELECT count(*) FROM public.pet_tags WHERE pet_id = $1::uuid AND status = 'active'`, petID).Scan(&count); err != nil {
-		return 0, fmt.Errorf("count active tags: %w", err)
-	}
-	return count, nil
-}
-
-func (s *Store) Activate(ctx context.Context, code, ownerID, petID string, at time.Time) (domain.PetTag, error) {
-	row := s.db.QueryRow(ctx, `UPDATE public.pet_tags
+func (s *Store) Activate(ctx context.Context, code, ownerID, petID string, maxActive int, at time.Time) (domain.PetTag, error) {
+	var tag domain.PetTag
+	err := s.withPetLock(ctx, ownerID, petID, maxActive, func(tx database.Transaction) error {
+		row := tx.QueryRow(ctx, `UPDATE public.pet_tags
 SET status = 'active', pet_id = $3::uuid, owner_id = $2::uuid, activated_at = $4, disabled_at = NULL
 WHERE code = $1 AND status = 'unassigned' AND (owner_id IS NULL OR owner_id = $2::uuid)
 RETURNING `+tagColumns, code, ownerID, petID, at)
-	tag, err := singleTag(row, "activate tag")
-	if errors.Is(err, domain.ErrNotFound) {
-		return domain.PetTag{}, domain.ErrTagNotAssignable
-	}
-	return tag, err
-}
-
-func (s *Store) CreateDigital(ctx context.Context, ownerID, petID, code string, at time.Time) (domain.PetTag, error) {
-	row := s.db.QueryRow(ctx, `INSERT INTO public.pet_tags (code, kind, status, pet_id, owner_id, activated_at)
-VALUES ($1, 'digital', 'active', $2::uuid, $3::uuid, $4)
-RETURNING `+tagColumns, code, petID, ownerID, at)
-	tag, err := scanTag(row)
-	if err != nil {
-		if isCodeConflict(err) {
-			return domain.PetTag{}, domain.ErrDuplicateTagCode
+		var err error
+		tag, err = singleTag(row, "activate tag")
+		if errors.Is(err, domain.ErrNotFound) {
+			return domain.ErrTagNotAssignable
 		}
-		return domain.PetTag{}, fmt.Errorf("create digital tag: %w", err)
+		return err
+	})
+	if err != nil {
+		return domain.PetTag{}, err
 	}
 	return tag, nil
+}
+
+func (s *Store) CreateDigital(ctx context.Context, ownerID, petID, code string, maxActive int, at time.Time) (domain.PetTag, error) {
+	var tag domain.PetTag
+	err := s.withPetLock(ctx, ownerID, petID, maxActive, func(tx database.Transaction) error {
+		row := tx.QueryRow(ctx, `INSERT INTO public.pet_tags (code, kind, status, pet_id, owner_id, activated_at)
+VALUES ($1, 'digital', 'active', $2::uuid, $3::uuid, $4)
+RETURNING `+tagColumns, code, petID, ownerID, at)
+		var err error
+		tag, err = scanTag(row)
+		if err != nil {
+			if isCodeConflict(err) {
+				return domain.ErrDuplicateTagCode
+			}
+			return fmt.Errorf("create digital tag: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return domain.PetTag{}, err
+	}
+	return tag, nil
+}
+
+// withPetLock runs write in a transaction that holds a row lock on the owner's
+// pet, so concurrent activations of the same pet serialize and the active-tag
+// limit cannot be exceeded.
+func (s *Store) withPetLock(ctx context.Context, ownerID, petID string, maxActive int, write func(tx database.Transaction) error) error {
+	tx, err := s.db.BeginTx(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tag write: %w", err)
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback(context.WithoutCancel(ctx))
+		}
+	}()
+	var locked int
+	if err := tx.QueryRow(ctx, `SELECT 1 FROM public.pets WHERE id = $1::uuid AND owner_id = $2::uuid FOR UPDATE`, petID, ownerID).Scan(&locked); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.ErrNotFound
+		}
+		return fmt.Errorf("lock pet: %w", err)
+	}
+	var active int
+	if err := tx.QueryRow(ctx, `SELECT count(*) FROM public.pet_tags WHERE pet_id = $1::uuid AND status = 'active'`, petID).Scan(&active); err != nil {
+		return fmt.Errorf("count active tags: %w", err)
+	}
+	if active >= maxActive {
+		return domain.ErrTagLimitReached
+	}
+	if err := write(tx); err != nil {
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit tag write: %w", err)
+	}
+	committed = true
+	return nil
 }
 
 func (s *Store) Disable(ctx context.Context, ownerID, petID, tagID string, at time.Time) (domain.PetTag, error) {

@@ -137,22 +137,19 @@ func TestTagStoreBatchAndActivation(t *testing.T) {
 		t.Fatalf("unknown code: %v", err)
 	}
 
-	active, err := store.Activate(ctx, codes[0], ownerA, petA, at)
+	active, err := store.Activate(ctx, codes[0], ownerA, petA, domain.MaxActiveTagsPerPet, at)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if active.Status != domain.TagStatusActive || active.PetID != petA || active.OwnerID != ownerA || active.ActivatedAt == nil || active.DisabledAt != nil {
 		t.Fatalf("active=%+v", active)
 	}
-	if _, err := store.Activate(ctx, codes[0], ownerA, petA, at); !errors.Is(err, domain.ErrTagNotAssignable) {
+	if _, err := store.Activate(ctx, codes[0], ownerA, petA, domain.MaxActiveTagsPerPet, at); !errors.Is(err, domain.ErrTagNotAssignable) {
 		t.Fatalf("second activation: %v", err)
 	}
 	list, err := store.ListByPet(ctx, ownerA, petA)
 	if err != nil || len(list) != 1 || list[0].Code != codes[0] {
 		t.Fatalf("list=%+v err=%v", list, err)
-	}
-	if n, err := store.CountActiveByPet(ctx, petA); err != nil || n != 1 {
-		t.Fatalf("count=%d err=%v", n, err)
 	}
 }
 
@@ -182,10 +179,10 @@ func TestTagStoreDuplicateCode(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM public.tag_batches WHERE label = 'Dup 2' AND created_by = $1::uuid`, ownerA).Scan(&leaked); err != nil || leaked != 0 {
 		t.Fatalf("leaked batches=%d err=%v", leaked, err)
 	}
-	if _, err := store.CreateDigital(ctx, ownerA, petA, codes[0], time.Now()); !errors.Is(err, domain.ErrDuplicateTagCode) {
+	if _, err := store.CreateDigital(ctx, ownerA, petA, codes[0], domain.MaxActiveTagsPerPet, time.Now()); !errors.Is(err, domain.ErrDuplicateTagCode) {
 		t.Fatalf("duplicate digital: %v", err)
 	}
-	digital, err := store.CreateDigital(ctx, ownerA, petA, "DGTAAB0001", time.Now())
+	digital, err := store.CreateDigital(ctx, ownerA, petA, "DGTAAB0001", domain.MaxActiveTagsPerPet, time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -205,7 +202,7 @@ func TestTagStoreDisableIsOwnerScoped(t *testing.T) {
 	petA := createPet(t, pets, ownerA, "Luna")
 	at := time.Now().UTC()
 
-	tag, err := store.CreateDigital(ctx, ownerA, petA, "DSBAAB0001", at)
+	tag, err := store.CreateDigital(ctx, ownerA, petA, "DSBAAB0001", domain.MaxActiveTagsPerPet, at)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -225,8 +222,8 @@ func TestTagStoreDisableIsOwnerScoped(t *testing.T) {
 	if _, err := store.Disable(ctx, ownerA, petA, tag.ID, at); !errors.Is(err, domain.ErrNotFound) {
 		t.Fatalf("second disable: %v", err)
 	}
-	if n, err := store.CountActiveByPet(ctx, petA); err != nil || n != 0 {
-		t.Fatalf("count=%d err=%v", n, err)
+	if list, err := store.ListByPet(ctx, ownerA, petA); err != nil || len(list) != 1 || list[0].Status != domain.TagStatusDisabled {
+		t.Fatalf("list=%+v err=%v", list, err)
 	}
 }
 
@@ -240,17 +237,18 @@ func TestTagStorePetDeletionReleasesTag(t *testing.T) {
 	ownerB := createUser(t, pool, "tag-rel-b@example.test")
 	petA := createPet(t, pets, ownerA, "Luna")
 	petA2 := createPet(t, pets, ownerA, "Nube")
+	petB := createPet(t, pets, ownerB, "Rex")
 	at := time.Now().UTC()
 
 	codes := newCodes("TAGRESAB", 2)
 	if _, err := store.CreateBatch(ctx, domain.TagBatch{Label: "Release", Quantity: 2, CreatedBy: ownerA}, codes); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.Activate(ctx, codes[0], ownerA, petA, at); err != nil {
+	if _, err := store.Activate(ctx, codes[0], ownerA, petA, domain.MaxActiveTagsPerPet, at); err != nil {
 		t.Fatal(err)
 	}
 	// A disabled tag is released too.
-	disabledTag, err := store.Activate(ctx, codes[1], ownerA, petA, at)
+	disabledTag, err := store.Activate(ctx, codes[1], ownerA, petA, domain.MaxActiveTagsPerPet, at)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -270,14 +268,60 @@ func TestTagStorePetDeletionReleasesTag(t *testing.T) {
 			t.Fatalf("released=%+v", released)
 		}
 	}
-	if _, err := store.Activate(ctx, codes[0], ownerB, petA2, at); !errors.Is(err, domain.ErrTagNotAssignable) {
+	if _, err := store.Activate(ctx, codes[0], ownerB, petB, domain.MaxActiveTagsPerPet, at); !errors.Is(err, domain.ErrTagNotAssignable) {
 		t.Fatalf("owner B activation: %v", err)
 	}
-	again, err := store.Activate(ctx, codes[0], ownerA, petA2, at)
+	again, err := store.Activate(ctx, codes[0], ownerA, petA2, domain.MaxActiveTagsPerPet, at)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if again.Status != domain.TagStatusActive || again.PetID != petA2 {
 		t.Fatalf("again=%+v", again)
+	}
+}
+
+func TestTagStoreEnforcesActiveLimitAtomically(t *testing.T) {
+	pool := testPool(t)
+	db := database.NewPostgresPgxForTest(pool)
+	store := tagstore.New(db)
+	pets := petstore.New(db)
+	ctx := context.Background()
+	ownerA := createUser(t, pool, "tag-lim-a@example.test")
+	ownerB := createUser(t, pool, "tag-lim-b@example.test")
+	petA := createPet(t, pets, ownerA, "Luna")
+	petB := createPet(t, pets, ownerB, "Rex")
+	at := time.Now().UTC()
+
+	codes := newCodes("TAGKMTAB", 7)
+	if _, err := store.CreateBatch(ctx, domain.TagBatch{Label: "Limit", Quantity: 99, CreatedBy: ownerA}, codes); err != nil {
+		t.Fatal(err)
+	}
+	var qty int
+	if err := pool.QueryRow(ctx, `SELECT quantity FROM public.tag_batches WHERE created_by = $1::uuid AND label = 'Limit'`, ownerA).Scan(&qty); err != nil || qty != 7 {
+		t.Fatalf("quantity=%d err=%v", qty, err)
+	}
+	for i := 0; i < domain.MaxActiveTagsPerPet; i++ {
+		if _, err := store.Activate(ctx, codes[i], ownerA, petA, domain.MaxActiveTagsPerPet, at); err != nil {
+			t.Fatalf("activation %d: %v", i, err)
+		}
+	}
+	if _, err := store.Activate(ctx, codes[5], ownerA, petA, domain.MaxActiveTagsPerPet, at); !errors.Is(err, domain.ErrTagLimitReached) {
+		t.Fatalf("sixth activation: %v", err)
+	}
+	if _, err := store.CreateDigital(ctx, ownerA, petA, "KMDIG00001", domain.MaxActiveTagsPerPet, at); !errors.Is(err, domain.ErrTagLimitReached) {
+		t.Fatalf("sixth digital: %v", err)
+	}
+	if got, err := store.GetByCode(ctx, codes[5]); err != nil || got.Status != domain.TagStatusUnassigned {
+		t.Fatalf("limit-rejected tag changed: %+v err=%v", got, err)
+	}
+	// Activating for a pet of another owner is not found.
+	if _, err := store.Activate(ctx, codes[5], ownerB, petA, domain.MaxActiveTagsPerPet, at); !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("foreign pet activation: %v", err)
+	}
+	if _, err := store.CreateDigital(ctx, ownerB, petA, "KMDIG00002", domain.MaxActiveTagsPerPet, at); !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("foreign pet digital: %v", err)
+	}
+	if _, err := store.Activate(ctx, codes[5], ownerA, petB, domain.MaxActiveTagsPerPet, at); !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("owner A with owner B pet: %v", err)
 	}
 }

@@ -161,6 +161,9 @@ func applyEnv(cfg *Config) error {
 	if err := applyTokenKeysEnv(&cfg.Auth.TokenKeys); err != nil {
 		return err
 	}
+	setStr(&cfg.Public.BaseURL, "PUBLIC_BASE_URL")
+	setStr(&cfg.Public.VisitorPepper, "TAG_VISITOR_PEPPER")
+	cfg.Public.BaseURL = strings.TrimRight(strings.TrimSpace(cfg.Public.BaseURL), "/")
 	return applyOIDCEnv(&cfg.Auth.OIDC)
 }
 

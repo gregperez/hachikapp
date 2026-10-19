@@ -319,3 +319,85 @@ func TestValidateRejectsInvalidTrustedProxyCIDR(t *testing.T) {
 		t.Fatalf("err=%v", err)
 	}
 }
+
+func validProductionConfig() appconfig.Config {
+	cfg := appconfig.Defaults()
+	cfg.Database.Password = "real-production-password-value"
+	cfg.Database.SSLMode = "require"
+	cfg.Runtime.Environment = "production"
+	cfg.CORS.AllowedOrigins = []string{"https://app.example.com"}
+	cfg.Public.BaseURL = "https://app.example.com"
+	cfg.Public.VisitorPepper = strings.Repeat("p", 40)
+	return cfg
+}
+
+func TestPublicConfigFromEnv(t *testing.T) {
+	t.Setenv("DB_PASSWORD", "secret-password-value")
+	t.Setenv("DB_SSLMODE", "disable")
+	t.Setenv("APP_ENV", "development")
+
+	cfg, err := appconfig.Load(appconfig.DatabaseConfig{})
+	if err != nil {
+		t.Fatalf("Load defaults: %v", err)
+	}
+	if cfg.Public.BaseURL != "http://localhost:3000" || cfg.Public.VisitorPepper != "dev-only-tag-pepper" {
+		t.Fatalf("defaults=%+v", cfg.Public)
+	}
+
+	t.Setenv("PUBLIC_BASE_URL", "https://hachik.example.com/")
+	t.Setenv("TAG_VISITOR_PEPPER", "custom-pepper-value")
+	cfg, err = appconfig.Load(appconfig.DatabaseConfig{})
+	if err != nil {
+		t.Fatalf("Load env: %v", err)
+	}
+	if cfg.Public.BaseURL != "https://hachik.example.com" {
+		t.Fatalf("base url=%q", cfg.Public.BaseURL)
+	}
+	if cfg.Public.VisitorPepper != "custom-pepper-value" {
+		t.Fatalf("pepper not loaded")
+	}
+}
+
+func TestPublicBaseURLValidation(t *testing.T) {
+	for _, bad := range []string{"", "localhost:3000", "/relative", "ftp://x.com", "http://", "https://x.com/path", "https://x.com?q=1", "https://x.com/#f"} {
+		cfg := appconfig.Defaults()
+		cfg.Database.Password = "pw-value"
+		cfg.Public.BaseURL = bad
+		err := cfg.Validate()
+		if err == nil || !strings.Contains(err.Error(), "public.baseURL") {
+			t.Fatalf("base=%q err=%v", bad, err)
+		}
+	}
+	cfg := appconfig.Defaults()
+	cfg.Database.Password = "pw-value"
+	cfg.Public.VisitorPepper = ""
+	if err := cfg.Validate(); err == nil || !strings.Contains(err.Error(), "public.visitorPepper") {
+		t.Fatalf("empty pepper err=%v", err)
+	}
+}
+
+func TestProductionRejectsDefaultPepper(t *testing.T) {
+	if err := validProductionConfig().Validate(); err != nil {
+		t.Fatalf("valid production config: %v", err)
+	}
+	for _, pepper := range []string{appconfig.Defaults().Public.VisitorPepper, "short-pepper", strings.Repeat("p", 31)} {
+		cfg := validProductionConfig()
+		cfg.Public.VisitorPepper = pepper
+		err := cfg.Validate()
+		if err == nil || !strings.Contains(err.Error(), "public.visitorPepper") {
+			t.Fatalf("pepper len=%d err=%v", len(pepper), err)
+		}
+		if strings.Contains(err.Error(), pepper) {
+			t.Fatal("error must not include the pepper")
+		}
+	}
+}
+
+func TestProductionRequiresHTTPSPublicBaseURL(t *testing.T) {
+	cfg := validProductionConfig()
+	cfg.Public.BaseURL = "http://app.example.com"
+	err := cfg.Validate()
+	if err == nil || !strings.Contains(err.Error(), "public.baseURL") {
+		t.Fatalf("err=%v", err)
+	}
+}

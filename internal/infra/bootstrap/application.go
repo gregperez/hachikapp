@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 	authBaseServices "github.com/WilsonSayago/authBase/v4/core/services"
@@ -204,6 +205,20 @@ func (a *Application) wire(opts Options) error {
 	if err != nil {
 		return fmt.Errorf("login limiter: %w", err)
 	}
+	// Separate instance: anonymous public traffic must never evict login/refresh
+	// entries through the shared MaxEntries LRU. Limits are fixed (per IP).
+	publicLimiter, err := ratelimit.NewMemory(ratelimit.Config{
+		Scopes: map[ports.LoginLimitScope]ratelimit.ScopeConfig{
+			ports.PublicTagViewLimit:    {Limit: 60, Window: time.Minute},
+			ports.PublicTagScanLimit:    {Limit: 20, Window: time.Hour},
+			ports.PublicTagMessageLimit: {Limit: 5, Window: time.Hour},
+			ports.PublicTagContactLimit: {Limit: 3, Window: time.Hour},
+		},
+		MaxEntries: opts.Config.Auth.RateLimitMaxEntries,
+	})
+	if err != nil {
+		return fmt.Errorf("public limiter: %w", err)
+	}
 	originResolver, err := controller.NewClientOriginResolver(opts.Config.Auth.TrustedProxyCIDRs)
 	if err != nil {
 		return fmt.Errorf("client origin resolver: %w", err)
@@ -228,6 +243,7 @@ func (a *Application) wire(opts Options) error {
 				Tokens:         tokens,
 				Translate:      translate,
 				Limiter:        limiter,
+				PublicLimiter:  publicLimiter,
 				OriginResolver: originResolver,
 				OIDC:           a.oidcService,
 				OIDCConfig:     opts.Config.Auth.OIDC,
@@ -325,6 +341,7 @@ type routeDeps struct {
 	Tokens         *authBaseServices.TokenManager
 	Translate      config.ITranslate
 	Limiter        ports.LoginLimiter
+	PublicLimiter  ports.LoginLimiter
 	OriginResolver *controller.ClientOriginResolver
 	OIDC           *services.OIDCService
 	OIDCConfig     appconfig.OIDCConfig

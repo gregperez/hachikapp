@@ -3,6 +3,7 @@ package appconfig
 import (
 	"fmt"
 	"net/netip"
+	"net/url"
 	"strings"
 )
 
@@ -112,6 +113,10 @@ func (c Config) Validate() error {
 		return err
 	}
 
+	if err := c.Public.validate(); err != nil {
+		return err
+	}
+
 	if c.CORS.AllowCredentials {
 		for _, origin := range c.CORS.AllowedOrigins {
 			if origin == "*" {
@@ -145,6 +150,27 @@ func (c Config) validateProduction() error {
 	}
 	if looksLikePlaceholder(c.Database.Password) {
 		return RedactedError("database.password", "rejects placeholder values in production")
+	}
+	if !strings.HasPrefix(strings.ToLower(c.Public.BaseURL), "https://") {
+		return RedactedError("public.baseURL", "must use https in production")
+	}
+	if c.Public.VisitorPepper == DefaultVisitorPepper {
+		return RedactedError("public.visitorPepper", "must not be the development default in production")
+	}
+	if len(c.Public.VisitorPepper) < 32 {
+		return RedactedError("public.visitorPepper", "must be at least 32 characters in production")
+	}
+	return nil
+}
+
+func (p PublicConfig) validate() error {
+	u, err := url.Parse(p.BaseURL)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" ||
+		(u.Path != "" && u.Path != "/") || u.RawQuery != "" || u.Fragment != "" || u.User != nil {
+		return RedactedError("public.baseURL", "must be an absolute http(s) URL without path, query or fragment")
+	}
+	if strings.TrimSpace(p.VisitorPepper) == "" {
+		return RedactedError("public.visitorPepper", "is required")
 	}
 	return nil
 }

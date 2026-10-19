@@ -22,6 +22,18 @@ type Config struct {
 	Docs     DocsConfig
 	Runtime  RuntimeConfig
 	Auth     AuthConfig
+	Public   PublicConfig
+}
+
+// DefaultVisitorPepper is the development-only pepper; production rejects it.
+const DefaultVisitorPepper = "dev-only-tag-pepper"
+
+// PublicConfig configures the anonymous public pet profile.
+type PublicConfig struct {
+	// BaseURL is the public web origin used to build tag links (no trailing slash).
+	BaseURL string
+	// VisitorPepper keys the visitor hash. Secret: never log or print it.
+	VisitorPepper string
 }
 
 type ServerConfig struct {
@@ -136,6 +148,10 @@ func Defaults() Config {
 			AllowCredentials: true,
 		},
 		Docs: DocsConfig{SwaggerEnabled: false},
+		Public: PublicConfig{
+			BaseURL:       "http://localhost:3000",
+			VisitorPepper: DefaultVisitorPepper,
+		},
 		Runtime: RuntimeConfig{
 			Environment: EnvDevelopment,
 			LogLevel:    "info",

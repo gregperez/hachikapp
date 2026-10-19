@@ -18,6 +18,9 @@
 #   SERVER_IDLE_TIMEOUT, SERVER_SHUTDOWN_TIMEOUT
 #   CORS_ALLOWED_ORIGINS (comma-separated), CORS_ALLOW_CREDENTIALS
 #   SWAGGER_ENABLED (default false; must stay false in production)
+#   PUBLIC_BASE_URL (public web origin for tag links; default http://localhost:3000; https in production)
+#   TAG_VISITOR_PEPPER (secret for the visitor hash; production: >= 32 chars, not the dev default;
+#     generate with: openssl rand -base64 48)
 #
 # Generate secrets, for example:
 #   export DB_PASSWORD="$(openssl rand -base64 24)"

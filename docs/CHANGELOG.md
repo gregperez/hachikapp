@@ -22,7 +22,9 @@
   to move to object storage.
 - Pet tags ("Ficha pública", part 1). Migrations `000019_pet_tags` (tags,
   batches, scans and finder messages) and `000020_tags_permission`, which
-  gives the `admin` role the new `TAGS` route and permission (create, read).
+  gives the `admin` role the new `TAGS` route and permission (create, read)
+  additively: other routes and permissions of the role are kept, and down
+  removes only the `TAGS` entries.
   - Public routes without login: `GET /v1/public/tags/{code}` and its
     `/photo`, `POST /v1/public/tags/{code}/scans {visitorId}`, and
     `POST /v1/public/scans/{scanId}/messages` and `/contact` with the

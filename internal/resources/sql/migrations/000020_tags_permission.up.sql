@@ -1,13 +1,13 @@
 -- Admin role gets the TAGS route and permission (create and read tag batches).
+-- Additive and idempotent: other routes and permissions are left untouched.
 
 UPDATE public.roles
-SET routes = ARRAY['USERS', 'ROLES', 'AUDIT_EVENTS', 'SETTINGS', 'TAGS']::text[],
-    permissions = '[
-      {"entity":"USERS","create":true,"read":true,"update":true,"delete":true},
-      {"entity":"ROLES","create":true,"read":true,"update":true,"delete":true},
-      {"entity":"USERS_PRIVILEGES","create":false,"read":false,"update":true,"delete":false},
-      {"entity":"AUDIT_EVENTS","create":false,"read":true,"update":false,"delete":false},
-      {"entity":"SETTINGS","create":false,"read":true,"update":true,"delete":false},
-      {"entity":"TAGS","create":true,"read":true,"update":false,"delete":false}
-    ]'::jsonb
-WHERE name = 'admin';
+SET routes = COALESCE(routes, ARRAY[]::text[]) || ARRAY['TAGS']::text[]
+WHERE name = 'admin'
+  AND NOT (COALESCE(routes, ARRAY[]::text[]) @> ARRAY['TAGS']::text[]);
+
+UPDATE public.roles
+SET permissions = COALESCE(permissions, '[]'::jsonb)
+    || '[{"entity":"TAGS","create":true,"read":true,"update":false,"delete":false}]'::jsonb
+WHERE name = 'admin'
+  AND NOT (COALESCE(permissions, '[]'::jsonb) @> '[{"entity":"TAGS"}]'::jsonb);

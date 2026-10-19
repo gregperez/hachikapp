@@ -1,10 +1,16 @@
+-- Remove exactly the TAGS route and the TAGS permission from the admin role.
+-- Idempotent: other routes and permissions are left untouched.
+
 UPDATE public.roles
-SET routes = ARRAY['USERS', 'ROLES', 'AUDIT_EVENTS', 'SETTINGS']::text[],
-    permissions = '[
-      {"entity":"USERS","create":true,"read":true,"update":true,"delete":true},
-      {"entity":"ROLES","create":true,"read":true,"update":true,"delete":true},
-      {"entity":"USERS_PRIVILEGES","create":false,"read":false,"update":true,"delete":false},
-      {"entity":"AUDIT_EVENTS","create":false,"read":true,"update":false,"delete":false},
-      {"entity":"SETTINGS","create":false,"read":true,"update":true,"delete":false}
-    ]'::jsonb
-WHERE name = 'admin';
+SET routes = array_remove(routes, 'TAGS')
+WHERE name = 'admin'
+  AND routes @> ARRAY['TAGS']::text[];
+
+UPDATE public.roles
+SET permissions = COALESCE(
+      (SELECT jsonb_agg(p ORDER BY ord)
+       FROM jsonb_array_elements(permissions) WITH ORDINALITY AS e(p, ord)
+       WHERE NOT (p @> '{"entity":"TAGS"}'::jsonb)),
+      '[]'::jsonb)
+WHERE name = 'admin'
+  AND permissions @> '[{"entity":"TAGS"}]'::jsonb;

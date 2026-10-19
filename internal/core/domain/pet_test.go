@@ -211,3 +211,15 @@ func TestPetWeightBelowColumnPrecisionIsInvalid(t *testing.T) {
 		t.Fatalf("0.004 kg must be rejected instead of becoming 0.00 in the database: %v", codes)
 	}
 }
+
+func TestComunaRejectsDigits(t *testing.T) {
+	details := NormalizePetDetails(validPetDetails())
+	if err := ValidatePetDetails(details, petNow); err != nil {
+		t.Fatalf("Ñuñoa must be valid: %v", err)
+	}
+	details.Owner.Comuna = "Av X 123"
+	codes := issueCodes(t, ValidatePetDetails(details, petNow))
+	if codes["owner.comuna"] != "no_digits" {
+		t.Fatalf("codes = %v", codes)
+	}
+}

@@ -369,6 +369,9 @@ func ValidatePetDetails(details PetDetails, now time.Time) error {
 	checkText(details.Owner.FullName, petFieldOwnerName, MaxPetOwnerNameLength, true, add)
 	checkText(details.Owner.Address, "owner.address", MaxPetAddressLength, false, add)
 	checkText(details.Owner.Comuna, "owner.comuna", MaxPetComunaLength, false, add)
+	if details.Owner.Comuna != "" && !ComunaIsSafe(details.Owner.Comuna) {
+		add("owner.comuna", "no_digits")
+	}
 	checkPhone(details.Owner.Phone, petFieldOwnerPhone, true, add)
 	checkPhone(details.Owner.PhoneAlt, petFieldOwnerPhoneAlt, false, add)
 

@@ -126,6 +126,13 @@ escaneos del dueño. `tagstore.Store` implementa `TagPort` y `TagScanPort`.
   separado del de login para que el tráfico anónimo no desaloje esas
   entradas. La clave es `KeyedHash(pepper, ip)`. Es memoria del proceso: **con
   varias instancias hay que reemplazarlo por Redis**.
+- **IP del visitante**: las rutas públicas y el login llegan a través del
+  servidor Next, que reenvía la IP del visitante en `X-Forwarded-For` (en el
+  frontend, `CLIENT_IP_HEADER`). El backend solo lee esa cabecera si la
+  conexión viene de `AUTH_TRUSTED_PROXY_CIDRS`, así que **esa lista debe
+  incluir la dirección del servidor Next**; si está vacía, todos los
+  visitantes comparten la misma cuota y en producción se registra un aviso al
+  arrancar.
 - **Dueño** (`TagController`): `/v1/pets/{id}/tags`, `/v1/tags/{code}/activate`
   y `/v1/pets/{id}/scans`, solo con JWT; la propiedad la valida el caso de uso.
   El historial nunca expone los hashes de visitante y token ni el prefijo IP.

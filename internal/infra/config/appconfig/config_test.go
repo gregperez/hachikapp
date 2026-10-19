@@ -401,3 +401,23 @@ func TestProductionRequiresHTTPSPublicBaseURL(t *testing.T) {
 		t.Fatalf("err=%v", err)
 	}
 }
+
+func TestTrustedProxyWarning(t *testing.T) {
+	cfg := validProductionConfig()
+	cfg.Auth.TrustedProxyCIDRs = nil
+	w := cfg.TrustedProxyWarning()
+	if !strings.Contains(w, "AUTH_TRUSTED_PROXY_CIDRS") || !strings.Contains(w, "every visitor") {
+		t.Fatalf("production without trusted proxies: warning=%q", w)
+	}
+
+	cfg.Auth.TrustedProxyCIDRs = []string{"10.0.0.0/8"}
+	if w := cfg.TrustedProxyWarning(); w != "" {
+		t.Fatalf("with trusted proxies: warning=%q", w)
+	}
+
+	dev := appconfig.Defaults()
+	dev.Auth.TrustedProxyCIDRs = nil
+	if w := dev.TrustedProxyWarning(); w != "" {
+		t.Fatalf("development: warning=%q", w)
+	}
+}

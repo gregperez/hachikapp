@@ -224,6 +224,9 @@ func (a *Application) wire(opts Options) error {
 	if err != nil {
 		return fmt.Errorf("client origin resolver: %w", err)
 	}
+	if warning := opts.Config.TrustedProxyWarning(); warning != "" {
+		a.Logger.Warn(warning)
+	}
 	if err := a.wireOIDC(opts, users, authn, recorder, recorder); err != nil {
 		return err
 	}

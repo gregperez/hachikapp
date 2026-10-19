@@ -226,3 +226,15 @@ func (c Config) IsProduction() bool {
 	env := strings.ToLower(strings.TrimSpace(c.Runtime.Environment))
 	return env == EnvProduction || env == "prod"
 }
+
+// TrustedProxyWarning returns the startup warning for a production process
+// that trusts no proxy, or "" when there is nothing to warn about. Without
+// AUTH_TRUSTED_PROXY_CIDRS the backend ignores X-Forwarded-For, so every
+// public tag call and login proxied by the frontend server shares one
+// client address and therefore one rate-limit bucket.
+func (c Config) TrustedProxyWarning() string {
+	if !c.IsProduction() || len(c.Auth.TrustedProxyCIDRs) > 0 {
+		return ""
+	}
+	return "AUTH_TRUSTED_PROXY_CIDRS is empty: X-Forwarded-For is ignored, so the public tag and login rate limits are shared by every visitor behind the frontend server; add the frontend server's address"
+}

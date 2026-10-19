@@ -87,6 +87,12 @@ Security operations (rotation, bootstrap contract, exposure response, secret sca
 Authentication throttling is enabled with bounded per-account, per-origin, and
 per-refresh-family quotas. Forwarded client addresses are ignored unless
 `AUTH_TRUSTED_PROXY_CIDRS` explicitly identifies the deployment's proxies.
+`AUTH_TRUSTED_PROXY_CIDRS` **must include the frontend (Next) server's
+address**: browsers reach the public tag routes (`/v1/public/...`) and login
+through that server, which forwards the visitor's IP in `X-Forwarded-For`
+(configured on the frontend with `CLIENT_IP_HEADER`). With the list empty the
+backend ignores that header, so every visitor shares one per-IP quota; a
+production process logs a startup warning in that case.
 Multi-replica deployments must replace the in-memory limiter with shared state.
 
 Optional Google Sign-In is OpenID Connect, not the Gmail API. Enable it with

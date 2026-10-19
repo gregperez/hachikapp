@@ -37,6 +37,11 @@
   - Per-IP quotas (429 with `Retry-After`): profile and photo 60/min, scans
     20/h, messages 5/h, contact 3/h. The limiter is in memory; with more than
     one instance it must move to Redis.
+  - `AUTH_TRUSTED_PROXY_CIDRS` must include the frontend (Next) server's
+    address: public tag calls and login arrive from it, and it forwards the
+    visitor's IP in `X-Forwarded-For` (frontend `CLIENT_IP_HEADER`). With the
+    list empty, every visitor shares one quota; production now logs a startup
+    warning in that case.
   - Owner routes: `GET/POST /v1/pets/{id}/tags` (POST creates a digital tag),
     `POST /v1/pets/{id}/tags/{tagId}/disable`, `POST /v1/tags/{code}/activate
     {petId}` (409 when the tag is already linked or the pet has 5 active tags)

@@ -66,6 +66,15 @@ func (m *memTags) GetByCode(_ context.Context, code string) (domain.PetTag, erro
 	return domain.PetTag{}, domain.ErrNotFound
 }
 
+func (m *memTags) GetByID(_ context.Context, tagID string) (domain.PetTag, error) {
+	for _, tag := range m.tags {
+		if tag.ID == tagID {
+			return tag, nil
+		}
+	}
+	return domain.PetTag{}, domain.ErrNotFound
+}
+
 func (m *memTags) ListByPet(_ context.Context, ownerID, petID string) ([]domain.PetTag, error) {
 	out := []domain.PetTag{}
 	for _, tag := range m.tags {

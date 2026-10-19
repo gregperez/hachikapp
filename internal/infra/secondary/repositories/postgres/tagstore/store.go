@@ -130,6 +130,16 @@ func (s *Store) GetByCode(ctx context.Context, code string) (domain.PetTag, erro
 	return singleTag(row, "get tag")
 }
 
+func (s *Store) GetByID(ctx context.Context, tagID string) (domain.PetTag, error) {
+	row := s.db.QueryRow(ctx, `SELECT `+tagColumns+` FROM public.pet_tags WHERE id = $1::uuid`, tagID)
+	tag, err := singleTag(row, "get tag by id")
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == invalidTextRepresentation {
+		return domain.PetTag{}, domain.ErrNotFound
+	}
+	return tag, err
+}
+
 func (s *Store) ListByPet(ctx context.Context, ownerID, petID string) ([]domain.PetTag, error) {
 	return s.queryTags(ctx, "list pet tags", `SELECT `+tagColumns+`
 FROM public.pet_tags

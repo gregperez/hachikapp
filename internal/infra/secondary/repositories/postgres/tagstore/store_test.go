@@ -137,6 +137,16 @@ func TestTagStoreBatchAndActivation(t *testing.T) {
 		t.Fatalf("unknown code: %v", err)
 	}
 
+	byID, err := store.GetByID(ctx, got.ID)
+	if err != nil || byID.Code != codes[0] {
+		t.Fatalf("get by id=%+v err=%v", byID, err)
+	}
+	for _, bad := range []string{"not-a-uuid", "00000000-0000-4000-8000-0000000000ff"} {
+		if _, err := store.GetByID(ctx, bad); !errors.Is(err, domain.ErrNotFound) {
+			t.Fatalf("get by id %q: %v", bad, err)
+		}
+	}
+
 	active, err := store.Activate(ctx, codes[0], ownerA, petA, domain.MaxActiveTagsPerPet, at)
 	if err != nil {
 		t.Fatal(err)

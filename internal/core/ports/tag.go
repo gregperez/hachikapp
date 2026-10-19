@@ -17,6 +17,8 @@ type TagPort interface {
 	BatchTags(ctx context.Context, batchID string) ([]domain.PetTag, error)
 	// GetByCode returns domain.ErrNotFound for an unknown code.
 	GetByCode(ctx context.Context, code string) (domain.PetTag, error)
+	// GetByID returns domain.ErrNotFound for an unknown (or malformed) tag id.
+	GetByID(ctx context.Context, tagID string) (domain.PetTag, error)
 	// ListByPet returns the pet's tags, newest first, only when the pet belongs to ownerID.
 	ListByPet(ctx context.Context, ownerID, petID string) ([]domain.PetTag, error)
 	// Activate links an unassigned tag (ownerless or reserved for ownerID) to a

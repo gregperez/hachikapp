@@ -306,7 +306,7 @@ func (a *Application) wire(opts Options) error {
 		}
 		a.auditPurger = auditPurger
 	}
-	if opts.Config.Notifications.Enabled && !opts.SkipPurger {
+	if dispatcherEnabled(opts) {
 		loc, err := time.LoadLocation("America/Santiago")
 		if err != nil {
 			a.Logger.Warn("America/Santiago timezone unavailable, using fixed UTC-3", "err", err)
@@ -513,4 +513,9 @@ func NewUserPersistence(
 		refreshstore.New(db),
 	)
 	return users, passwordcheck.NewOffline(authCfg.PasswordBlocklist), nil
+}
+
+// dispatcherEnabled reports whether the notification dispatcher must run.
+func dispatcherEnabled(opts Options) bool {
+	return opts.Config.Notifications.Enabled && !opts.SkipPurger
 }

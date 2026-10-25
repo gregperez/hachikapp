@@ -265,3 +265,42 @@ func TestNewNotificationDispatcherValidates(t *testing.T) {
 		}
 	}
 }
+
+func TestDispatcherLeaseBudgetStopsBatch(t *testing.T) {
+	store := &fakeDeliveries{batches: [][]domain.Delivery{{delivery("d1", 0), delivery("d2", 0), delivery("d3", 0), delivery("d4", 0)}}}
+	m := &fakeMailer{}
+	d, err := NewNotificationDispatcher(store, m, NotificationDispatcherConfig{
+		Interval: time.Hour, BatchSize: 20, Lease: 2 * time.Minute, SendTimeout: 30 * time.Second, Location: time.UTC,
+	}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	clock := dispatcherNow
+	d.now = func() time.Time { return clock }
+	m.fn = func(context.Context, domain.Email) error { clock = clock.Add(40 * time.Second); return nil }
+	d.runCycle(context.Background())
+	// elapsed 0 -> send; 40s -> send; 80s -> send; 120s+30s >= lease -> stop.
+	marks := store.snapshot()
+	if len(m.sent) != 3 || len(marks) != 3 {
+		t.Fatalf("sent=%d marks=%+v", len(m.sent), marks)
+	}
+}
+
+func TestDispatcherPanicIsFailedAttempt(t *testing.T) {
+	store := &fakeDeliveries{batches: [][]domain.Delivery{{delivery("d1", 0), delivery("d2", 5)}}}
+	m := &fakeMailer{fn: func(context.Context, domain.Email) error { panic(strings.Repeat("x", 400)) }}
+	newTestDispatcher(t, store, m, time.Hour).runCycle(context.Background())
+	marks := store.snapshot()
+	if len(marks) != 2 || marks[0].kind != "retry" || marks[1].kind != "failed" ||
+		!strings.HasPrefix(marks[0].err, "panic: ") || len([]rune(marks[0].err)) != 300 {
+		t.Fatalf("marks = %+v", marks)
+	}
+}
+
+func TestNewNotificationDispatcherSendTimeoutBelowLease(t *testing.T) {
+	_, err := NewNotificationDispatcher(&fakeDeliveries{}, &fakeMailer{}, NotificationDispatcherConfig{
+		Interval: time.Second, BatchSize: 1, Lease: time.Minute, SendTimeout: time.Minute}, nil)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}

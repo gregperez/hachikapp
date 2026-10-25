@@ -16,7 +16,7 @@ import (
 
 const (
 	dispatcherMaxErrorRunes = 300
-	dispatcherSendTimeout   = 30 * time.Second
+	defaultSendTimeout      = 30 * time.Second
 	dispatcherMarkTimeout   = 5 * time.Second
 )
 
@@ -26,6 +26,8 @@ type NotificationDispatcherConfig struct {
 	Lease     time.Duration
 	BaseURL   string
 	Location  *time.Location
+	// SendTimeout bounds one send; zero means 30 s. Must be below Lease.
+	SendTimeout time.Duration
 }
 
 // NotificationDispatcher periodically claims due email deliveries and sends
@@ -62,6 +64,12 @@ func NewNotificationDispatcher(
 	}
 	if cfg.Lease <= 0 {
 		return nil, fmt.Errorf("notification dispatch lease must be positive")
+	}
+	if cfg.SendTimeout == 0 {
+		cfg.SendTimeout = defaultSendTimeout
+	}
+	if cfg.SendTimeout < 0 || cfg.SendTimeout >= cfg.Lease {
+		return nil, fmt.Errorf("notification send timeout must be positive and below the lease")
 	}
 	if logger == nil {
 		logger = slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -129,7 +137,8 @@ func (d *NotificationDispatcher) runCycle(ctx context.Context) {
 	if ctx.Err() != nil {
 		return
 	}
-	deliveries, err := d.store.ClaimDue(ctx, d.now(), d.cfg.BatchSize, d.cfg.Lease)
+	claimedAt := d.now()
+	deliveries, err := d.store.ClaimDue(ctx, claimedAt, d.cfg.BatchSize, d.cfg.Lease)
 	if err != nil {
 		if ctx.Err() == nil {
 			d.logger.Error("claim notification deliveries failed", "err", err)
@@ -141,15 +150,18 @@ func (d *NotificationDispatcher) runCycle(ctx context.Context) {
 			// Unprocessed claims keep their lease and are retried after it expires.
 			return
 		}
+		if d.now().Sub(claimedAt)+d.cfg.SendTimeout >= d.cfg.Lease {
+			// Lease budget exhausted: another replica may reclaim the rest, so
+			// sending them now could duplicate emails.
+			d.logger.Warn("notification lease budget exhausted, leaving rest of batch")
+			return
+		}
 		d.dispatch(ctx, del)
 	}
 }
 
 func (d *NotificationDispatcher) dispatch(ctx context.Context, del domain.Delivery) {
-	email := services.RenderNotificationEmail(del, d.cfg.BaseURL, d.cfg.Location)
-	sendCtx, cancel := context.WithTimeout(ctx, dispatcherSendTimeout)
-	sendErr := d.mailer.Send(sendCtx, email)
-	cancel()
+	sendErr := d.renderAndSend(ctx, del)
 
 	// Marks use a context detached from shutdown so a completed send is recorded.
 	markCtx, markCancel := context.WithTimeout(context.WithoutCancel(ctx), dispatcherMarkTimeout)
@@ -180,6 +192,20 @@ func (d *NotificationDispatcher) dispatch(ctx context.Context, del domain.Delive
 	if err := d.store.MarkRetry(markCtx, del.ID, attempts, next, lastErr); err != nil {
 		d.logger.Error("mark delivery retry failed", "delivery", del.ID, "err", err)
 	}
+}
+
+// renderAndSend converts a panic in rendering or sending into an error.
+func (d *NotificationDispatcher) renderAndSend(ctx context.Context, del domain.Delivery) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			d.logger.Error("panic dispatching notification", "delivery", del.ID)
+			err = fmt.Errorf("panic: %v", r)
+		}
+	}()
+	email := services.RenderNotificationEmail(del, d.cfg.BaseURL, d.cfg.Location)
+	sendCtx, cancel := context.WithTimeout(ctx, d.cfg.SendTimeout)
+	defer cancel()
+	return d.mailer.Send(sendCtx, email)
 }
 
 func truncateRunes(s string, max int) string {

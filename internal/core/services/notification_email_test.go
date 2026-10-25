@@ -57,7 +57,7 @@ func TestRenderScanEmail(t *testing.T) {
 	for name, body := range map[string]string{"text": m.Text, "html": m.HTML} {
 		for _, want := range []string{
 			"Hola Ana:", "Luna", "23/10/2026 a las 12:04", "un iPhone o iPad", maps,
-			"La encontré en la plaza", "Pedro", "56912345678",
+			"La encontré en la plaza", "Pedro", "56912345678", "Compartieron su ubicación (precisión aproximada de 20 m).",
 			"También vio tu número de teléfono.", link, "Si fuiste tú, puedes ignorar este correo.",
 		} {
 			if !strings.Contains(body, want) {
@@ -124,7 +124,7 @@ func TestRenderSubjectsByKind(t *testing.T) {
 	cases := map[domain.NotificationKind]string{
 		domain.NotificationTagScanned:     "Alguien escaneó el Hachikapp Tag de Luna",
 		domain.NotificationFinderMessage:  "Luna: te dejaron un mensaje",
-		domain.NotificationLocationShared: "Luna: compartieron dónde la encontraron",
+		domain.NotificationLocationShared: "Luna: compartieron su ubicación",
 		domain.NotificationPhoneRevealed:  "Luna: alguien vio tu número",
 	}
 	for kind, want := range cases {
@@ -163,6 +163,34 @@ func TestRenderOmitsEmptyFinderFieldsAndZeroAccuracy(t *testing.T) {
 		for _, bad := range []string{"Nombre:", "Teléfono:", "precisión"} {
 			if strings.Contains(s, bad) {
 				t.Errorf("%s contains %q", name, bad)
+			}
+		}
+	}
+}
+
+func TestRenderNeutralLocationAndClosingOnlyForScan(t *testing.T) {
+	for kind, wantClosing := range map[domain.NotificationKind]bool{
+		domain.NotificationTagScanned:     true,
+		domain.NotificationFinderMessage:  false,
+		domain.NotificationLocationShared: false,
+		domain.NotificationPhoneRevealed:  false,
+	} {
+		d := baseDelivery(kind)
+		d.Notification.Payload.Location = &domain.ScanLocation{Lat: 1, Lng: 2}
+		m := RenderNotificationEmail(d, "https://x.test", santiago(t))
+		for name, s := range map[string]string{"subject": m.Subject, "text": m.Text, "html": m.HTML} {
+			for _, bad := range []string{"la encontraron", "encontrarla"} {
+				if strings.Contains(s, bad) {
+					t.Errorf("%s %s contains gendered %q", kind, name, bad)
+				}
+			}
+		}
+		if !strings.Contains(m.Text, "Compartieron su ubicación.") || !strings.Contains(m.HTML, "Compartieron su ubicación.") {
+			t.Errorf("%s: missing neutral location line\n%s", kind, m.Text)
+		}
+		for name, s := range map[string]string{"text": m.Text, "html": m.HTML} {
+			if got := strings.Contains(s, "Si fuiste tú, puedes ignorar este correo."); got != wantClosing {
+				t.Errorf("%s %s: closing present=%v want %v", kind, name, got, wantClosing)
 			}
 		}
 	}

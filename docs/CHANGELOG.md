@@ -68,7 +68,7 @@
     waits 60 s so events of the same scan are grouped in one email. Delivery
     retries at 1 min, 5 min, 30 min, 2 h and 6 h and is `failed` after the
     sixth attempt. Delivery is at least once.
-  - Location sharing route: `POST /v1/public/scans/{scanId}/location` (once
+  - Location sharing route: `PUT /v1/public/scans/{scanId}/location` (once
     per scan, 409 if it already exists; 10 per hour per IP).
   - Retention purge: coordinates are set to `NULL` after 30 days (in
     `tag_scans` and in notification payloads); scans, messages and

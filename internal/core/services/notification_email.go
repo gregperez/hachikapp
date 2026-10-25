@@ -44,8 +44,8 @@ var emailTemplate = template.Must(template.New("email").Parse(`<!doctype html>
 </div>
 {{end}}{{if .PhoneLine}}<p style="margin:0 0 12px;">{{.PhoneLine}}</p>
 {{end}}<p style="margin:16px 0;"><a href="{{.PetURL}}" style="display:inline-block;background:#385d50;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;">{{.ButtonLabel}}</a></p>
-<p style="margin:0;color:#624536;font-size:14px;">{{.Closing}}</p>
-</div></body></html>
+{{if .Closing}}<p style="margin:0;color:#624536;font-size:14px;">{{.Closing}}</p>
+{{end}}</div></body></html>
 `))
 
 func deviceLabel(code string) string {
@@ -67,7 +67,7 @@ func emailSubject(kind domain.NotificationKind, pet string) string {
 	case domain.NotificationFinderMessage:
 		return pet + ": te dejaron un mensaje"
 	case domain.NotificationLocationShared:
-		return pet + ": compartieron dónde la encontraron"
+		return pet + ": compartieron su ubicación"
 	case domain.NotificationPhoneRevealed:
 		return pet + ": alguien vio tu número"
 	default:
@@ -92,16 +92,18 @@ func RenderNotificationEmail(d domain.Delivery, baseURL string, loc *time.Locati
 		When:        "el " + p.ScannedAt.In(loc).Format("02/01/2006") + " a las " + p.ScannedAt.In(loc).Format("15:04"),
 		Device:      deviceLabel(p.Device),
 		PetURL:      baseURL + "/dashboard/pets/" + d.Notification.PetID,
-		Closing:     "Si fuiste tú, puedes ignorar este correo.",
 		ButtonLabel: "Ver en Hachikapp",
 	}
 	v.Intro = capitalizeFirst(v.Intro)
+	if d.Notification.Kind == domain.NotificationTagScanned {
+		v.Closing = "Si fuiste tú, puedes ignorar este correo."
+	}
 	if p.Location != nil {
 		v.HasLocation = true
 		v.MapsURL = fmt.Sprintf("https://maps.google.com/?q=%.6f,%.6f", p.Location.Lat, p.Location.Lng)
-		v.LocationLine = "Compartieron dónde la encontraron."
+		v.LocationLine = "Compartieron su ubicación."
 		if p.Location.AccuracyM > 0 {
-			v.LocationLine = fmt.Sprintf("Compartieron dónde la encontraron (precisión aproximada de %d m).", p.Location.AccuracyM)
+			v.LocationLine = fmt.Sprintf("Compartieron su ubicación (precisión aproximada de %d m).", p.Location.AccuracyM)
 		}
 	}
 	if p.Message != nil {
@@ -165,8 +167,10 @@ func renderText(v emailView) string {
 	if v.PhoneLine != "" {
 		b.WriteString(v.PhoneLine + "\n\n")
 	}
-	b.WriteString(v.ButtonLabel + ": " + v.PetURL + "\n\n")
-	b.WriteString(v.Closing + "\n")
+	b.WriteString(v.ButtonLabel + ": " + v.PetURL + "\n")
+	if v.Closing != "" {
+		b.WriteString("\n" + v.Closing + "\n")
+	}
 	return b.String()
 }
 

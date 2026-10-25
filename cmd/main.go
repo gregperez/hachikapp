@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	// Embedded zone data so America/Santiago loads even without system tzdata.
+	_ "time/tzdata"
 
 	_ "github.com/gregperez/hachikapp-backend/docs"
 	"github.com/gregperez/hachikapp-backend/internal/infra/bootstrap"

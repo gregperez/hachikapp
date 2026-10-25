@@ -611,3 +611,7 @@ func TestShareLocationBadToken404(t *testing.T) {
 		t.Fatal("nothing may be stored")
 	}
 }
+
+func (m *memScans) PurgeTagData(context.Context, time.Time) (int, int, int, error) {
+	return 0, 0, 0, nil
+}

@@ -78,6 +78,7 @@ type Application struct {
 	sessionPurger  *applifecycle.ExpiredSessionPurger
 	auditPurger    *applifecycle.AuditEventPurger
 	oidcPurger     *applifecycle.OIDCTransactionPurger
+	tagPurger      *applifecycle.TagRetentionPurger
 	dispatcher     *applifecycle.NotificationDispatcher
 	oidcService    *services.OIDCService
 	lifecycleNames []string
@@ -305,6 +306,14 @@ func (a *Application) wire(opts Options) error {
 			return fmt.Errorf("audit purger: %w", err)
 		}
 		a.auditPurger = auditPurger
+		// Retention is a privacy guarantee: independent of NOTIFICATIONS_ENABLED.
+		tagPurger, err := applifecycle.NewTagRetentionPurger(tagstore.New(a.DB), applifecycle.TagRetentionPurgerConfig{
+			Interval: 24 * time.Hour,
+		}, a.Logger)
+		if err != nil {
+			return fmt.Errorf("tag retention purger: %w", err)
+		}
+		a.tagPurger = tagPurger
 	}
 	if dispatcherEnabled(opts) {
 		loc, err := time.LoadLocation("America/Santiago")
@@ -341,6 +350,10 @@ func (a *Application) registerLifecycles(opts Options) {
 	if a.auditPurger != nil {
 		a.App.Register(a.auditPurger)
 		a.lifecycleNames = append(a.lifecycleNames, "audit-purger")
+	}
+	if a.tagPurger != nil {
+		a.App.Register(a.tagPurger)
+		a.lifecycleNames = append(a.lifecycleNames, "tag-retention-purger")
 	}
 	if a.dispatcher != nil {
 		a.App.Register(a.dispatcher)

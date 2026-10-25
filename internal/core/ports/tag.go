@@ -59,4 +59,10 @@ type TagScanPort interface {
 	// (oldest first), only when the pet belongs to ownerID; otherwise an empty page.
 	// The cursor key is (scanned_at, id).
 	ListScansByPet(ctx context.Context, ownerID, petID string, page authBaseDomain.PageRequest) (authBaseDomain.Page[domain.ScanWithMessages], error)
+	// PurgeTagData applies the retention policy relative to now: it nulls scan
+	// coordinates and strips payload.location from notifications older than
+	// domain.LocationRetention, and deletes scans (with their messages) and
+	// notifications (with their deliveries) older than domain.ScanRetention.
+	// Deletes run in bounded batches, so one call may leave work for the next.
+	PurgeTagData(ctx context.Context, now time.Time) (clearedLocations, deletedScans, deletedNotifications int, err error)
 }

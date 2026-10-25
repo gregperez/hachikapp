@@ -659,3 +659,7 @@ func TestLocationRateLimited(t *testing.T) {
 		t.Fatalf("headers=%v", w.Header())
 	}
 }
+
+func (m *memScans) PurgeTagData(context.Context, time.Time) (int, int, int, error) {
+	return 0, 0, 0, nil
+}

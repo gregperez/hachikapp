@@ -466,3 +466,92 @@ func TestSetLocationRollsBackWithNotification(t *testing.T) {
 		t.Fatalf("location must roll back: %+v err=%v", got.Location, err)
 	}
 }
+
+func TestPurgeTagData(t *testing.T) {
+	f := newScanFixture(t, "purge", "5CNP0030")
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	day := 24 * time.Hour
+
+	// mk stores a scan at the given age with coordinates, a message and a
+	// notification (with delivery) whose payload carries a location.
+	mk := func(visitor string, age time.Duration) (scanID, notifID string) {
+		t.Helper()
+		at := now.Add(-age)
+		scan, _, err := f.store.RecordScan(ctx, f.scan(visitor, "tok-"+visitor, at), at.Add(-domain.ScanDedupeWindow), f.draft(domain.NotificationTagScanned, f.owner))
+		if err != nil {
+			t.Fatal(err)
+		}
+		loc := domain.ScanLocation{Lat: -33.4, Lng: -70.6, AccuracyM: 10, At: at}
+		if err := f.store.SetLocation(ctx, scan.ID, loc, nil); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := f.store.AddMessage(ctx, domain.TagMessage{ScanID: scan.ID, TagID: f.tagID, PetID: f.petID, Body: "hola"}, nil); err != nil {
+			t.Fatal(err)
+		}
+		if err := f.pool.QueryRow(ctx, `UPDATE public.notifications
+SET created_at = $2, payload = payload || '{"location":{"lat":-33.4,"lng":-70.6}}'::jsonb
+WHERE scan_id = $1::uuid RETURNING id::text`, scan.ID, at).Scan(&notifID); err != nil {
+			t.Fatal(err)
+		}
+		return scan.ID, notifID
+	}
+	scanOld, notifOld := mk("old", 181*day)
+	scanMid, notifMid := mk("mid", 31*day)
+	scanNew, notifNew := mk("new", 29*day)
+
+	cleared, scans, notifs, err := f.store.PurgeTagData(ctx, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cleared < 1 || scans < 1 || notifs < 1 {
+		t.Fatalf("cleared=%d scans=%d notifs=%d", cleared, scans, notifs)
+	}
+
+	exists := func(q, id string) bool {
+		var n int
+		if err := f.pool.QueryRow(ctx, q, id).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n > 0
+	}
+	if exists(`SELECT count(*) FROM public.tag_scans WHERE id = $1::uuid`, scanOld) ||
+		exists(`SELECT count(*) FROM public.tag_messages WHERE scan_id = $1::uuid`, scanOld) {
+		t.Fatal("181-day scan and its messages must be deleted")
+	}
+	if exists(`SELECT count(*) FROM public.notifications WHERE id = $1::uuid`, notifOld) ||
+		exists(`SELECT count(*) FROM public.notification_deliveries WHERE notification_id = $1::uuid`, notifOld) {
+		t.Fatal("181-day notification and its delivery must be deleted")
+	}
+
+	hasCoords := func(id string) bool {
+		var lat, lng, acc, at bool
+		if err := f.pool.QueryRow(ctx, `SELECT latitude IS NOT NULL, longitude IS NOT NULL, accuracy_m IS NOT NULL, location_at IS NOT NULL
+FROM public.tag_scans WHERE id = $1::uuid`, id).Scan(&lat, &lng, &acc, &at); err != nil {
+			t.Fatal(err)
+		}
+		if lat != lng || lat != acc || lat != at {
+			t.Fatalf("coordinates partially cleared for %s", id)
+		}
+		return lat
+	}
+	hasPayloadLoc := func(id string) bool {
+		var has bool
+		if err := f.pool.QueryRow(ctx, `SELECT payload ? 'location' FROM public.notifications WHERE id = $1::uuid`, id).Scan(&has); err != nil {
+			t.Fatal(err)
+		}
+		return has
+	}
+	if hasCoords(scanMid) || hasPayloadLoc(notifMid) {
+		t.Fatal("31-day scan must lose coordinates and notification payload location")
+	}
+	if !exists(`SELECT count(*) FROM public.tag_messages WHERE scan_id = $1::uuid`, scanMid) {
+		t.Fatal("31-day message must remain")
+	}
+	if !hasCoords(scanNew) || !hasPayloadLoc(notifNew) {
+		t.Fatal("29-day scan and notification must be untouched")
+	}
+	if !exists(`SELECT count(*) FROM public.notification_deliveries WHERE notification_id = $1::uuid`, notifNew) {
+		t.Fatal("recent delivery must remain")
+	}
+}

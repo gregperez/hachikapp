@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	authBaseCore "github.com/WilsonSayago/authBase/v4/core"
 	authBaseServices "github.com/WilsonSayago/authBase/v4/core/services"
@@ -34,6 +35,7 @@ import (
 	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories"
 	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/auditstore"
 	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/dao"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/notifystore"
 	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/oidcstore"
 	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/petstore"
 	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/refreshstore"
@@ -76,6 +78,7 @@ type Application struct {
 	sessionPurger  *applifecycle.ExpiredSessionPurger
 	auditPurger    *applifecycle.AuditEventPurger
 	oidcPurger     *applifecycle.OIDCTransactionPurger
+	dispatcher     *applifecycle.NotificationDispatcher
 	oidcService    *services.OIDCService
 	lifecycleNames []string
 }
@@ -303,6 +306,24 @@ func (a *Application) wire(opts Options) error {
 		}
 		a.auditPurger = auditPurger
 	}
+	if opts.Config.Notifications.Enabled && !opts.SkipPurger {
+		loc, err := time.LoadLocation("America/Santiago")
+		if err != nil {
+			a.Logger.Warn("America/Santiago timezone unavailable, using fixed UTC-3", "err", err)
+			loc = time.FixedZone("America/Santiago", -3*60*60)
+		}
+		dispatcher, err := applifecycle.NewNotificationDispatcher(notifystore.New(a.DB), a.Mailer, applifecycle.NotificationDispatcherConfig{
+			Interval:  5 * time.Second,
+			BatchSize: 20,
+			Lease:     domain.DeliveryLease,
+			BaseURL:   opts.Config.Public.BaseURL,
+			Location:  loc,
+		}, a.Logger)
+		if err != nil {
+			return fmt.Errorf("notification dispatcher: %w", err)
+		}
+		a.dispatcher = dispatcher
+	}
 	return nil
 }
 
@@ -320,6 +341,10 @@ func (a *Application) registerLifecycles(opts Options) {
 	if a.auditPurger != nil {
 		a.App.Register(a.auditPurger)
 		a.lifecycleNames = append(a.lifecycleNames, "audit-purger")
+	}
+	if a.dispatcher != nil {
+		a.App.Register(a.dispatcher)
+		a.lifecycleNames = append(a.lifecycleNames, "notification-dispatcher")
 	}
 	if a.oidcPurger != nil {
 		a.App.Register(a.oidcPurger)

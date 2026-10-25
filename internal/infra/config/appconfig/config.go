@@ -23,6 +23,8 @@ type Config struct {
 	Runtime  RuntimeConfig
 	Auth     AuthConfig
 	Public   PublicConfig
+
+	Notifications NotificationsConfig
 }
 
 // DefaultVisitorPepper is the development-only pepper; production rejects it.
@@ -35,6 +37,30 @@ type PublicConfig struct {
 	// VisitorPepper keys the visitor hash. Secret: never log or print it.
 	VisitorPepper string
 }
+
+// NotificationsConfig configures owner email notifications.
+type NotificationsConfig struct {
+	// Enabled turns on email delivery (in-app notices are always created).
+	Enabled bool
+	SMTP    SMTPConfig
+}
+
+// SMTPConfig is the outgoing mail server. Without Host the log mailer is used.
+type SMTPConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string // secret: never log or print it
+	From     string
+}
+
+// String redacts the password so formatting the config never leaks it.
+func (s SMTPConfig) String() string {
+	return fmt.Sprintf("{Host:%s Port:%d User:%s Password:[redacted] From:%s}", s.Host, s.Port, s.User, s.From)
+}
+
+// GoString redacts the password for %#v.
+func (s SMTPConfig) GoString() string { return s.String() }
 
 type ServerConfig struct {
 	Address           string
@@ -151,6 +177,10 @@ func Defaults() Config {
 		Public: PublicConfig{
 			BaseURL:       "http://localhost:3000",
 			VisitorPepper: DefaultVisitorPepper,
+		},
+		Notifications: NotificationsConfig{
+			Enabled: true,
+			SMTP:    SMTPConfig{Port: 587},
 		},
 		Runtime: RuntimeConfig{
 			Environment: EnvDevelopment,

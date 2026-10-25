@@ -26,6 +26,7 @@ import (
 	applifecycle "github.com/gregperez/hachikapp-backend/internal/infra/lifecycle"
 	"github.com/gregperez/hachikapp-backend/internal/infra/primary/controller"
 	"github.com/gregperez/hachikapp-backend/internal/infra/primary/ginadapter"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/mailer"
 	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/oidcclient"
 	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/oidccrypto"
 	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/passwordcheck"
@@ -68,6 +69,7 @@ type Application struct {
 
 	TokenManager *authBaseServices.TokenManager
 	Users        ports.UserPort
+	Mailer       ports.Mailer
 	UserUseCase  core.UserUseCase
 
 	refreshStore   *refreshstore.Store
@@ -188,7 +190,14 @@ func (a *Application) wire(opts Options) error {
 	petUseCase := services.NewPetService(petStore, photoStore)
 	tagStore := tagstore.New(a.DB)
 	tagUseCase := services.NewTagService(tagStore, petStore, rand.Reader)
-	publicTagUseCase := services.NewPublicTagService(tagStore, tagStore, petStore, photoStore, []byte(opts.Config.Public.VisitorPepper), rand.Reader)
+	publicTagUseCase := services.NewPublicTagService(tagStore, tagStore, petStore, photoStore, []byte(opts.Config.Public.VisitorPepper), rand.Reader).
+		WithEmailNotifications(opts.Config.Notifications.Enabled)
+	a.Mailer = mailer.FromConfig(opts.Config, a.Logger)
+	mailerKind := "log"
+	if opts.Config.Notifications.SMTP.Host != "" {
+		mailerKind = "smtp"
+	}
+	a.Logger.Info("notifications configured", "enabled", opts.Config.Notifications.Enabled, "mailer", mailerKind)
 	roleUseCase := authBaseServices.GetRoleServiceInstance(roles)
 
 	limiter, err := ratelimit.NewMemory(ratelimit.Config{

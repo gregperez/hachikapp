@@ -21,6 +21,10 @@
 #   PUBLIC_BASE_URL (public web origin for tag links; default http://localhost:3000; https in production)
 #   TAG_VISITOR_PEPPER (secret for the visitor hash; production: >= 32 chars, not the dev default;
 #     generate with: openssl rand -base64 48)
+#   NOTIFICATIONS_ENABLED (default true; owner email notifications and the delivery worker)
+#   SMTP_HOST (empty = emails are only logged), SMTP_PORT (default 587), SMTP_USER (enables AUTH PLAIN),
+#   SMTP_PASSWORD (secret; never logged), SMTP_FROM (valid address). STARTTLS is mandatory except on
+#     localhost. Production with notifications enabled requires SMTP_HOST and SMTP_FROM.
 #
 # Generate secrets, for example:
 #   export DB_PASSWORD="$(openssl rand -base64 24)"
@@ -54,3 +58,14 @@ jwt:
   issuer: change-me-issuer
   audience: change-me-audience
   leeway-seconds: 0
+
+# Notifications are configured only through environment variables (read by appconfig,
+# not by this file). Shown here as a reference of the equivalent section:
+# notifications:
+#   enabled: true            # NOTIFICATIONS_ENABLED
+#   smtp:
+#     host: ""               # SMTP_HOST (empty = log mailer)
+#     port: 587              # SMTP_PORT
+#     user: ""               # SMTP_USER
+#     password: ${SMTP_PASSWORD}   # secret, never logged
+#     from: ""               # SMTP_FROM

@@ -164,6 +164,21 @@ func applyEnv(cfg *Config) error {
 	setStr(&cfg.Public.BaseURL, "PUBLIC_BASE_URL")
 	setStr(&cfg.Public.VisitorPepper, "TAG_VISITOR_PEPPER")
 	cfg.Public.BaseURL = strings.TrimRight(strings.TrimSpace(cfg.Public.BaseURL), "/")
+	if v := os.Getenv("NOTIFICATIONS_ENABLED"); v != "" {
+		b, err := parseBoolStrict(v)
+		if err != nil {
+			return RedactedError("notifications.enabled", err.Error())
+		}
+		cfg.Notifications.Enabled = b
+	}
+	setStr(&cfg.Notifications.SMTP.Host, "SMTP_HOST")
+	if err := setInt(&cfg.Notifications.SMTP.Port, "SMTP_PORT"); err != nil {
+		return err
+	}
+	setStr(&cfg.Notifications.SMTP.User, "SMTP_USER")
+	setStr(&cfg.Notifications.SMTP.Password, "SMTP_PASSWORD")
+	setStr(&cfg.Notifications.SMTP.From, "SMTP_FROM")
+	cfg.Notifications.SMTP.Host = strings.TrimSpace(cfg.Notifications.SMTP.Host)
 	return applyOIDCEnv(&cfg.Auth.OIDC)
 }
 
@@ -272,6 +287,8 @@ func parseBoolStrict(v string) (bool, error) {
 
 func envField(envKey string) string {
 	switch envKey {
+	case "SMTP_PORT":
+		return "notifications.smtp.port"
 	case "DB_MAX_CONNS":
 		return "database.maxConns"
 	case "DB_CONNECT_TIMEOUT":

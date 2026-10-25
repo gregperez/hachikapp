@@ -2,6 +2,7 @@ package appconfig
 
 import (
 	"fmt"
+	"net/mail"
 	"net/netip"
 	"net/url"
 	"strings"
@@ -117,6 +118,10 @@ func (c Config) Validate() error {
 		return err
 	}
 
+	if err := c.Notifications.validate(); err != nil {
+		return err
+	}
+
 	if c.CORS.AllowCredentials {
 		for _, origin := range c.CORS.AllowedOrigins {
 			if origin == "*" {
@@ -159,6 +164,28 @@ func (c Config) validateProduction() error {
 	}
 	if len(c.Public.VisitorPepper) < 32 {
 		return RedactedError("public.visitorPepper", "must be at least 32 characters in production")
+	}
+	if c.Notifications.Enabled {
+		if strings.TrimSpace(c.Notifications.SMTP.Host) == "" {
+			return RedactedError("notifications.smtp.host", "is required in production when notifications are enabled")
+		}
+		if strings.TrimSpace(c.Notifications.SMTP.From) == "" {
+			return RedactedError("notifications.smtp.from", "is required in production when notifications are enabled")
+		}
+	}
+	return nil
+}
+
+func (n NotificationsConfig) validate() error {
+	s := n.SMTP
+	if strings.TrimSpace(s.Host) == "" {
+		return nil
+	}
+	if s.Port < 1 || s.Port > 65535 {
+		return RedactedError("notifications.smtp.port", "must be between 1 and 65535")
+	}
+	if _, err := mail.ParseAddress(s.From); err != nil {
+		return RedactedError("notifications.smtp.from", "must be a valid email address")
 	}
 	return nil
 }

@@ -1,6 +1,7 @@
 package appconfig_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -328,6 +329,7 @@ func validProductionConfig() appconfig.Config {
 	cfg.CORS.AllowedOrigins = []string{"https://app.example.com"}
 	cfg.Public.BaseURL = "https://app.example.com"
 	cfg.Public.VisitorPepper = strings.Repeat("p", 40)
+	cfg.Notifications.SMTP = appconfig.SMTPConfig{Host: "smtp.example.com", Port: 587, From: "no-reply@example.com"}
 	return cfg
 }
 
@@ -419,5 +421,109 @@ func TestTrustedProxyWarning(t *testing.T) {
 	dev.Auth.TrustedProxyCIDRs = nil
 	if w := dev.TrustedProxyWarning(); w != "" {
 		t.Fatalf("development: warning=%q", w)
+	}
+}
+
+func TestNotificationsConfigFromEnv(t *testing.T) {
+	t.Setenv("DB_PASSWORD", "secret-password-value")
+	t.Setenv("DB_SSLMODE", "disable")
+	t.Setenv("APP_ENV", "development")
+
+	cfg, err := appconfig.Load(appconfig.DatabaseConfig{})
+	if err != nil {
+		t.Fatalf("Load defaults: %v", err)
+	}
+	if !cfg.Notifications.Enabled || cfg.Notifications.SMTP.Port != 587 || cfg.Notifications.SMTP.Host != "" {
+		t.Fatalf("defaults=%+v", cfg.Notifications)
+	}
+
+	t.Setenv("NOTIFICATIONS_ENABLED", "false")
+	t.Setenv("SMTP_HOST", "smtp.example.com")
+	t.Setenv("SMTP_PORT", "2525")
+	t.Setenv("SMTP_USER", "mailer")
+	t.Setenv("SMTP_PASSWORD", "s3cret-smtp")
+	t.Setenv("SMTP_FROM", "Hachikapp <no-reply@example.com>")
+	cfg, err = appconfig.Load(appconfig.DatabaseConfig{})
+	if err != nil {
+		t.Fatalf("Load env: %v", err)
+	}
+	n := cfg.Notifications
+	if n.Enabled || n.SMTP.Host != "smtp.example.com" || n.SMTP.Port != 2525 || n.SMTP.User != "mailer" ||
+		n.SMTP.Password != "s3cret-smtp" || n.SMTP.From != "Hachikapp <no-reply@example.com>" {
+		t.Fatalf("notifications=%+v", n)
+	}
+
+	t.Setenv("SMTP_PORT", "abc")
+	if _, err := appconfig.Load(appconfig.DatabaseConfig{}); err == nil {
+		t.Fatal("expected error for non-numeric SMTP_PORT")
+	}
+}
+
+func TestSMTPValidation(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		mutate func(*appconfig.Config)
+		field  string
+	}{
+		{"bad from", func(c *appconfig.Config) { c.Notifications.SMTP.From = "not an address" }, "notifications.smtp.from"},
+		{"empty from", func(c *appconfig.Config) { c.Notifications.SMTP.From = "" }, "notifications.smtp.from"},
+		{"port zero", func(c *appconfig.Config) { c.Notifications.SMTP.Port = 0 }, "notifications.smtp.port"},
+		{"port high", func(c *appconfig.Config) { c.Notifications.SMTP.Port = 70000 }, "notifications.smtp.port"},
+	} {
+		cfg := validProductionConfig()
+		cfg.Runtime.Environment = "development"
+		cfg.Notifications.SMTP = appconfig.SMTPConfig{Host: "smtp.example.com", Port: 587, From: "a@example.com"}
+		tc.mutate(&cfg)
+		if err := cfg.Validate(); err == nil || !strings.Contains(err.Error(), tc.field) {
+			t.Fatalf("%s: err=%v", tc.name, err)
+		}
+	}
+}
+
+func TestProductionRequiresSMTPWhenEnabled(t *testing.T) {
+	cfg := validProductionConfig()
+	cfg.Notifications.Enabled = true
+	cfg.Notifications.SMTP = appconfig.SMTPConfig{Port: 587}
+	err := cfg.Validate()
+	if err == nil || !strings.Contains(err.Error(), "notifications.smtp.host") {
+		t.Fatalf("missing host err=%v", err)
+	}
+
+	cfg.Notifications.SMTP.Host = "smtp.example.com"
+	err = cfg.Validate()
+	if err == nil || !strings.Contains(err.Error(), "notifications.smtp.from") {
+		t.Fatalf("missing from err=%v", err)
+	}
+
+	cfg.Notifications.SMTP.From = "no-reply@example.com"
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("valid: %v", err)
+	}
+
+	cfg = validProductionConfig()
+	cfg.Notifications.Enabled = false
+	cfg.Notifications.SMTP = appconfig.SMTPConfig{Port: 587}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("disabled notifications need no smtp: %v", err)
+	}
+}
+
+func TestSMTPPasswordNeverInErrors(t *testing.T) {
+	const pw = "s3cret-smtp-password"
+	cfg := validProductionConfig()
+	cfg.Notifications.SMTP = appconfig.SMTPConfig{Host: "smtp.example.com", Port: 0, User: "u", Password: pw, From: "bad"}
+	err := cfg.Validate()
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if strings.Contains(err.Error(), pw) {
+		t.Fatal("error leaks the SMTP password")
+	}
+	cfg.Notifications.SMTP.Port = 587
+	if err := cfg.Validate(); err == nil || strings.Contains(err.Error(), pw) {
+		t.Fatalf("err=%v", err)
+	}
+	if strings.Contains(fmt.Sprintf("%v %+v", cfg.Notifications.SMTP, cfg.Notifications.SMTP), pw) {
+		t.Fatal("formatting SMTPConfig leaks the password")
 	}
 }

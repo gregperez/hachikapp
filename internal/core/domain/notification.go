@@ -104,9 +104,9 @@ var deliveryBackoff = []time.Duration{
 	time.Minute, 5 * time.Minute, 30 * time.Minute, 2 * time.Hour, 6 * time.Hour,
 }
 
-// NextDeliveryAttempt returns when to retry after `attempts` failed sends
-// (1-based, including the one that just failed). failed is true once the
-// retry ladder is exhausted.
+// NextDeliveryAttempt returns when to retry after a failed send. Callers pass
+// the attempt count INCLUDING the one that just failed (Delivery.Attempts+1),
+// 1-based. failed is true once the retry ladder is exhausted (6 or more).
 func NextDeliveryAttempt(attempts int, now time.Time) (next time.Time, failed bool) {
 	if attempts < 1 {
 		attempts = 1

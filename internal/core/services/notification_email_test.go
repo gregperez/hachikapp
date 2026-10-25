@@ -1,6 +1,8 @@
 package services
 
 import (
+	"errors"
+	"html/template"
 	"strings"
 	"testing"
 	"time"
@@ -140,5 +142,28 @@ func TestRenderNilLocationFallsBackToUTC(t *testing.T) {
 	m := RenderNotificationEmail(baseDelivery(domain.NotificationTagScanned), "https://x.test", nil)
 	if !strings.Contains(m.Text, "23/10/2026 a las 15:04") {
 		t.Errorf("text = %s", m.Text)
+	}
+}
+
+func TestRenderHTMLFallbackOnTemplateError(t *testing.T) {
+	bad := template.Must(template.New("bad").Funcs(template.FuncMap{"boom": func() (string, error) { return "", errors.New("boom") }}).Parse(`{{boom}}`))
+	text := "Hola <Ana>: & más"
+	got := renderHTML(bad, emailView{}, text)
+	if !strings.Contains(got, "Hola &lt;Ana&gt;: &amp; más") || !strings.Contains(got, "<pre") {
+		t.Errorf("fallback = %q", got)
+	}
+}
+
+func TestRenderOmitsEmptyFinderFieldsAndZeroAccuracy(t *testing.T) {
+	d := baseDelivery(domain.NotificationFinderMessage)
+	d.Notification.Payload.Message = &domain.TagMessageSummary{Body: "Hola"}
+	d.Notification.Payload.Location = &domain.ScanLocation{Lat: 1, Lng: 2}
+	m := RenderNotificationEmail(d, "https://x.test", santiago(t))
+	for name, s := range map[string]string{"text": m.Text, "html": m.HTML} {
+		for _, bad := range []string{"Nombre:", "Teléfono:", "precisión"} {
+			if strings.Contains(s, bad) {
+				t.Errorf("%s contains %q", name, bad)
+			}
+		}
 	}
 }

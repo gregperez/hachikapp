@@ -38,8 +38,9 @@ var emailTemplate = template.Must(template.New("email").Parse(`<!doctype html>
 {{if .HasLocation}}<p style="margin:0 0 12px;">{{.LocationLine}} <a href="{{.MapsURL}}" style="color:#385d50;">Ver en el mapa</a></p>
 {{end}}{{if .HasMessage}}<div style="margin:0 0 12px;padding:12px;background:#faf5e9;border-radius:8px;">
 <p style="margin:0 0 8px;">{{.Body}}</p>
-<p style="margin:0;color:#624536;">Nombre: {{.FinderName}}</p>
-<p style="margin:0;color:#624536;">Teléfono: {{.FinderPhone}}</p>
+{{if .FinderName}}<p style="margin:0;color:#624536;">Nombre: {{.FinderName}}</p>
+{{end}}{{if .FinderPhone}}<p style="margin:0;color:#624536;">Teléfono: {{.FinderPhone}}</p>
+{{end}}
 </div>
 {{end}}{{if .PhoneLine}}<p style="margin:0 0 12px;">{{.PhoneLine}}</p>
 {{end}}<p style="margin:16px 0;"><a href="{{.PetURL}}" style="display:inline-block;background:#385d50;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;">{{.ButtonLabel}}</a></p>
@@ -98,7 +99,10 @@ func RenderNotificationEmail(d domain.Delivery, baseURL string, loc *time.Locati
 	if p.Location != nil {
 		v.HasLocation = true
 		v.MapsURL = fmt.Sprintf("https://maps.google.com/?q=%.6f,%.6f", p.Location.Lat, p.Location.Lng)
-		v.LocationLine = fmt.Sprintf("Compartieron dónde la encontraron (precisión aproximada de %d m).", p.Location.AccuracyM)
+		v.LocationLine = "Compartieron dónde la encontraron."
+		if p.Location.AccuracyM > 0 {
+			v.LocationLine = fmt.Sprintf("Compartieron dónde la encontraron (precisión aproximada de %d m).", p.Location.AccuracyM)
+		}
 	}
 	if p.Message != nil {
 		v.HasMessage = true
@@ -110,16 +114,23 @@ func RenderNotificationEmail(d domain.Delivery, baseURL string, loc *time.Locati
 		v.PhoneLine = "También vio tu número de teléfono."
 	}
 
-	var html bytes.Buffer
-	if err := emailTemplate.Execute(&html, v); err != nil {
-		html.Reset()
-	}
+	text := renderText(v)
 	return domain.Email{
 		To:      d.ToEmail,
 		Subject: emailSubject(d.Notification.Kind, p.PetName),
-		Text:    renderText(v),
-		HTML:    html.String(),
+		Text:    text,
+		HTML:    renderHTML(emailTemplate, v, text),
 	}
+}
+
+// renderHTML executes tpl; if that fails or yields nothing it falls back to
+// the escaped text part so the email always carries its content.
+func renderHTML(tpl *template.Template, v emailView, text string) string {
+	var buf bytes.Buffer
+	if err := tpl.Execute(&buf, v); err != nil || buf.Len() == 0 {
+		return `<pre style="font-family:inherit;white-space:pre-wrap">` + template.HTMLEscapeString(text) + `</pre>`
+	}
+	return buf.String()
 }
 
 func capitalizeFirst(s string) string {
@@ -143,8 +154,13 @@ func renderText(v emailView) string {
 	}
 	if v.HasMessage {
 		b.WriteString(v.Body + "\n")
-		b.WriteString("Nombre: " + v.FinderName + "\n")
-		b.WriteString("Teléfono: " + v.FinderPhone + "\n\n")
+		if v.FinderName != "" {
+			b.WriteString("Nombre: " + v.FinderName + "\n")
+		}
+		if v.FinderPhone != "" {
+			b.WriteString("Teléfono: " + v.FinderPhone + "\n")
+		}
+		b.WriteString("\n")
 	}
 	if v.PhoneLine != "" {
 		b.WriteString(v.PhoneLine + "\n\n")

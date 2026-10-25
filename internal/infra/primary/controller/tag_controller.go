@@ -273,7 +273,12 @@ func toScanResponse(scan domain.ScanWithMessages) tagout.ScanResponse {
 			CreatedAt:   formatPetTime(msg.CreatedAt),
 		})
 	}
+	var location *tagout.ScanLocationResponse
+	if scan.Location != nil {
+		location = &tagout.ScanLocationResponse{Lat: scan.Location.Lat, Lng: scan.Location.Lng, AccuracyM: scan.Location.AccuracyM, At: formatPetTime(scan.Location.At)}
+	}
 	return tagout.ScanResponse{
+		Location:        location,
 		ID:              scan.ID,
 		TagCode:         scan.TagCode,
 		ScannedAt:       formatPetTime(scan.ScannedAt),

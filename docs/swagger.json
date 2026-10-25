@@ -1558,6 +1558,78 @@
                 }
             }
         },
+        "/v1/public/scans/{scanId}/location": {
+            "put": {
+                "description": "No login; requires the X-Scan-Token of the scan. The finder chooses to send the position of the device: lat -90..90, lng -180..180, accuracy in meters 0..100000, all required. Allowed once per scan (409 afterwards). The owner is notified. Rate limited per IP (10/hour).",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public tags"
+                ],
+                "summary": "Share where the pet was found",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Scan ID",
+                        "name": "scanId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token returned when the scan was registered",
+                        "name": "X-Scan-Token",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Position",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.ShareLocationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Location stored"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/public/scans/{scanId}/messages": {
             "post": {
                 "description": "No login; requires the X-Scan-Token of the scan. body 1-500 characters, finderName up to 80, finderPhone with the pet record phone rules. website is a honeypot: when filled the request is accepted and nothing is stored. Rate limited per IP (5/hour).",
@@ -3554,6 +3626,24 @@
                 }
             }
         },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.ShareLocationRequest": {
+            "description": "Position the finder agreed to share. All three fields are required (0 is a valid value); lat -90..90, lng -180..180, accuracy in meters 0..100000.",
+            "type": "object",
+            "properties": {
+                "accuracy": {
+                    "type": "integer",
+                    "example": 35
+                },
+                "lat": {
+                    "type": "number",
+                    "example": -33.4372
+                },
+                "lng": {
+                    "type": "number",
+                    "example": -70.6506
+                }
+            }
+        },
         "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.AdminUpdateUserRequest": {
             "type": "object",
             "required": [
@@ -4173,6 +4263,27 @@
                 }
             }
         },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanLocationResponse": {
+            "type": "object",
+            "properties": {
+                "accuracyM": {
+                    "type": "integer",
+                    "example": 35
+                },
+                "at": {
+                    "type": "string",
+                    "example": "2026-10-18T21:02:00Z"
+                },
+                "lat": {
+                    "type": "number",
+                    "example": -33.4372
+                },
+                "lng": {
+                    "type": "number",
+                    "example": -70.6506
+                }
+            }
+        },
         "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanMessageResponse": {
             "type": "object",
             "properties": {
@@ -4215,6 +4326,9 @@
             "properties": {
                 "id": {
                     "type": "string"
+                },
+                "location": {
+                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanLocationResponse"
                 },
                 "messages": {
                     "type": "array",

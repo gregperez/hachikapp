@@ -50,6 +50,11 @@ type TagScanPort interface {
 	// and domain.ErrNotFound when the scan does not exist. A non-nil draft creates
 	// its notification in the same transaction, only on that first reveal.
 	MarkPhoneRevealed(ctx context.Context, scanID string, at time.Time, draft *domain.NotificationDraft) (bool, error)
+	// SetLocation stores loc on the scan once: it returns domain.ErrNotFound for
+	// an unknown scan and domain.ErrLocationAlreadyShared when it already has one.
+	// A non-nil draft creates its notification in the same transaction, only
+	// when the location is stored.
+	SetLocation(ctx context.Context, scanID string, loc domain.ScanLocation, draft *domain.NotificationDraft) error
 	// ListScansByPet returns the pet's scans newest first with their messages
 	// (oldest first), only when the pet belongs to ownerID; otherwise an empty page.
 	// The cursor key is (scanned_at, id).

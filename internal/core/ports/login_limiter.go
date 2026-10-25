@@ -21,6 +21,8 @@ const (
 	PublicTagMessageLimit LoginLimitScope = "public_tag_message"
 	// PublicTagContactLimit caps anonymous contact reveals per client IP and tag.
 	PublicTagContactLimit LoginLimitScope = "public_tag_contact"
+	// PublicTagLocationLimit caps anonymous location shares per client IP.
+	PublicTagLocationLimit LoginLimitScope = "public_tag_location"
 )
 
 // LoginLimitResult reports whether a request may proceed.

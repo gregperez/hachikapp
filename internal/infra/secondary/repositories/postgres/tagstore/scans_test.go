@@ -366,3 +366,103 @@ func TestEventRollsBackWithNotification(t *testing.T) {
 		t.Fatalf("got=%+v err=%v", got, err)
 	}
 }
+
+func TestSetLocationOnceAndRead(t *testing.T) {
+	f := newScanFixture(t, "loc1", "5CNM0020")
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	scan, _, err := f.store.RecordScan(ctx, f.scan("v1", "t1", now), now.Add(-domain.ScanDedupeWindow), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if scan.Location != nil {
+		t.Fatalf("new scan has location: %+v", scan.Location)
+	}
+	loc := domain.ScanLocation{Lat: -33.437212, Lng: -70.650604, AccuracyM: 35, At: now.Add(time.Minute)}
+	if err := f.store.SetLocation(ctx, scan.ID, loc, f.draft(domain.NotificationLocationShared, f.owner)); err != nil {
+		t.Fatal(err)
+	}
+	if n, _ := f.counts(t); n != 1 {
+		t.Fatalf("notifications=%d", n)
+	}
+	got, err := f.store.GetScan(ctx, scan.ID)
+	if err != nil || got.Location == nil || *got.Location != loc {
+		t.Fatalf("got=%+v err=%v", got.Location, err)
+	}
+
+	second := domain.ScanLocation{Lat: 1, Lng: 2, AccuracyM: 3, At: now.Add(2 * time.Minute)}
+	if err := f.store.SetLocation(ctx, scan.ID, second, f.draft(domain.NotificationLocationShared, f.owner)); !errors.Is(err, domain.ErrLocationAlreadyShared) {
+		t.Fatalf("err=%v", err)
+	}
+	if n, _ := f.counts(t); n != 1 {
+		t.Fatalf("a rejected second share must not notify: notifications=%d", n)
+	}
+	got, _ = f.store.GetScan(ctx, scan.ID)
+	if got.Location == nil || *got.Location != loc {
+		t.Fatalf("first location must win: %+v", got.Location)
+	}
+
+	if err := f.store.SetLocation(ctx, "00000000-0000-0000-0000-000000000000", loc, nil); !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("unknown err=%v", err)
+	}
+	if err := f.store.SetLocation(ctx, "not-a-uuid", loc, nil); !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("bad uuid err=%v", err)
+	}
+
+	page, err := f.store.ListScansByPet(ctx, f.owner, f.petID, authBaseDomain.PageRequest{Limit: 10})
+	if err != nil || len(page.Items) != 1 || page.Items[0].Location == nil || *page.Items[0].Location != loc {
+		t.Fatalf("page=%+v err=%v", page, err)
+	}
+}
+
+func TestSetLocationConcurrentExactlyOne(t *testing.T) {
+	f := newScanFixture(t, "loc2", "5CNM0021")
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	scan, _, err := f.store.RecordScan(ctx, f.scan("v1", "t1", now), now.Add(-domain.ScanDedupeWindow), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const n = 6
+	errs := make(chan error, n)
+	for i := 0; i < n; i++ {
+		go func(i int) {
+			errs <- f.store.SetLocation(ctx, scan.ID, domain.ScanLocation{Lat: float64(i), Lng: 1, AccuracyM: 5, At: now}, f.draft(domain.NotificationLocationShared, f.owner))
+		}(i)
+	}
+	ok, conflict := 0, 0
+	for i := 0; i < n; i++ {
+		switch err := <-errs; {
+		case err == nil:
+			ok++
+		case errors.Is(err, domain.ErrLocationAlreadyShared):
+			conflict++
+		default:
+			t.Fatal(err)
+		}
+	}
+	if ok != 1 || conflict != n-1 {
+		t.Fatalf("ok=%d conflict=%d", ok, conflict)
+	}
+	if notes, _ := f.counts(t); notes != 1 {
+		t.Fatalf("notifications=%d", notes)
+	}
+}
+
+func TestSetLocationRollsBackWithNotification(t *testing.T) {
+	f := newScanFixture(t, "loc3", "5CNM0022")
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	scan, _, err := f.store.RecordScan(ctx, f.scan("v1", "t1", now), now.Add(-domain.ScanDedupeWindow), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bad := f.draft(domain.NotificationLocationShared, "00000000-0000-0000-0000-000000000000")
+	if err := f.store.SetLocation(ctx, scan.ID, domain.ScanLocation{Lat: 1, Lng: 1, AccuracyM: 1, At: now}, bad); err == nil {
+		t.Fatal("want error")
+	}
+	got, err := f.store.GetScan(ctx, scan.ID)
+	if err != nil || got.Location != nil {
+		t.Fatalf("location must roll back: %+v err=%v", got.Location, err)
+	}
+}

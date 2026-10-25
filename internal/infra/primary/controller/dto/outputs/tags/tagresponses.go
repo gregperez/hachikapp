@@ -65,6 +65,14 @@ type ScanMessageResponse struct {
 	CreatedAt   string `json:"createdAt" example:"2026-10-18T21:05:00Z"`
 }
 
+// ScanLocationResponse is the position a finder shared for a scan.
+type ScanLocationResponse struct {
+	Lat       float64 `json:"lat" example:"-33.4372"`
+	Lng       float64 `json:"lng" example:"-70.6506"`
+	AccuracyM int     `json:"accuracyM" example:"35"`
+	At        string  `json:"at" example:"2026-10-18T21:02:00Z"`
+}
+
 // ScanResponse is a scan of one of the owner's tags.
 type ScanResponse struct {
 	ID              string                `json:"id"`
@@ -72,6 +80,7 @@ type ScanResponse struct {
 	ScannedAt       string                `json:"scannedAt" example:"2026-10-18T21:00:00Z"`
 	UserAgentFamily string                `json:"userAgentFamily" enums:"ios,android,desktop,other" example:"ios"`
 	PhoneRevealedAt string                `json:"phoneRevealedAt,omitempty"`
+	Location        *ScanLocationResponse `json:"location,omitempty"`
 	Messages        []ScanMessageResponse `json:"messages"`
 }
 

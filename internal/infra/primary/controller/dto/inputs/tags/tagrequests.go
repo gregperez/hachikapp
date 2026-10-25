@@ -15,6 +15,14 @@ type FinderMessageRequest struct {
 	Website     string `json:"website,omitempty" example:""`
 }
 
+// ShareLocationRequest is the body of PUT /v1/public/scans/{scanId}/location.
+// @Description Position the finder agreed to share. All three fields are required (0 is a valid value); lat -90..90, lng -180..180, accuracy in meters 0..100000.
+type ShareLocationRequest struct {
+	Lat      *float64 `json:"lat" example:"-33.4372"`
+	Lng      *float64 `json:"lng" example:"-70.6506"`
+	Accuracy *int     `json:"accuracy" example:"35"`
+}
+
 // ActivateTagRequest is the body of POST /v1/tags/{code}/activate.
 type ActivateTagRequest struct {
 	PetID string `json:"petId" example:"2f1c5a0e-6a43-4f8e-9a51-0c2f3f9b7d11"`

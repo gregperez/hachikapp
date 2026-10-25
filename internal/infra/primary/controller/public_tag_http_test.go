@@ -80,10 +80,11 @@ func (m *memTags) Disable(context.Context, string, string, string, time.Time) (d
 }
 
 type memScans struct {
-	mu       sync.Mutex
-	scans    map[string]domain.TagScan
-	messages []domain.TagMessage
-	revealed int
+	mu        sync.Mutex
+	scans     map[string]domain.TagScan
+	messages  []domain.TagMessage
+	revealed  int
+	locations int
 }
 
 func (m *memScans) RecordScan(_ context.Context, scan domain.TagScan, _ time.Time, _ *domain.NotificationDraft) (domain.TagScan, bool, error) {
@@ -113,6 +114,21 @@ func (m *memScans) MarkPhoneRevealed(context.Context, string, time.Time, *domain
 	defer m.mu.Unlock()
 	m.revealed++
 	return m.revealed == 1, nil
+}
+func (m *memScans) SetLocation(_ context.Context, id string, loc domain.ScanLocation, _ *domain.NotificationDraft) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	scan, ok := m.scans[id]
+	if !ok {
+		return domain.ErrNotFound
+	}
+	if scan.Location != nil {
+		return domain.ErrLocationAlreadyShared
+	}
+	scan.Location = &loc
+	m.scans[id] = scan
+	m.locations++
+	return nil
 }
 func (m *memScans) ListScansByPet(context.Context, string, string, authBaseDomain.PageRequest) (authBaseDomain.Page[domain.ScanWithMessages], error) {
 	panic("unused")
@@ -549,5 +565,97 @@ func TestContactHiddenReturns404(t *testing.T) {
 	}
 	if f.scans.revealed != 0 {
 		t.Fatal("hidden contact must not mark the phone as revealed")
+	}
+}
+
+func TestShareLocationHTTP(t *testing.T) {
+	f := newPublicFixture(t, publicTestPet(domain.PetVisibilityAlways), nil)
+	scanID, token := f.scan(t)
+	path := "/v1/public/scans/" + scanID + "/location"
+	auth := map[string]string{"X-Scan-Token": token}
+
+	// 0,0 is a legitimate position.
+	w := f.do(http.MethodPut, path, `{"lat":0,"lng":0,"accuracy":0}`, auth)
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	if w.Header().Get("Cache-Control") != "no-store" || w.Header().Get("X-Robots-Tag") != "noindex" {
+		t.Fatalf("headers=%v", w.Header())
+	}
+	if loc := f.scans.scans[scanID].Location; loc == nil || loc.AccuracyM != 0 {
+		t.Fatalf("loc=%+v", loc)
+	}
+
+	w = f.do(http.MethodPut, path, `{"lat":1,"lng":1,"accuracy":5}`, auth)
+	if w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), "Location already shared") {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Header().Get("Content-Type"), "problem+json") {
+		t.Fatalf("content-type=%q", w.Header().Get("Content-Type"))
+	}
+	assertNoPrivateData(t, "location 409", w)
+}
+
+func TestShareLocationValidation422(t *testing.T) {
+	f := newPublicFixture(t, publicTestPet(domain.PetVisibilityAlways), nil)
+	scanID, token := f.scan(t)
+	path := "/v1/public/scans/" + scanID + "/location"
+	auth := map[string]string{"X-Scan-Token": token}
+	cases := []struct{ name, body, field string }{
+		{"lat range", `{"lat":91,"lng":0,"accuracy":1}`, "lat"},
+		{"lng range", `{"lat":0,"lng":181,"accuracy":1}`, "lng"},
+		{"accuracy range", `{"lat":0,"lng":0,"accuracy":100001}`, "accuracy"},
+		{"missing lat", `{"lng":0,"accuracy":1}`, "lat"},
+		{"missing lng", `{"lat":0,"accuracy":1}`, "lng"},
+		{"missing accuracy", `{"lat":0,"lng":0}`, "accuracy"},
+		{"empty", `{}`, "lat"},
+	}
+	for _, tc := range cases {
+		w := f.do(http.MethodPut, path, tc.body, auth)
+		if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), `"`+tc.field+`"`) {
+			t.Fatalf("%s: status=%d body=%s", tc.name, w.Code, w.Body.String())
+		}
+	}
+	if f.scans.scans[scanID].Location != nil {
+		t.Fatal("nothing may be stored")
+	}
+}
+
+func TestShareLocationBadToken404(t *testing.T) {
+	f := newPublicFixture(t, publicTestPet(domain.PetVisibilityAlways), nil)
+	scanID, _ := f.scan(t)
+	body := `{"lat":1,"lng":1,"accuracy":1}`
+	msg := f.do(http.MethodPost, "/v1/public/scans/"+scanID+"/messages", `{"body":"hola hola"}`, map[string]string{"X-Scan-Token": "nope"})
+	loc := f.do(http.MethodPut, "/v1/public/scans/"+scanID+"/location", body, map[string]string{"X-Scan-Token": "nope"})
+	if loc.Code != http.StatusNotFound || loc.Code != msg.Code || loc.Body.String() == "" {
+		t.Fatalf("location=%d messages=%d", loc.Code, msg.Code)
+	}
+	if w := f.do(http.MethodPut, "/v1/public/scans/"+scanID+"/location", body, nil); w.Code != http.StatusNotFound {
+		t.Fatalf("no token status=%d", w.Code)
+	}
+}
+
+func TestLocationRateLimited(t *testing.T) {
+	f := newPublicFixture(t, publicTestPet(domain.PetVisibilityAlways), nil)
+	scanID, token := f.scan(t)
+	path := "/v1/public/scans/" + scanID + "/location"
+	auth := map[string]string{"X-Scan-Token": token}
+	body := `{"lat":1,"lng":1,"accuracy":1}`
+	for i := 1; i <= 10; i++ {
+		w := f.do(http.MethodPut, path, body, auth)
+		want := http.StatusConflict
+		if i == 1 {
+			want = http.StatusNoContent
+		}
+		if w.Code != want {
+			t.Fatalf("call %d status=%d", i, w.Code)
+		}
+	}
+	w := f.do(http.MethodPut, path, body, auth)
+	if w.Code != http.StatusTooManyRequests {
+		t.Fatalf("call 11 status=%d", w.Code)
+	}
+	if w.Header().Get("Retry-After") == "" || w.Header().Get("Cache-Control") != "no-store" || w.Header().Get("X-Robots-Tag") != "noindex" {
+		t.Fatalf("headers=%v", w.Header())
 	}
 }

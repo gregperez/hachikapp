@@ -13,6 +13,7 @@ type PublicTagUseCase interface {
 	Photo(ctx context.Context, code string) (domain.PetPhoto, error)
 	RecordScan(ctx context.Context, code, visitorID, ip, userAgent string) (domain.ScanReceipt, error)
 	SendMessage(ctx context.Context, scanID, token string, in domain.FinderMessageInput) error
+	ShareLocation(ctx context.Context, scanID, token string, lat, lng float64, accuracy int) error
 	RevealContact(ctx context.Context, scanID, token string) (domain.PublicContact, error)
 	ListPetScans(ctx context.Context, ownerID, petID string, page authBaseDomain.PageRequest) (authBaseDomain.Page[domain.ScanWithMessages], error)
 }

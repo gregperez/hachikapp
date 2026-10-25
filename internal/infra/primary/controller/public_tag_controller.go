@@ -22,8 +22,9 @@ const (
 	// publicMaxBodyBytes bounds anonymous JSON bodies (a message is <= 500 chars).
 	publicMaxBodyBytes int64 = 8 << 10
 
-	publicNotFoundDetail    = "Tag not found"
-	publicRateLimitedDetail = "Too many requests, try again later"
+	publicNotFoundDetail       = "Tag not found"
+	publicLocationSharedDetail = "Location already shared"
+	publicRateLimitedDetail    = "Too many requests, try again later"
 )
 
 // PublicTagController serves the anonymous tag page ("Ficha pública"). It is
@@ -64,6 +65,7 @@ func (pc *PublicTagController) RunController() {
 		group.GET("/tags/:code/photo", pc.limit(ports.PublicTagViewLimit), pc.Photo())
 		group.POST("/tags/:code/scans", pc.limit(ports.PublicTagScanLimit), pc.RecordScan())
 		group.POST("/scans/:scanId/messages", pc.limit(ports.PublicTagMessageLimit), pc.SendMessage())
+		group.PUT("/scans/:scanId/location", pc.limit(ports.PublicTagLocationLimit), pc.ShareLocation())
 		group.POST("/scans/:scanId/contact", pc.limit(ports.PublicTagContactLimit), pc.Contact())
 	}
 }
@@ -213,6 +215,48 @@ func (pc *PublicTagController) SendMessage() gin.HandlerFunc {
 	}
 }
 
+// ShareLocation godoc
+// @Summary Share where the pet was found
+// @Description No login; requires the X-Scan-Token of the scan. The finder chooses to send the position of the device: lat -90..90, lng -180..180, accuracy in meters 0..100000, all required. Allowed once per scan (409 afterwards). The owner is notified. Rate limited per IP (10/hour).
+// @Tags Public tags
+// @Accept json
+// @Param scanId path string true "Scan ID"
+// @Param X-Scan-Token header string true "Token returned when the scan was registered"
+// @Param body body tagin.ShareLocationRequest true "Position"
+// @Success 204 "Location stored"
+// @Failure 400 {object} httpapi.Problem
+// @Failure 404 {object} httpapi.Problem
+// @Failure 409 {object} httpapi.Problem
+// @Failure 422 {object} httpapi.Problem
+// @Failure 429 {object} httpapi.Problem
+// @Router /v1/public/scans/{scanId}/location [put]
+func (pc *PublicTagController) ShareLocation() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req tagin.ShareLocationRequest
+		if !bindPublic(c, &req) {
+			return
+		}
+		var missing []domain.PetFieldIssue
+		for _, f := range []struct {
+			name string
+			nil  bool
+		}{{"lat", req.Lat == nil}, {"lng", req.Lng == nil}, {"accuracy", req.Accuracy == nil}} {
+			if f.nil {
+				missing = append(missing, domain.PetFieldIssue{Field: f.name, Code: "required"})
+			}
+		}
+		if len(missing) > 0 {
+			writePublicTagError(c, &domain.PetValidationError{Issues: missing})
+			return
+		}
+		if err := pc.tags.ShareLocation(c.Request.Context(), c.Param("scanId"), c.GetHeader(scanTokenHeader), *req.Lat, *req.Lng, *req.Accuracy); err != nil {
+			writePublicTagError(c, err)
+			return
+		}
+		c.Status(http.StatusNoContent)
+	}
+}
+
 // Contact godoc
 // @Summary Reveal the family's phone
 // @Description No login; requires the X-Scan-Token of the scan. Returns only the main owner phone and a WhatsApp link, and only when the owner shows the contact button; otherwise 404. This is the only public route that returns a phone. Rate limited per IP (3/hour).
@@ -255,6 +299,8 @@ func writePublicTagError(c *gin.Context, err error) {
 	switch {
 	case errors.As(err, &invalid):
 		httpapi.WriteProblem(c, httpapi.Validation("Request contains invalid fields", requestID, fieldErrors(invalid)))
+	case errors.Is(err, domain.ErrLocationAlreadyShared):
+		httpapi.WriteProblem(c, httpapi.Conflict(publicLocationSharedDetail, requestID))
 	case errors.Is(err, domain.ErrNotFound), errors.Is(err, domain.ErrInvalidScanToken):
 		httpapi.WriteProblem(c, httpapi.NotFound(publicNotFoundDetail, requestID))
 	default:

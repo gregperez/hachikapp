@@ -259,6 +259,20 @@ definitions:
         example: 6f1d2a8e-3b4c-4d5e-8f90-1a2b3c4d5e6f
         type: string
     type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.ShareLocationRequest:
+    description: Position the finder agreed to share. All three fields are required
+      (0 is a valid value); lat -90..90, lng -180..180, accuracy in meters 0..100000.
+    properties:
+      accuracy:
+        example: 35
+        type: integer
+      lat:
+        example: -33.4372
+        type: number
+      lng:
+        example: -70.6506
+        type: number
+    type: object
   github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_users.AdminUpdateUserRequest:
     properties:
       email:
@@ -683,6 +697,21 @@ definitions:
         example: active
         type: string
     type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanLocationResponse:
+    properties:
+      accuracyM:
+        example: 35
+        type: integer
+      at:
+        example: "2026-10-18T21:02:00Z"
+        type: string
+      lat:
+        example: -33.4372
+        type: number
+      lng:
+        example: -70.6506
+        type: number
+    type: object
   github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanMessageResponse:
     properties:
       body:
@@ -713,6 +742,8 @@ definitions:
     properties:
       id:
         type: string
+      location:
+        $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanLocationResponse'
       messages:
         items:
           $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_tags.ScanMessageResponse'
@@ -1858,6 +1889,57 @@ paths:
           schema:
             $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
       summary: Reveal the family's phone
+      tags:
+      - Public tags
+  /v1/public/scans/{scanId}/location:
+    put:
+      consumes:
+      - application/json
+      description: 'No login; requires the X-Scan-Token of the scan. The finder chooses
+        to send the position of the device: lat -90..90, lng -180..180, accuracy in
+        meters 0..100000, all required. Allowed once per scan (409 afterwards). The
+        owner is notified. Rate limited per IP (10/hour).'
+      parameters:
+      - description: Scan ID
+        in: path
+        name: scanId
+        required: true
+        type: string
+      - description: Token returned when the scan was registered
+        in: header
+        name: X-Scan-Token
+        required: true
+        type: string
+      - description: Position
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_inputs_tags.ShareLocationRequest'
+      responses:
+        "204":
+          description: Location stored
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      summary: Share where the pet was found
       tags:
       - Public tags
   /v1/public/scans/{scanId}/messages:

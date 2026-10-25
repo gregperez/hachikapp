@@ -167,6 +167,22 @@ func (s *PublicTagService) SendMessage(ctx context.Context, scanID, token string
 	return err
 }
 
+func (s *PublicTagService) ShareLocation(ctx context.Context, scanID, token string, lat, lng float64, accuracy int) error {
+	scan, tag, pet, err := s.authorizedScan(ctx, scanID, token)
+	if err != nil {
+		return err
+	}
+	if err := domain.ValidateScanLocation(lat, lng, accuracy); err != nil {
+		return err
+	}
+	loc := domain.ScanLocation{Lat: lat, Lng: lng, AccuracyM: accuracy, At: s.now()}
+	draft := s.draft(domain.NotificationLocationShared, tag, pet, scan)
+	if draft != nil {
+		draft.Payload.Location = &loc
+	}
+	return s.scans.SetLocation(ctx, scan.ID, loc, draft)
+}
+
 func (s *PublicTagService) RevealContact(ctx context.Context, scanID, token string) (domain.PublicContact, error) {
 	scan, tag, pet, err := s.authorizedScan(ctx, scanID, token)
 	if err != nil {

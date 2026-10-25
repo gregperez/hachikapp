@@ -96,6 +96,9 @@ type stubScanHistoryUC struct {
 func (s *stubScanHistoryUC) View(context.Context, string) (domain.PublicTagView, error) {
 	panic("unused")
 }
+func (s *stubScanHistoryUC) ShareLocation(context.Context, string, string, float64, float64, int) error {
+	panic("unused")
+}
 func (s *stubScanHistoryUC) Photo(context.Context, string) (domain.PetPhoto, error) { panic("unused") }
 func (s *stubScanHistoryUC) RecordScan(context.Context, string, string, string, string) (domain.ScanReceipt, error) {
 	panic("unused")
@@ -315,5 +318,47 @@ func TestTagRoutesCoexistWithPetRoutes(t *testing.T) {
 		if w := doPet(engine, http.MethodGet, path, "", ""); w.Code != http.StatusOK {
 			t.Fatalf("GET %s status=%d body=%s", path, w.Code, w.Body.String())
 		}
+	}
+}
+
+func TestOwnerScansIncludeLocation(t *testing.T) {
+	scannedAt := time.Date(2026, 10, 18, 21, 0, 0, 0, time.UTC)
+	at := scannedAt.Add(2 * time.Minute)
+	scans := &stubScanHistoryUC{page: authBaseDomain.Page[domain.ScanWithMessages]{
+		Items: []domain.ScanWithMessages{
+			{TagScan: domain.TagScan{ID: "33333333-3333-3333-3333-000000000001", ScannedAt: scannedAt,
+				Location: &domain.ScanLocation{Lat: -33.4372, Lng: -70.6506, AccuracyM: 35, At: at}}, TagCode: publicTestCode},
+			{TagScan: domain.TagScan{ID: "33333333-3333-3333-3333-000000000002", ScannedAt: scannedAt}, TagCode: publicTestCode},
+		},
+	}}
+	w := doPet(tagEngine(&stubTagUC{}, scans, true), http.MethodGet, "/v1/pets/"+testPetID+"/scans", "", "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	var env struct {
+		Data struct {
+			Data []map[string]any `json:"data"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &env); err != nil {
+		t.Fatal(err)
+	}
+	items := env.Data.Data
+	if len(items) == 0 {
+		var flat struct {
+			Data []map[string]any `json:"data"`
+		}
+		_ = json.Unmarshal(w.Body.Bytes(), &flat)
+		items = flat.Data
+	}
+	if len(items) != 2 {
+		t.Fatalf("body=%s", w.Body.String())
+	}
+	loc, ok := items[0]["location"].(map[string]any)
+	if !ok || loc["lat"] != -33.4372 || loc["lng"] != -70.6506 || loc["accuracyM"] != float64(35) || loc["at"] != "2026-10-18T21:02:00Z" {
+		t.Fatalf("location=%v", items[0]["location"])
+	}
+	if _, present := items[1]["location"]; present {
+		t.Fatalf("scan without location must omit the key: %v", items[1])
 	}
 }

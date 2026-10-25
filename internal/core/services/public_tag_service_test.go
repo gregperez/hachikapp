@@ -72,6 +72,20 @@ func (m *memScans) MarkPhoneRevealed(_ context.Context, id string, at time.Time,
 	return true, nil
 }
 
+func (m *memScans) SetLocation(_ context.Context, id string, loc domain.ScanLocation, draft *domain.NotificationDraft) error {
+	scan, ok := m.scans[id]
+	if !ok {
+		return domain.ErrNotFound
+	}
+	if scan.Location != nil {
+		return domain.ErrLocationAlreadyShared
+	}
+	scan.Location = &loc
+	m.scans[id] = scan
+	m.drafts = append(m.drafts, draft)
+	return nil
+}
+
 func (m *memScans) ListScansByPet(context.Context, string, string, authBaseDomain.PageRequest) (authBaseDomain.Page[domain.ScanWithMessages], error) {
 	items := []domain.ScanWithMessages{}
 	for _, s := range m.scans {
@@ -516,5 +530,84 @@ func TestEmailFlagOff(t *testing.T) {
 		if d == nil || d.Email {
 			t.Fatalf("draft %d=%+v", i, d)
 		}
+	}
+}
+
+func TestShareLocationValidatesAndStores(t *testing.T) {
+	f := newPublicFixture(t, domain.PetDetails{})
+	r := f.scan(t)
+	ctx := context.Background()
+
+	for _, bad := range []struct {
+		lat, lng float64
+		acc      int
+		field    string
+	}{{91, 0, 10, "lat"}, {0, -181, 10, "lng"}, {0, 0, -1, "accuracy"}, {0, 0, 100001, "accuracy"}} {
+		err := f.svc.ShareLocation(ctx, r.ScanID, r.Token, bad.lat, bad.lng, bad.acc)
+		var ve *domain.PetValidationError
+		if !errors.As(err, &ve) || ve.Issues[0].Field != bad.field {
+			t.Fatalf("%+v: %v", bad, err)
+		}
+	}
+	if f.scans.scans[r.ScanID].Location != nil {
+		t.Fatal("invalid input must not be stored")
+	}
+
+	// 0,0 and the range edges are valid values.
+	if err := f.svc.ShareLocation(ctx, r.ScanID, r.Token, 0, 0, 0); err != nil {
+		t.Fatal(err)
+	}
+	loc := f.scans.scans[r.ScanID].Location
+	if loc == nil || loc.Lat != 0 || loc.Lng != 0 || loc.AccuracyM != 0 || !loc.At.Equal(f.svc.now()) {
+		t.Fatalf("loc=%+v", loc)
+	}
+	d := lastDraft(t, f.scans)
+	if d == nil || d.Kind != domain.NotificationLocationShared || d.UserID != ownerA || !d.Email || d.Payload.PetName != "Luna" {
+		t.Fatalf("draft=%+v", d)
+	}
+	if d.Payload.Location == nil || *d.Payload.Location != *loc {
+		t.Fatalf("payload location=%+v", d.Payload.Location)
+	}
+}
+
+func TestShareLocationTwiceConflict(t *testing.T) {
+	f := newPublicFixture(t, domain.PetDetails{})
+	r := f.scan(t)
+	ctx := context.Background()
+	if err := f.svc.ShareLocation(ctx, r.ScanID, r.Token, -33.4, -70.6, 25); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.svc.ShareLocation(ctx, r.ScanID, r.Token, -33.5, -70.7, 30); !errors.Is(err, domain.ErrLocationAlreadyShared) {
+		t.Fatalf("err=%v", err)
+	}
+	if got := f.scans.scans[r.ScanID].Location; got.Lat != -33.4 {
+		t.Fatalf("first location must win: %+v", got)
+	}
+}
+
+func TestShareLocationBadToken404(t *testing.T) {
+	f := newPublicFixture(t, domain.PetDetails{})
+	r := f.scan(t)
+	ctx := context.Background()
+	for _, token := range []string{"", "wrong"} {
+		if err := f.svc.ShareLocation(ctx, r.ScanID, token, 1, 1, 1); !errors.Is(err, domain.ErrInvalidScanToken) {
+			t.Fatalf("token %q: %v", token, err)
+		}
+	}
+	// Auth comes before validation: a bad token with bad input is still the token error.
+	if err := f.svc.ShareLocation(ctx, r.ScanID, "wrong", 999, 1, 1); !errors.Is(err, domain.ErrInvalidScanToken) {
+		t.Fatalf("err=%v", err)
+	}
+	if err := f.svc.ShareLocation(ctx, "not-a-uuid", r.Token, 1, 1, 1); !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("err=%v", err)
+	}
+	if _, err := f.tags.Disable(ctx, ownerA, f.pet.ID, f.tag.ID, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.svc.ShareLocation(ctx, r.ScanID, r.Token, 1, 1, 1); !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("disabled tag: %v", err)
+	}
+	if f.scans.scans[r.ScanID].Location != nil {
+		t.Fatal("nothing may be stored")
 	}
 }

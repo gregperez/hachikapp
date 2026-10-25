@@ -39,6 +39,8 @@ type TagScan struct {
 	IPPrefix        string
 	UserAgentFamily string
 	PhoneRevealedAt *time.Time
+	// Location is what the finder chose to share, nil until they do.
+	Location *ScanLocation
 }
 
 // TagMessage is a message a finder left for the owner.

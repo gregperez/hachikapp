@@ -56,7 +56,8 @@ VALUES ($1::uuid, 'email', 'pending', 0, $2)`, notificationID, nextAttempt); err
 // groupIntoScanEmail merges the event into the payload of the scan's pending,
 // never-attempted tag_scanned email. A delivery whose next_attempt_at is past
 // created_at + FirstEmailDelay has been leased by a dispatcher, so it is left
-// alone and the event sends on its own.
+// alone and the event sends on its own. A finder message only merges while
+// that email has no message yet, so a second message keeps its own email.
 func groupIntoScanEmail(ctx context.Context, tx database.Transaction, draft domain.NotificationDraft, scanID string, now time.Time) (bool, error) {
 	if scanID == "" {
 		return false, nil
@@ -78,6 +79,12 @@ func groupIntoScanEmail(ctx context.Context, tx database.Transaction, draft doma
 	default:
 		return false, nil
 	}
+	// The scan email shows one message: later ones send on their own instead
+	// of overwriting it (payload || would replace "message").
+	skipIfHas := ""
+	if draft.Kind == domain.NotificationFinderMessage {
+		skipIfHas = "message"
+	}
 	var scanNotificationID string
 	err := tx.QueryRow(ctx, `SELECT n.id::text
 FROM public.notifications n
@@ -86,9 +93,10 @@ WHERE n.scan_id = $1::uuid AND n.kind = 'tag_scanned'
   AND d.channel = 'email' AND d.status = 'pending' AND d.attempts = 0
   AND d.next_attempt_at > $2
   AND d.next_attempt_at <= n.created_at + make_interval(secs => $3)
+  AND ($4 = '' OR NOT (n.payload ? $4))
 ORDER BY n.created_at DESC
 LIMIT 1
-FOR UPDATE OF n, d`, scanID, now, domain.FirstEmailDelay.Seconds()).Scan(&scanNotificationID)
+FOR UPDATE OF n, d`, scanID, now, domain.FirstEmailDelay.Seconds(), skipIfHas).Scan(&scanNotificationID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return false, nil
 	}

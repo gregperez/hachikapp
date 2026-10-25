@@ -178,19 +178,22 @@ ORDER BY n.created_at, c.id`, now, limit, now.Add(lease))
 
 func (s *Store) MarkSent(ctx context.Context, id string, at time.Time) error {
 	return s.updateDelivery(ctx, "mark delivery sent", `UPDATE public.notification_deliveries
-SET status = 'sent', sent_at = $2 WHERE id = $1::uuid`, id, at)
+SET status = 'sent', sent_at = $2 WHERE id = $1::uuid AND status = 'pending'`, id, at)
 }
 
 func (s *Store) MarkRetry(ctx context.Context, id string, attempts int, next time.Time, lastErr string) error {
 	return s.updateDelivery(ctx, "mark delivery retry", `UPDATE public.notification_deliveries
-SET attempts = $2, next_attempt_at = $3, last_error = $4 WHERE id = $1::uuid`, id, attempts, next, truncate(lastErr))
+SET attempts = $2, next_attempt_at = $3, last_error = $4 WHERE id = $1::uuid AND status = 'pending'`, id, attempts, next, truncate(lastErr))
 }
 
 func (s *Store) MarkFailed(ctx context.Context, id string, attempts int, lastErr string) error {
 	return s.updateDelivery(ctx, "mark delivery failed", `UPDATE public.notification_deliveries
-SET status = 'failed', attempts = $2, last_error = $3 WHERE id = $1::uuid`, id, attempts, truncate(lastErr))
+SET status = 'failed', attempts = $2, last_error = $3 WHERE id = $1::uuid AND status = 'pending'`, id, attempts, truncate(lastErr))
 }
 
+// updateDelivery only touches pending deliveries, so a late mark cannot
+// overwrite one another worker already finished; that case is a no-op, while
+// an unknown id is ErrNotFound. args[0] must be the delivery id.
 func (s *Store) updateDelivery(ctx context.Context, op, sql string, args ...any) error {
 	tag, err := s.db.Exec(ctx, sql, args...)
 	if err != nil {
@@ -199,7 +202,14 @@ func (s *Store) updateDelivery(ctx context.Context, op, sql string, args ...any)
 		}
 		return fmt.Errorf("%s: %w", op, err)
 	}
-	if tag.RowsAffected() == 0 {
+	if tag.RowsAffected() > 0 {
+		return nil
+	}
+	var exists bool
+	if err := s.db.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM public.notification_deliveries WHERE id = $1::uuid)`, args[0]).Scan(&exists); err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if !exists {
 		return domain.ErrNotFound
 	}
 	return nil

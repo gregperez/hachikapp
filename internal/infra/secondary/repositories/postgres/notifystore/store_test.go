@@ -209,6 +209,67 @@ func TestInsertEventGroupsIntoPendingScanEmail(t *testing.T) {
 	}
 }
 
+func TestInsertEventSecondFinderMessageGetsOwnEmail(t *testing.T) {
+	f := newFixture(t, "notif-two-msgs@example.test")
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Millisecond)
+	scan := f.newScan(t)
+	f.insert(t, f.draft(domain.NotificationTagScanned, true), scan, "", now)
+
+	first := f.draft(domain.NotificationFinderMessage, true)
+	first.Payload.Message = &domain.TagMessageSummary{Body: "primer mensaje", FinderName: "Pedro"}
+	f.insert(t, first, scan, f.newMessage(t, scan), now.Add(10*time.Second))
+	second := f.draft(domain.NotificationFinderMessage, true)
+	second.Payload.Message = &domain.TagMessageSummary{Body: "segundo mensaje", FinderName: "Pedro"}
+	secondAt := now.Add(20 * time.Second)
+	f.insert(t, second, scan, f.newMessage(t, scan), secondAt)
+
+	if n := f.deliveryCount(t); n != 2 {
+		t.Fatalf("deliveries=%d want 2 (scan email + second message)", n)
+	}
+	var kinds []string
+	rows, err := f.pool.Query(ctx, `SELECT n.kind, n.payload->'message'->>'body', d.next_attempt_at
+FROM public.notification_deliveries d JOIN public.notifications n ON n.id = d.notification_id
+WHERE n.user_id = $1::uuid ORDER BY n.created_at`, f.userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var kind string
+		var body *string
+		var next time.Time
+		if err := rows.Scan(&kind, &body, &next); err != nil {
+			t.Fatal(err)
+		}
+		kinds = append(kinds, kind)
+		switch kind {
+		case string(domain.NotificationTagScanned):
+			if body == nil || *body != "primer mensaje" {
+				t.Fatalf("scan email message=%v want first message", body)
+			}
+			if !next.Equal(now.Add(domain.FirstEmailDelay)) {
+				t.Fatalf("scan next=%v", next)
+			}
+		case string(domain.NotificationFinderMessage):
+			if body == nil || *body != "segundo mensaje" {
+				t.Fatalf("own delivery message=%v want second message", body)
+			}
+			if !next.Equal(secondAt) {
+				t.Fatalf("second next=%v want %v", next, secondAt)
+			}
+		default:
+			t.Fatalf("unexpected delivery kind %s", kind)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if len(kinds) != 2 || kinds[0] == kinds[1] {
+		t.Fatalf("delivery kinds=%v", kinds)
+	}
+}
+
 func TestInsertEventNoGroupingAfterDue(t *testing.T) {
 	f := newFixture(t, "notif-due@example.test")
 	now := time.Now().UTC().Truncate(time.Millisecond)
@@ -415,6 +476,25 @@ func TestMarkSentRetryAndFailed(t *testing.T) {
 	}
 	if st, att, _, le, _ := read(got[2].ID); st != "failed" || att != 6 || le != "boom" {
 		t.Fatalf("failed st=%s att=%d le=%s", st, att, le)
+	}
+	// Late marks on a delivery another worker already finished are no-ops.
+	if err := f.store.MarkRetry(ctx, got[0].ID, 2, retryAt, "late"); err != nil {
+		t.Fatalf("late retry on sent: %v", err)
+	}
+	if err := f.store.MarkFailed(ctx, got[0].ID, 6, "late"); err != nil {
+		t.Fatalf("late failed on sent: %v", err)
+	}
+	if st, att, _, le, sent := read(got[0].ID); st != "sent" || att != 0 || le != "" || sent == nil || !sent.Equal(now) {
+		t.Fatalf("sent delivery overwritten: st=%s att=%d le=%q sent=%v", st, att, le, sent)
+	}
+	if err := f.store.MarkSent(ctx, got[2].ID, now.Add(time.Hour)); err != nil {
+		t.Fatalf("late sent on failed: %v", err)
+	}
+	if err := f.store.MarkRetry(ctx, got[2].ID, 7, retryAt, "late"); err != nil {
+		t.Fatalf("late retry on failed: %v", err)
+	}
+	if st, att, _, le, sent := read(got[2].ID); st != "failed" || att != 6 || le != "boom" || sent != nil {
+		t.Fatalf("failed delivery overwritten: st=%s att=%d le=%q sent=%v", st, att, le, sent)
 	}
 	missing := "00000000-0000-0000-0000-000000000000"
 	if err := f.store.MarkSent(ctx, missing, now); !errors.Is(err, domain.ErrNotFound) {

@@ -26,6 +26,7 @@ type PublicTagService struct {
 	pepper []byte
 	random io.Reader
 	now    func() time.Time
+	email  bool
 }
 
 // NewPublicTagService builds the service. pepper keys the visitor and scan
@@ -43,6 +44,34 @@ func NewPublicTagService(tags ports.TagPort, scans ports.TagScanPort, pets ports
 		pepper: pepper,
 		random: random,
 		now:    func() time.Time { return time.Now().UTC() },
+		email:  true,
+	}
+}
+
+// WithEmailNotifications sets whether owner notifications also ask for an email
+// delivery (default true). In-app notices are always created.
+func (s *PublicTagService) WithEmailNotifications(enabled bool) *PublicTagService {
+	s.email = enabled
+	return s
+}
+
+// draft builds the owner notification for an event, or nil when the tag has no owner.
+func (s *PublicTagService) draft(kind domain.NotificationKind, tag domain.PetTag, pet domain.Pet, scan domain.TagScan) *domain.NotificationDraft {
+	if tag.OwnerID == "" {
+		return nil
+	}
+	return &domain.NotificationDraft{
+		UserID: tag.OwnerID,
+		PetID:  pet.ID,
+		TagID:  tag.ID,
+		Kind:   kind,
+		Payload: domain.NotificationPayload{
+			PetName:   pet.Name,
+			TagCode:   tag.Code,
+			ScannedAt: scan.ScannedAt,
+			Device:    scan.UserAgentFamily,
+		},
+		Email: s.email,
 	}
 }
 
@@ -96,7 +125,7 @@ func (s *PublicTagService) RecordScan(ctx context.Context, code, visitorID, ip, 
 		return domain.ScanReceipt{}, fmt.Errorf("generate scan token: %w", err)
 	}
 	now := s.now()
-	scan, _, err := s.scans.RecordScan(ctx, domain.TagScan{
+	newScan := domain.TagScan{
 		TagID:           tag.ID,
 		PetID:           pet.ID,
 		ScannedAt:       now,
@@ -104,7 +133,9 @@ func (s *PublicTagService) RecordScan(ctx context.Context, code, visitorID, ip, 
 		ScanTokenHash:   domain.KeyedHash(s.pepper, token),
 		IPPrefix:        domain.IPPrefix(ip),
 		UserAgentFamily: domain.UserAgentFamily(userAgent),
-	}, now.Add(-domain.ScanDedupeWindow))
+	}
+	scan, _, err := s.scans.RecordScan(ctx, newScan, now.Add(-domain.ScanDedupeWindow),
+		s.draft(domain.NotificationTagScanned, tag, pet, newScan))
 	if err != nil {
 		return domain.ScanReceipt{}, err
 	}
@@ -112,13 +143,17 @@ func (s *PublicTagService) RecordScan(ctx context.Context, code, visitorID, ip, 
 }
 
 func (s *PublicTagService) SendMessage(ctx context.Context, scanID, token string, in domain.FinderMessageInput) error {
-	scan, _, _, err := s.authorizedScan(ctx, scanID, token)
+	scan, tag, pet, err := s.authorizedScan(ctx, scanID, token)
 	if err != nil {
 		return err
 	}
 	in = domain.NormalizeFinderMessage(in)
 	if err := domain.ValidateFinderMessage(in); err != nil {
 		return err
+	}
+	draft := s.draft(domain.NotificationFinderMessage, tag, pet, scan)
+	if draft != nil {
+		draft.Payload.Message = &domain.TagMessageSummary{Body: in.Body, FinderName: in.FinderName, FinderPhone: in.FinderPhone}
 	}
 	_, err = s.scans.AddMessage(ctx, domain.TagMessage{
 		ScanID:      scan.ID,
@@ -127,12 +162,13 @@ func (s *PublicTagService) SendMessage(ctx context.Context, scanID, token string
 		Body:        in.Body,
 		FinderName:  in.FinderName,
 		FinderPhone: in.FinderPhone,
-	})
+		CreatedAt:   s.now(),
+	}, draft)
 	return err
 }
 
 func (s *PublicTagService) RevealContact(ctx context.Context, scanID, token string) (domain.PublicContact, error) {
-	scan, _, pet, err := s.authorizedScan(ctx, scanID, token)
+	scan, tag, pet, err := s.authorizedScan(ctx, scanID, token)
 	if err != nil {
 		return domain.PublicContact{}, err
 	}
@@ -140,8 +176,12 @@ func (s *PublicTagService) RevealContact(ctx context.Context, scanID, token stri
 	if !domain.PublicProfileOf(pet, false, s.now()).CanContact || strings.TrimSpace(phone) == "" {
 		return domain.PublicContact{}, domain.ErrNotFound
 	}
-	// Part 2 uses the result to notify the owner on the first reveal only.
-	if _, err := s.scans.MarkPhoneRevealed(ctx, scan.ID, s.now()); err != nil {
+	// The store notifies the owner on the first reveal only.
+	draft := s.draft(domain.NotificationPhoneRevealed, tag, pet, scan)
+	if draft != nil {
+		draft.Payload.PhoneRevealed = true
+	}
+	if _, err := s.scans.MarkPhoneRevealed(ctx, scan.ID, s.now(), draft); err != nil {
 		return domain.PublicContact{}, err
 	}
 	return domain.PublicContact{Phone: phone, WhatsAppURL: whatsAppURL(phone)}, nil

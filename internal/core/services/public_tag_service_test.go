@@ -22,11 +22,12 @@ type memScans struct {
 	seq        int
 	revealed   int
 	lastDedupe time.Time
+	drafts     []*domain.NotificationDraft
 }
 
 func newMemScans() *memScans { return &memScans{scans: map[string]domain.TagScan{}} }
 
-func (m *memScans) RecordScan(_ context.Context, scan domain.TagScan, dedupeSince time.Time) (domain.TagScan, bool, error) {
+func (m *memScans) RecordScan(_ context.Context, scan domain.TagScan, dedupeSince time.Time, draft *domain.NotificationDraft) (domain.TagScan, bool, error) {
 	m.lastDedupe = dedupeSince
 	for id, existing := range m.scans {
 		if existing.TagID == scan.TagID && existing.VisitorHash == scan.VisitorHash && !existing.ScannedAt.Before(dedupeSince) {
@@ -38,6 +39,7 @@ func (m *memScans) RecordScan(_ context.Context, scan domain.TagScan, dedupeSinc
 	m.seq++
 	scan.ID = fmt.Sprintf("22222222-0000-4000-8000-%012d", m.seq)
 	m.scans[scan.ID] = scan
+	m.drafts = append(m.drafts, draft)
 	return scan, false, nil
 }
 
@@ -49,12 +51,13 @@ func (m *memScans) GetScan(_ context.Context, id string) (domain.TagScan, error)
 	return scan, nil
 }
 
-func (m *memScans) AddMessage(_ context.Context, msg domain.TagMessage) (domain.TagMessage, error) {
+func (m *memScans) AddMessage(_ context.Context, msg domain.TagMessage, draft *domain.NotificationDraft) (domain.TagMessage, error) {
+	m.drafts = append(m.drafts, draft)
 	m.messages = append(m.messages, msg)
 	return msg, nil
 }
 
-func (m *memScans) MarkPhoneRevealed(_ context.Context, id string, at time.Time) (bool, error) {
+func (m *memScans) MarkPhoneRevealed(_ context.Context, id string, at time.Time, draft *domain.NotificationDraft) (bool, error) {
 	scan, ok := m.scans[id]
 	if !ok {
 		return false, domain.ErrNotFound
@@ -63,6 +66,7 @@ func (m *memScans) MarkPhoneRevealed(_ context.Context, id string, at time.Time)
 		return false, nil
 	}
 	scan.PhoneRevealedAt = &at
+	m.drafts = append(m.drafts, draft)
 	m.scans[id] = scan
 	m.revealed++
 	return true, nil
@@ -438,5 +442,79 @@ func TestListPetScansIsOwnerScoped(t *testing.T) {
 	}
 	if _, err := f.svc.ListPetScans(context.Background(), ownerA, "bad", authBaseDomain.PageRequest{}); !errors.Is(err, domain.ErrNotFound) {
 		t.Fatalf("bad id: %v", err)
+	}
+}
+
+func lastDraft(t *testing.T, m *memScans) *domain.NotificationDraft {
+	t.Helper()
+	if len(m.drafts) == 0 {
+		t.Fatal("no draft recorded")
+	}
+	return m.drafts[len(m.drafts)-1]
+}
+
+func TestRecordScanBuildsScanDraft(t *testing.T) {
+	f := newPublicFixture(t, domain.PetDetails{})
+	if _, err := f.svc.RecordScan(context.Background(), f.tag.Code, testVisitor, "203.0.113.9", "Mozilla/5.0 (iPhone)"); err != nil {
+		t.Fatal(err)
+	}
+	d := lastDraft(t, f.scans)
+	if d == nil {
+		t.Fatal("nil draft")
+	}
+	if d.UserID != ownerA || d.PetID != f.pet.ID || d.TagID != f.tag.ID || d.Kind != domain.NotificationTagScanned || !d.Email {
+		t.Fatalf("draft=%+v", d)
+	}
+	want := domain.NotificationPayload{PetName: "Luna", TagCode: f.tag.Code, ScannedAt: f.svc.now(), Device: "ios"}
+	if d.Payload != want {
+		t.Fatalf("payload=%+v want %+v", d.Payload, want)
+	}
+}
+
+func TestSendMessageBuildsMessageDraft(t *testing.T) {
+	f := newPublicFixture(t, domain.PetDetails{})
+	r, _ := f.svc.RecordScan(context.Background(), f.tag.Code, testVisitor, "1.2.3.4", "Android")
+	err := f.svc.SendMessage(context.Background(), r.ScanID, r.Token, domain.FinderMessageInput{Body: "  La encontré  ", FinderName: " Ana ", FinderPhone: "+56 9 1111 2222"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	d := lastDraft(t, f.scans)
+	if d == nil || d.Kind != domain.NotificationFinderMessage || d.UserID != ownerA || !d.Email {
+		t.Fatalf("draft=%+v", d)
+	}
+	m := d.Payload.Message
+	if m == nil || m.Body != "La encontré" || m.FinderName != "Ana" || m.FinderPhone != f.scans.messages[0].FinderPhone {
+		t.Fatalf("message=%+v", m)
+	}
+	if d.Payload.PetName != "Luna" || d.Payload.Device != "android" || d.Payload.TagCode != f.tag.Code {
+		t.Fatalf("payload=%+v", d.Payload)
+	}
+}
+
+func TestRevealContactBuildsPhoneDraft(t *testing.T) {
+	f := newPublicFixture(t, domain.PetDetails{})
+	r, _ := f.svc.RecordScan(context.Background(), f.tag.Code, testVisitor, "1.2.3.4", "Mozilla/5.0 (iPhone)")
+	if _, err := f.svc.RevealContact(context.Background(), r.ScanID, r.Token); err != nil {
+		t.Fatal(err)
+	}
+	d := lastDraft(t, f.scans)
+	if d == nil || d.Kind != domain.NotificationPhoneRevealed || !d.Payload.PhoneRevealed || d.UserID != ownerA || !d.Email {
+		t.Fatalf("draft=%+v", d)
+	}
+}
+
+func TestEmailFlagOff(t *testing.T) {
+	f := newPublicFixture(t, domain.PetDetails{})
+	f.svc.WithEmailNotifications(false)
+	r, _ := f.svc.RecordScan(context.Background(), f.tag.Code, testVisitor, "1.2.3.4", "ua")
+	_ = f.svc.SendMessage(context.Background(), r.ScanID, r.Token, domain.FinderMessageInput{Body: "hola hola hola"})
+	_, _ = f.svc.RevealContact(context.Background(), r.ScanID, r.Token)
+	if len(f.scans.drafts) != 3 {
+		t.Fatalf("drafts=%d", len(f.scans.drafts))
+	}
+	for i, d := range f.scans.drafts {
+		if d == nil || d.Email {
+			t.Fatalf("draft %d=%+v", i, d)
+		}
 	}
 }

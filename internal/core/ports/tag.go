@@ -38,14 +38,18 @@ type TagPort interface {
 type TagScanPort interface {
 	// RecordScan stores scan, unless the same (tag, visitor) already scanned at or
 	// after dedupeSince: then that scan keeps its time, takes the new
-	// scan_token_hash and is returned with reused=true.
-	RecordScan(ctx context.Context, scan domain.TagScan, dedupeSince time.Time) (domain.TagScan, bool, error)
+	// scan_token_hash and is returned with reused=true. A non-nil draft creates
+	// its notification in the same transaction, only when the scan is new.
+	RecordScan(ctx context.Context, scan domain.TagScan, dedupeSince time.Time, draft *domain.NotificationDraft) (domain.TagScan, bool, error)
 	// GetScan returns domain.ErrNotFound for an unknown scan.
 	GetScan(ctx context.Context, scanID string) (domain.TagScan, error)
-	AddMessage(ctx context.Context, msg domain.TagMessage) (domain.TagMessage, error)
+	// AddMessage stores the message and, for a non-nil draft, its notification in
+	// one transaction. A zero msg.CreatedAt is filled by the database.
+	AddMessage(ctx context.Context, msg domain.TagMessage, draft *domain.NotificationDraft) (domain.TagMessage, error)
 	// MarkPhoneRevealed returns true only for the call that sets phone_revealed_at,
-	// and domain.ErrNotFound when the scan does not exist.
-	MarkPhoneRevealed(ctx context.Context, scanID string, at time.Time) (bool, error)
+	// and domain.ErrNotFound when the scan does not exist. A non-nil draft creates
+	// its notification in the same transaction, only on that first reveal.
+	MarkPhoneRevealed(ctx context.Context, scanID string, at time.Time, draft *domain.NotificationDraft) (bool, error)
 	// ListScansByPet returns the pet's scans newest first with their messages
 	// (oldest first), only when the pet belongs to ownerID; otherwise an empty page.
 	// The cursor key is (scanned_at, id).

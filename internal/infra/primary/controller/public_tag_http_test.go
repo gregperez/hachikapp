@@ -86,7 +86,7 @@ type memScans struct {
 	revealed int
 }
 
-func (m *memScans) RecordScan(_ context.Context, scan domain.TagScan, _ time.Time) (domain.TagScan, bool, error) {
+func (m *memScans) RecordScan(_ context.Context, scan domain.TagScan, _ time.Time, _ *domain.NotificationDraft) (domain.TagScan, bool, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	scan.ID = fmt.Sprintf("33333333-3333-3333-3333-%012d", len(m.scans)+1)
@@ -102,13 +102,13 @@ func (m *memScans) GetScan(_ context.Context, id string) (domain.TagScan, error)
 	}
 	return scan, nil
 }
-func (m *memScans) AddMessage(_ context.Context, msg domain.TagMessage) (domain.TagMessage, error) {
+func (m *memScans) AddMessage(_ context.Context, msg domain.TagMessage, _ *domain.NotificationDraft) (domain.TagMessage, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.messages = append(m.messages, msg)
 	return msg, nil
 }
-func (m *memScans) MarkPhoneRevealed(context.Context, string, time.Time) (bool, error) {
+func (m *memScans) MarkPhoneRevealed(context.Context, string, time.Time, *domain.NotificationDraft) (bool, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.revealed++

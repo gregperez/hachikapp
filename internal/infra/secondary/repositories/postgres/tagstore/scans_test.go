@@ -61,7 +61,7 @@ func TestRecordScanDedupes(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now().UTC().Truncate(time.Microsecond)
 
-	first, reused, err := f.store.RecordScan(ctx, f.scan("v1", "t1", now), now.Add(-domain.ScanDedupeWindow))
+	first, reused, err := f.store.RecordScan(ctx, f.scan("v1", "t1", now), now.Add(-domain.ScanDedupeWindow), nil)
 	if err != nil || reused || first.ID == "" {
 		t.Fatalf("first=%+v reused=%v err=%v", first, reused, err)
 	}
@@ -70,7 +70,7 @@ func TestRecordScanDedupes(t *testing.T) {
 	}
 
 	later := now.Add(5 * time.Minute)
-	second, reused, err := f.store.RecordScan(ctx, f.scan("v1", "t2", later), later.Add(-domain.ScanDedupeWindow))
+	second, reused, err := f.store.RecordScan(ctx, f.scan("v1", "t2", later), later.Add(-domain.ScanDedupeWindow), nil)
 	if err != nil || !reused || second.ID != first.ID {
 		t.Fatalf("second=%+v reused=%v err=%v", second, reused, err)
 	}
@@ -83,14 +83,14 @@ func TestRecordScanDedupes(t *testing.T) {
 	}
 
 	// A different visitor is a different scan.
-	other, reused, err := f.store.RecordScan(ctx, f.scan("v2", "t3", later), later.Add(-domain.ScanDedupeWindow))
+	other, reused, err := f.store.RecordScan(ctx, f.scan("v2", "t3", later), later.Add(-domain.ScanDedupeWindow), nil)
 	if err != nil || reused || other.ID == first.ID {
 		t.Fatalf("other=%+v reused=%v err=%v", other, reused, err)
 	}
 
 	// Outside the window a new scan is stored.
 	far := now.Add(30 * time.Minute)
-	third, reused, err := f.store.RecordScan(ctx, f.scan("v1", "t4", far), far.Add(-domain.ScanDedupeWindow))
+	third, reused, err := f.store.RecordScan(ctx, f.scan("v1", "t4", far), far.Add(-domain.ScanDedupeWindow), nil)
 	if err != nil || reused || third.ID == first.ID {
 		t.Fatalf("third=%+v reused=%v err=%v", third, reused, err)
 	}
@@ -109,7 +109,7 @@ func TestRecordScanConcurrentSameVisitorInsertsOnce(t *testing.T) {
 	results := make(chan result, n)
 	for i := 0; i < n; i++ {
 		go func(i int) {
-			s, reused, err := f.store.RecordScan(ctx, f.scan("same", "tok"+string(rune('a'+i)), now), now.Add(-domain.ScanDedupeWindow))
+			s, reused, err := f.store.RecordScan(ctx, f.scan("same", "tok"+string(rune('a'+i)), now), now.Add(-domain.ScanDedupeWindow), nil)
 			results <- result{s.ID, reused, err}
 		}(i)
 	}
@@ -143,15 +143,15 @@ func TestMarkPhoneRevealedOnce(t *testing.T) {
 	f := newScanFixture(t, "reveal", "5CNR0004")
 	ctx := context.Background()
 	now := time.Now().UTC().Truncate(time.Microsecond)
-	scan, _, err := f.store.RecordScan(ctx, f.scan("v1", "t1", now), now.Add(-domain.ScanDedupeWindow))
+	scan, _, err := f.store.RecordScan(ctx, f.scan("v1", "t1", now), now.Add(-domain.ScanDedupeWindow), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	ok, err := f.store.MarkPhoneRevealed(ctx, scan.ID, now)
+	ok, err := f.store.MarkPhoneRevealed(ctx, scan.ID, now, nil)
 	if err != nil || !ok {
 		t.Fatalf("first ok=%v err=%v", ok, err)
 	}
-	ok, err = f.store.MarkPhoneRevealed(ctx, scan.ID, now.Add(time.Minute))
+	ok, err = f.store.MarkPhoneRevealed(ctx, scan.ID, now.Add(time.Minute), nil)
 	if err != nil || ok {
 		t.Fatalf("second ok=%v err=%v", ok, err)
 	}
@@ -159,7 +159,7 @@ func TestMarkPhoneRevealedOnce(t *testing.T) {
 	if err != nil || got.PhoneRevealedAt == nil || !got.PhoneRevealedAt.Equal(now) {
 		t.Fatalf("got=%+v err=%v", got, err)
 	}
-	if _, err := f.store.MarkPhoneRevealed(ctx, "00000000-0000-0000-0000-000000000000", now); !errors.Is(err, domain.ErrNotFound) {
+	if _, err := f.store.MarkPhoneRevealed(ctx, "00000000-0000-0000-0000-000000000000", now, nil); !errors.Is(err, domain.ErrNotFound) {
 		t.Fatalf("unknown err=%v", err)
 	}
 }
@@ -172,7 +172,7 @@ func TestListScansByPetIsOwnerScoped(t *testing.T) {
 	var scans []domain.TagScan
 	for i := 0; i < 3; i++ {
 		at := base.Add(time.Duration(i) * time.Minute)
-		s, _, err := f.store.RecordScan(ctx, f.scan("v"+string(rune('a'+i)), "t"+string(rune('a'+i)), at), at.Add(-domain.ScanDedupeWindow))
+		s, _, err := f.store.RecordScan(ctx, f.scan("v"+string(rune('a'+i)), "t"+string(rune('a'+i)), at), at.Add(-domain.ScanDedupeWindow), nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -181,7 +181,7 @@ func TestListScansByPetIsOwnerScoped(t *testing.T) {
 	for i, body := range []string{"primero", "segundo"} {
 		msg, err := f.store.AddMessage(ctx, domain.TagMessage{
 			ScanID: scans[1].ID, TagID: f.tagID, PetID: f.petID, Body: body, FinderName: "Ana", FinderPhone: "+56 9 1234 5678",
-		})
+		}, nil)
 		if err != nil || msg.ID == "" || msg.CreatedAt.IsZero() || msg.Body != body || msg.FinderName != "Ana" {
 			t.Fatalf("msg %d=%+v err=%v", i, msg, err)
 		}
@@ -221,11 +221,11 @@ func TestPetDeletionRemovesScansAndMessages(t *testing.T) {
 	f := newScanFixture(t, "cascade", "5CNK0006")
 	ctx := context.Background()
 	now := time.Now().UTC()
-	scan, _, err := f.store.RecordScan(ctx, f.scan("v1", "t1", now), now.Add(-domain.ScanDedupeWindow))
+	scan, _, err := f.store.RecordScan(ctx, f.scan("v1", "t1", now), now.Add(-domain.ScanDedupeWindow), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.store.AddMessage(ctx, domain.TagMessage{ScanID: scan.ID, TagID: f.tagID, PetID: f.petID, Body: strings.Repeat("a", 10)}); err != nil {
+	if _, err := f.store.AddMessage(ctx, domain.TagMessage{ScanID: scan.ID, TagID: f.tagID, PetID: f.petID, Body: strings.Repeat("a", 10)}, nil); err != nil {
 		t.Fatal(err)
 	}
 	if err := f.pets.Delete(ctx, f.owner, f.petID); err != nil {
@@ -240,5 +240,129 @@ func TestPetDeletionRemovesScansAndMessages(t *testing.T) {
 	}
 	if scans != 0 || messages != 0 {
 		t.Fatalf("scans=%d messages=%d", scans, messages)
+	}
+}
+
+func (f scanFixture) draft(kind domain.NotificationKind, userID string) *domain.NotificationDraft {
+	return &domain.NotificationDraft{
+		UserID: userID, PetID: f.petID, TagID: f.tagID, Kind: kind, Email: true,
+		Payload: domain.NotificationPayload{PetName: "Luna", TagCode: f.code, ScannedAt: time.Now().UTC(), Device: "ios"},
+	}
+}
+
+func (f scanFixture) counts(t *testing.T) (notifications, deliveries int) {
+	t.Helper()
+	ctx := context.Background()
+	if err := f.pool.QueryRow(ctx, `SELECT count(*) FROM public.notifications WHERE tag_id = $1::uuid`, f.tagID).Scan(&notifications); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.pool.QueryRow(ctx, `SELECT count(*) FROM public.notification_deliveries d
+JOIN public.notifications n ON n.id = d.notification_id WHERE n.tag_id = $1::uuid`, f.tagID).Scan(&deliveries); err != nil {
+		t.Fatal(err)
+	}
+	return notifications, deliveries
+}
+
+func TestRecordScanNewCreatesOneNotificationAndDelivery(t *testing.T) {
+	f := newScanFixture(t, "notify1", "5CNN0010")
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	if _, reused, err := f.store.RecordScan(ctx, f.scan("v1", "t1", now), now.Add(-domain.ScanDedupeWindow), f.draft(domain.NotificationTagScanned, f.owner)); err != nil || reused {
+		t.Fatalf("reused=%v err=%v", reused, err)
+	}
+	if n, d := f.counts(t); n != 1 || d != 1 {
+		t.Fatalf("notifications=%d deliveries=%d", n, d)
+	}
+}
+
+func TestRecordScanReuseCreatesNoSecondNotification(t *testing.T) {
+	f := newScanFixture(t, "notify2", "5CNN0011")
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	draft := f.draft(domain.NotificationTagScanned, f.owner)
+	if _, _, err := f.store.RecordScan(ctx, f.scan("v1", "t1", now), now.Add(-domain.ScanDedupeWindow), draft); err != nil {
+		t.Fatal(err)
+	}
+	later := now.Add(time.Minute)
+	if _, reused, err := f.store.RecordScan(ctx, f.scan("v1", "t2", later), later.Add(-domain.ScanDedupeWindow), draft); err != nil || !reused {
+		t.Fatalf("reused=%v err=%v", reused, err)
+	}
+	if n, d := f.counts(t); n != 1 || d != 1 {
+		t.Fatalf("notifications=%d deliveries=%d", n, d)
+	}
+}
+
+func TestAddMessageWithinMinuteGroupsDelivery(t *testing.T) {
+	f := newScanFixture(t, "notify3", "5CNN0012")
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	scan, _, err := f.store.RecordScan(ctx, f.scan("v1", "t1", now), now.Add(-domain.ScanDedupeWindow), f.draft(domain.NotificationTagScanned, f.owner))
+	if err != nil {
+		t.Fatal(err)
+	}
+	msg := domain.TagMessage{ScanID: scan.ID, TagID: f.tagID, PetID: f.petID, Body: strings.Repeat("a", 10), CreatedAt: now.Add(10 * time.Second)}
+	msgDraft := f.draft(domain.NotificationFinderMessage, f.owner)
+	msgDraft.Payload.Message = &domain.TagMessageSummary{Body: msg.Body}
+	stored, err := f.store.AddMessage(ctx, msg, msgDraft)
+	if err != nil || !stored.CreatedAt.Equal(msg.CreatedAt) {
+		t.Fatalf("stored=%+v err=%v", stored, err)
+	}
+	if n, d := f.counts(t); n != 2 || d != 1 {
+		t.Fatalf("notifications=%d deliveries=%d", n, d)
+	}
+}
+
+func TestMarkPhoneRevealedNotifiesOnlyFirstTime(t *testing.T) {
+	f := newScanFixture(t, "notify4", "5CNN0013")
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	scan, _, err := f.store.RecordScan(ctx, f.scan("v1", "t1", now), now.Add(-domain.ScanDedupeWindow), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 2; i++ {
+		if _, err := f.store.MarkPhoneRevealed(ctx, scan.ID, now.Add(time.Duration(i)*time.Second), f.draft(domain.NotificationPhoneRevealed, f.owner)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if n, _ := f.counts(t); n != 1 {
+		t.Fatalf("notifications=%d", n)
+	}
+}
+
+func TestEventRollsBackWithNotification(t *testing.T) {
+	f := newScanFixture(t, "rollback", "5CNR0014")
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	bad := f.draft(domain.NotificationTagScanned, "00000000-0000-0000-0000-000000000000")
+
+	if _, _, err := f.store.RecordScan(ctx, f.scan("v1", "t1", now), now.Add(-domain.ScanDedupeWindow), bad); err == nil {
+		t.Fatal("want error")
+	}
+	var scans int
+	if err := f.pool.QueryRow(ctx, `SELECT count(*) FROM public.tag_scans WHERE tag_id = $1::uuid`, f.tagID).Scan(&scans); err != nil || scans != 0 {
+		t.Fatalf("scans=%d err=%v", scans, err)
+	}
+
+	scan, _, err := f.store.RecordScan(ctx, f.scan("v1", "t1", now), now.Add(-domain.ScanDedupeWindow), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bad.Kind = domain.NotificationFinderMessage
+	if _, err := f.store.AddMessage(ctx, domain.TagMessage{ScanID: scan.ID, TagID: f.tagID, PetID: f.petID, Body: strings.Repeat("a", 10)}, bad); err == nil {
+		t.Fatal("want error")
+	}
+	var messages int
+	if err := f.pool.QueryRow(ctx, `SELECT count(*) FROM public.tag_messages WHERE tag_id = $1::uuid`, f.tagID).Scan(&messages); err != nil || messages != 0 {
+		t.Fatalf("messages=%d err=%v", messages, err)
+	}
+
+	bad.Kind = domain.NotificationPhoneRevealed
+	if _, err := f.store.MarkPhoneRevealed(ctx, scan.ID, now, bad); err == nil {
+		t.Fatal("want error")
+	}
+	got, err := f.store.GetScan(ctx, scan.ID)
+	if err != nil || got.PhoneRevealedAt != nil {
+		t.Fatalf("got=%+v err=%v", got, err)
 	}
 }

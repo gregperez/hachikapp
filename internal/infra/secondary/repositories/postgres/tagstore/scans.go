@@ -9,6 +9,8 @@ import (
 	authBaseDomain "github.com/WilsonSayago/authBase/v4/core/domain"
 	"github.com/gregperez/hachikapp-backend/internal/core/domain"
 	"github.com/gregperez/hachikapp-backend/internal/core/ports"
+	"github.com/gregperez/hachikapp-backend/internal/infra/config/database"
+	"github.com/gregperez/hachikapp-backend/internal/infra/secondary/repositories/postgres/notifystore"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -26,7 +28,7 @@ var _ ports.TagScanPort = (*Store)(nil)
 // RecordScan dedupes by (tag, visitor) inside one transaction. A transaction
 // advisory lock on that pair serializes concurrent first scans, which a row
 // lock alone cannot do because there is no row to lock yet.
-func (s *Store) RecordScan(ctx context.Context, scan domain.TagScan, dedupeSince time.Time) (domain.TagScan, bool, error) {
+func (s *Store) RecordScan(ctx context.Context, scan domain.TagScan, dedupeSince time.Time, draft *domain.NotificationDraft) (domain.TagScan, bool, error) {
 	tx, err := s.db.BeginTx(ctx)
 	if err != nil {
 		return domain.TagScan{}, false, fmt.Errorf("begin record scan: %w", err)
@@ -75,6 +77,11 @@ RETURNING `+scanColumns, scan.TagID, scan.PetID, scannedAt, scan.VisitorHash, sc
 		if err != nil {
 			return domain.TagScan{}, false, fmt.Errorf("insert scan: %w", err)
 		}
+		if draft != nil {
+			if err := notifystore.InsertEvent(ctx, tx, *draft, stored.ID, "", stored.ScannedAt); err != nil {
+				return domain.TagScan{}, false, fmt.Errorf("notify scan: %w", err)
+			}
+		}
 	default:
 		return domain.TagScan{}, false, fmt.Errorf("find recent scan: %w", err)
 	}
@@ -97,37 +104,89 @@ func (s *Store) GetScan(ctx context.Context, scanID string) (domain.TagScan, err
 	return scan, nil
 }
 
-func (s *Store) AddMessage(ctx context.Context, msg domain.TagMessage) (domain.TagMessage, error) {
-	stored, err := scanMessage(s.db.QueryRow(ctx, `INSERT INTO public.tag_messages
-(scan_id, tag_id, pet_id, body, finder_name, finder_phone)
-VALUES ($1::uuid, $2::uuid, $3::uuid, $4, $5, $6)
-RETURNING `+messageColumns, msg.ScanID, msg.TagID, msg.PetID, msg.Body, msg.FinderName, msg.FinderPhone))
+func (s *Store) AddMessage(ctx context.Context, msg domain.TagMessage, draft *domain.NotificationDraft) (domain.TagMessage, error) {
+	var createdAt any
+	if !msg.CreatedAt.IsZero() {
+		createdAt = msg.CreatedAt
+	}
+	var stored domain.TagMessage
+	err := s.inTx(ctx, "add message", func(tx database.Transaction) error {
+		var err error
+		stored, err = scanMessage(tx.QueryRow(ctx, `INSERT INTO public.tag_messages
+(scan_id, tag_id, pet_id, body, finder_name, finder_phone, created_at)
+VALUES ($1::uuid, $2::uuid, $3::uuid, $4, $5, $6, COALESCE($7::timestamptz, now()))
+RETURNING `+messageColumns, msg.ScanID, msg.TagID, msg.PetID, msg.Body, msg.FinderName, msg.FinderPhone, createdAt))
+		if err != nil {
+			return fmt.Errorf("insert tag message: %w", err)
+		}
+		if draft != nil {
+			if err := notifystore.InsertEvent(ctx, tx, *draft, stored.ScanID, stored.ID, stored.CreatedAt); err != nil {
+				return fmt.Errorf("notify message: %w", err)
+			}
+		}
+		return nil
+	})
 	if err != nil {
-		return domain.TagMessage{}, fmt.Errorf("insert tag message: %w", err)
+		return domain.TagMessage{}, err
 	}
 	return stored, nil
 }
 
-func (s *Store) MarkPhoneRevealed(ctx context.Context, scanID string, at time.Time) (bool, error) {
-	tag, err := s.db.Exec(ctx, `UPDATE public.tag_scans SET phone_revealed_at = $2
+func (s *Store) MarkPhoneRevealed(ctx context.Context, scanID string, at time.Time, draft *domain.NotificationDraft) (bool, error) {
+	revealed := false
+	err := s.inTx(ctx, "mark phone revealed", func(tx database.Transaction) error {
+		tag, err := tx.Exec(ctx, `UPDATE public.tag_scans SET phone_revealed_at = $2
 WHERE id = $1::uuid AND phone_revealed_at IS NULL`, scanID, at)
-	if err != nil {
-		if isNoRowsOrBadUUID(err) {
-			return false, domain.ErrNotFound
+		if err != nil {
+			if isNoRowsOrBadUUID(err) {
+				return domain.ErrNotFound
+			}
+			return fmt.Errorf("mark phone revealed: %w", err)
 		}
-		return false, fmt.Errorf("mark phone revealed: %w", err)
+		if tag.RowsAffected() == 1 {
+			revealed = true
+			if draft != nil {
+				if err := notifystore.InsertEvent(ctx, tx, *draft, scanID, "", at); err != nil {
+					return fmt.Errorf("notify phone revealed: %w", err)
+				}
+			}
+			return nil
+		}
+		var exists bool
+		if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM public.tag_scans WHERE id = $1::uuid)`, scanID).Scan(&exists); err != nil {
+			return fmt.Errorf("check scan: %w", err)
+		}
+		if !exists {
+			return domain.ErrNotFound
+		}
+		return nil
+	})
+	if err != nil {
+		return false, err
 	}
-	if tag.RowsAffected() == 1 {
-		return true, nil
+	return revealed, nil
+}
+
+// inTx runs fn in a transaction, committing on success and rolling back on any error.
+func (s *Store) inTx(ctx context.Context, what string, fn func(tx database.Transaction) error) error {
+	tx, err := s.db.BeginTx(ctx)
+	if err != nil {
+		return fmt.Errorf("begin %s: %w", what, err)
 	}
-	var exists bool
-	if err := s.db.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM public.tag_scans WHERE id = $1::uuid)`, scanID).Scan(&exists); err != nil {
-		return false, fmt.Errorf("check scan: %w", err)
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback(context.WithoutCancel(ctx))
+		}
+	}()
+	if err := fn(tx); err != nil {
+		return err
 	}
-	if !exists {
-		return false, domain.ErrNotFound
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit %s: %w", what, err)
 	}
-	return false, nil
+	committed = true
+	return nil
 }
 
 func (s *Store) ListScansByPet(ctx context.Context, ownerID, petID string, page authBaseDomain.PageRequest) (authBaseDomain.Page[domain.ScanWithMessages], error) {

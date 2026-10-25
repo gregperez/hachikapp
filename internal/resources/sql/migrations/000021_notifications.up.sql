@@ -19,6 +19,7 @@ CREATE TABLE public.notifications (
 CREATE INDEX notifications_user_idx ON public.notifications (user_id, created_at DESC, id DESC);
 CREATE INDEX notifications_unread_idx ON public.notifications (user_id) WHERE read_at IS NULL;
 CREATE INDEX notifications_scan_idx ON public.notifications (scan_id) WHERE scan_id IS NOT NULL;
+CREATE INDEX notifications_message_idx ON public.notifications (message_id) WHERE message_id IS NOT NULL;
 CREATE INDEX notifications_created_idx ON public.notifications (created_at);
 
 CREATE TABLE public.notification_deliveries (

@@ -17,8 +17,9 @@ import (
 // email FirstEmailDelay later. Location, message and contact events of the same
 // scan merge into that pending scan email instead of sending their own, as long
 // as it has not been claimed or attempted yet; the in-app notice is always
-// created. scanID and messageID may be empty (stored as NULL).
-func InsertEvent(ctx context.Context, tx database.DBTX, draft domain.NotificationDraft, scanID, messageID string, now time.Time) error {
+// created. It must run inside a transaction (the grouping lock only holds there).
+// scanID and messageID may be empty (stored as NULL).
+func InsertEvent(ctx context.Context, tx database.Transaction, draft domain.NotificationDraft, scanID, messageID string, now time.Time) error {
 	payload, err := json.Marshal(draft.Payload)
 	if err != nil {
 		return fmt.Errorf("encode notification payload: %w", err)
@@ -56,7 +57,7 @@ VALUES ($1::uuid, 'email', 'pending', 0, $2)`, notificationID, nextAttempt); err
 // never-attempted tag_scanned email. A delivery whose next_attempt_at is past
 // created_at + FirstEmailDelay has been leased by a dispatcher, so it is left
 // alone and the event sends on its own.
-func groupIntoScanEmail(ctx context.Context, tx database.DBTX, draft domain.NotificationDraft, scanID string, now time.Time) (bool, error) {
+func groupIntoScanEmail(ctx context.Context, tx database.Transaction, draft domain.NotificationDraft, scanID string, now time.Time) (bool, error) {
 	if scanID == "" {
 		return false, nil
 	}

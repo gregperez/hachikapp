@@ -230,15 +230,32 @@ JOIN public.notifications n ON n.id = d.notification_id WHERE n.kind = 'finder_m
 		t.Fatalf("next=%v want %v", next, later)
 	}
 
-	// A claimed delivery (attempts still 0, but lease pushed) also stops grouping when the lease is past.
+	// A leased delivery (claimed, attempts still 0, next_attempt_at pushed past the
+	// lease) is still in the future, so only the created_at+FirstEmailDelay guard
+	// keeps a new event from merging into an email that is already being sent.
 	scan2 := f.newScan(t)
 	f.insert(t, f.draft(domain.NotificationTagScanned, true), scan2, "", now)
-	if _, err := f.store.ClaimDue(context.Background(), now.Add(domain.FirstEmailDelay), 100, time.Second); err != nil {
+	claimed, err := f.store.ClaimDue(context.Background(), now.Add(domain.FirstEmailDelay), 100, domain.DeliveryLease)
+	if err != nil {
 		t.Fatal(err)
 	}
-	f.insert(t, f.draft(domain.NotificationLocationShared, true), scan2, "", now.Add(domain.FirstEmailDelay+time.Minute))
+	leased := false
+	for _, c := range claimed {
+		leased = leased || c.Notification.ScanID == scan2
+	}
+	if !leased {
+		t.Fatal("scan2 delivery was not claimed")
+	}
+	msg2 := f.draft(domain.NotificationFinderMessage, true)
+	msg2.Payload.Message = &domain.TagMessageSummary{Body: "hola"}
+	f.insert(t, msg2, scan2, "", now.Add(domain.FirstEmailDelay+10*time.Second))
 	if n := f.deliveryCount(t); n != 4 {
-		t.Fatalf("deliveries=%d want 4", n)
+		t.Fatalf("deliveries=%d want 4 (finder_message must get its own)", n)
+	}
+	for _, it := range f.notifications(t) {
+		if it.ScanID == scan2 && it.Kind == domain.NotificationTagScanned && it.Payload.Message != nil {
+			t.Fatalf("leased scan payload was merged: %+v", it.Payload)
+		}
 	}
 
 	// Attempts > 0 also blocks grouping.
@@ -266,10 +283,20 @@ func TestInsertEventWithoutEmail(t *testing.T) {
 	if len(f.notifications(t)) != 2 {
 		t.Fatal("expected 2 notifications")
 	}
-	// No-email event must not group into (or alter) an email-bearing scan.
-	f.insert(t, f.draft(domain.NotificationTagScanned, true), f.newScan(t), "", now)
-	if n := f.deliveryCount(t); n != 1 {
-		t.Fatalf("deliveries=%d", n)
+	// An Email=false event never groups into an email-bearing scan.
+	emailScan := f.newScan(t)
+	f.insert(t, f.draft(domain.NotificationTagScanned, true), emailScan, "", now)
+	before := f.deliveryCount(t)
+	quiet := f.draft(domain.NotificationFinderMessage, false)
+	quiet.Payload.Message = &domain.TagMessageSummary{Body: "hola"}
+	f.insert(t, quiet, emailScan, "", now.Add(time.Second))
+	if n := f.deliveryCount(t); n != before {
+		t.Fatalf("deliveries=%d want %d", n, before)
+	}
+	for _, it := range f.notifications(t) {
+		if it.ScanID == emailScan && it.Kind == domain.NotificationTagScanned && it.Payload.Message != nil {
+			t.Fatalf("scan payload changed: %+v", it.Payload)
+		}
 	}
 }
 

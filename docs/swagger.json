@@ -760,6 +760,195 @@
                 }
             }
         },
+        "/v1/notifications": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Newest first. The payload carries the pet name, tag code, scan time and, while retained (30 days), the shared location.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "List my notifications",
+                "parameters": [
+                    {
+                        "maximum": 100,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size (1-100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Opaque cursor returned by the previous page",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_notifications.NotificationsPageResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/notifications/read-all": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Mark all my notifications as read",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_notifications.ReadAllResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/notifications/unread-count": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Count my unread notifications",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_notifications.UnreadCountResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/notifications/{id}/read": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Idempotent. 404 when the notification does not exist or belongs to someone else.",
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Mark one of my notifications as read",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Notification ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/pets": {
             "get": {
                 "security": [
@@ -3275,6 +3464,63 @@
                 "ROLES"
             ]
         },
+        "github_com_gregperez_hachikapp-backend_internal_core_domain.NotificationPayload": {
+            "type": "object",
+            "properties": {
+                "device": {
+                    "type": "string"
+                },
+                "location": {
+                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_core_domain.ScanLocation"
+                },
+                "message": {
+                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_core_domain.TagMessageSummary"
+                },
+                "petName": {
+                    "type": "string"
+                },
+                "phoneRevealed": {
+                    "type": "boolean"
+                },
+                "scannedAt": {
+                    "type": "string"
+                },
+                "tagCode": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_core_domain.ScanLocation": {
+            "type": "object",
+            "properties": {
+                "accuracyM": {
+                    "type": "integer"
+                },
+                "at": {
+                    "type": "string"
+                },
+                "lat": {
+                    "type": "number"
+                },
+                "lng": {
+                    "type": "number"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_core_domain.TagMessageSummary": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string"
+                },
+                "finderName": {
+                    "type": "string"
+                },
+                "finderPhone": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.AuthDto": {
             "description": "Authentication response model containing JWT tokens for user authentication",
             "type": "object",
@@ -3796,6 +4042,83 @@
                 },
                 "nextCursor": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_notifications.NotificationResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-25T09:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "9c2f3a1e-5b7d-4c8e-9a10-2b3c4d5e6f70"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "tag_scanned",
+                        "location_shared",
+                        "finder_message",
+                        "phone_revealed"
+                    ],
+                    "example": "tag_scanned"
+                },
+                "payload": {
+                    "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_core_domain.NotificationPayload"
+                },
+                "petId": {
+                    "type": "string"
+                },
+                "readAt": {
+                    "type": "string",
+                    "example": "2026-10-25T10:00:00Z"
+                },
+                "scanId": {
+                    "type": "string"
+                },
+                "tagId": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_notifications.NotificationsPageResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_notifications.NotificationResponse"
+                    }
+                },
+                "hasNext": {
+                    "type": "boolean"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "nextCursor": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_notifications.ReadAllResponse": {
+            "type": "object",
+            "properties": {
+                "updated": {
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
+        "github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_notifications.UnreadCountResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 3
                 }
             }
         },

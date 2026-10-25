@@ -67,6 +67,11 @@ func TestOpenAPIContract(t *testing.T) {
 		"/v1/pets/{id}/tags/{tagId}/disable",
 		"/v1/pets/{id}/scans",
 		"/v1/tags/{code}/activate",
+		"/v1/notifications",
+		"/v1/notifications/unread-count",
+		"/v1/notifications/{id}/read",
+		"/v1/notifications/read-all",
+		"/v1/public/scans/{scanId}/location",
 		"/v1/admin/tag-batches",
 		"/v1/admin/tag-batches/{id}/codes.csv",
 	}

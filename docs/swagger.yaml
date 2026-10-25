@@ -9,6 +9,43 @@ definitions:
     x-enum-varnames:
     - USERS
     - ROLES
+  github_com_gregperez_hachikapp-backend_internal_core_domain.NotificationPayload:
+    properties:
+      device:
+        type: string
+      location:
+        $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_core_domain.ScanLocation'
+      message:
+        $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_core_domain.TagMessageSummary'
+      petName:
+        type: string
+      phoneRevealed:
+        type: boolean
+      scannedAt:
+        type: string
+      tagCode:
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_core_domain.ScanLocation:
+    properties:
+      accuracyM:
+        type: integer
+      at:
+        type: string
+      lat:
+        type: number
+      lng:
+        type: number
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_core_domain.TagMessageSummary:
+    properties:
+      body:
+        type: string
+      finderName:
+        type: string
+      finderPhone:
+        type: string
+    type: object
   github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.AuthDto:
     description: Authentication response model containing JWT tokens for user authentication
     properties:
@@ -375,6 +412,59 @@ definitions:
         type: integer
       nextCursor:
         type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_notifications.NotificationResponse:
+    properties:
+      createdAt:
+        example: "2026-10-25T09:00:00Z"
+        type: string
+      id:
+        example: 9c2f3a1e-5b7d-4c8e-9a10-2b3c4d5e6f70
+        type: string
+      kind:
+        enum:
+        - tag_scanned
+        - location_shared
+        - finder_message
+        - phone_revealed
+        example: tag_scanned
+        type: string
+      payload:
+        $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_core_domain.NotificationPayload'
+      petId:
+        type: string
+      readAt:
+        example: "2026-10-25T10:00:00Z"
+        type: string
+      scanId:
+        type: string
+      tagId:
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_notifications.NotificationsPageResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_notifications.NotificationResponse'
+        type: array
+      hasNext:
+        type: boolean
+      limit:
+        type: integer
+      nextCursor:
+        type: string
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_notifications.ReadAllResponse:
+    properties:
+      updated:
+        example: 3
+        type: integer
+    type: object
+  github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_notifications.UnreadCountResponse:
+    properties:
+      count:
+        example: 3
+        type: integer
     type: object
   github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_pets.PetHealthResponse:
     properties:
@@ -1399,6 +1489,118 @@ paths:
       summary: Refresh JWT token
       tags:
       - Authentication
+  /v1/notifications:
+    get:
+      description: Newest first. The payload carries the pet name, tag code, scan
+        time and, while retained (30 days), the shared location.
+      parameters:
+      - default: 10
+        description: Page size (1-100)
+        in: query
+        maximum: 100
+        name: limit
+        type: integer
+      - description: Opaque cursor returned by the previous page
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_notifications.NotificationsPageResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: List my notifications
+      tags:
+      - Notifications
+  /v1/notifications/{id}/read:
+    post:
+      description: Idempotent. 404 when the notification does not exist or belongs
+        to someone else.
+      parameters:
+      - description: Notification ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Mark one of my notifications as read
+      tags:
+      - Notifications
+  /v1/notifications/read-all:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_notifications.ReadAllResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Mark all my notifications as read
+      tags:
+      - Notifications
+  /v1/notifications/unread-count:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto.ResponseDto'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_controller_dto_outputs_notifications.UnreadCountResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_gregperez_hachikapp-backend_internal_infra_primary_httpapi.Problem'
+      security:
+      - BearerAuth: []
+      summary: Count my unread notifications
+      tags:
+      - Notifications
   /v1/pets:
     get:
       description: Returns the pet records managed by the authenticated account, newest

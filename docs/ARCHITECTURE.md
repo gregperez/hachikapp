@@ -140,6 +140,35 @@ escaneos del dueño. `tagstore.Store` implementa `TagPort` y `TagScanPort`.
   `PoliciesGuard` sobre la entidad `TAGS` (crear para POST, leer para GET).
   La migración `000020_tags_permission` da ese permiso al rol `admin`.
 
+## Avisos al dueño
+
+Cada evento de una placa (escaneo, ubicación compartida, mensaje, contacto
+revelado) crea un aviso del panel y, si `NOTIFICATIONS_ENABLED`, un envío de
+correo, **en la misma transacción** que el evento (`notifystore`, `events.go`).
+Así no hay aviso sin evento ni evento sin aviso.
+
+- **Flujo**: evento (tx) -> `notifications` + `notification_deliveries`
+  (`pending`, `next_attempt_at = now + 60 s`) -> `NotificationDispatcher`
+  (ciclo cada 5 s, hasta 20 envíos) -> `Mailer`. Ubicación, mensaje y contacto
+  que llegan mientras el envío del escaneo sigue `pending` con `attempts = 0`
+  y `next_attempt_at > now()` se combinan en el `payload` del aviso del
+  escaneo y solo crean el aviso del panel: sale un solo correo.
+- **Despachador**: reclama los envíos vencidos en una transacción corta
+  (`FOR UPDATE SKIP LOCKED`, `next_attempt_at = now + 2 min` como lease) y
+  envía fuera de ella. Si el proceso muere, otra instancia retoma el envío al
+  vencer el lease. La entrega es **al menos una vez**: un fallo entre el envío
+  y `MarkSent` puede duplicar un correo. Reintentos a 1 min, 5 min, 30 min,
+  2 h y 6 h; tras el sexto intento fallido queda `failed`.
+- **Mailer**: SMTP con STARTTLS en 587/25 (no TLS implícito en 465) o, sin
+  `SMTP_HOST`, el adaptador Log (solo destinatario y asunto). El correo de
+  escaneo usa la hora de `America/Santiago`.
+- **Retención** (`TagRetentionPurger`): a los 30 días pone las coordenadas en
+  `NULL` en `tag_scans` y en el `payload` de los avisos; a los 180 días borra
+  escaneos, mensajes y avisos.
+- **API del dueño** (`NotificationController`): `/v1/notifications`,
+  `/unread-count`, `/{id}/read` y `/read-all`, solo con JWT y acotadas al
+  usuario (`NotificationService`); un aviso ajeno responde 404.
+
 ## Paginación keyset
 
 Los listados `GET /v1/users` y `GET /v1/roles` aceptan `limit` y un `cursor`

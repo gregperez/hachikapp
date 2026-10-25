@@ -196,6 +196,7 @@ func (a *Application) wire(opts Options) error {
 	tagUseCase := services.NewTagService(tagStore, petStore, rand.Reader)
 	publicTagUseCase := services.NewPublicTagService(tagStore, tagStore, petStore, photoStore, []byte(opts.Config.Public.VisitorPepper), rand.Reader).
 		WithEmailNotifications(opts.Config.Notifications.Enabled)
+	notificationUseCase := services.NewNotificationService(notifystore.New(a.DB), nil)
 	a.Mailer = mailer.FromConfig(opts.Config, a.Logger)
 	mailerKind := "log"
 	if opts.Config.Notifications.SMTP.Host != "" {
@@ -271,6 +272,7 @@ func (a *Application) wire(opts Options) error {
 				Pets:           petUseCase,
 				Tags:           tagUseCase,
 				PublicTags:     publicTagUseCase,
+				Notifications:  notificationUseCase,
 				PublicBaseURL:  opts.Config.Public.BaseURL,
 				VisitorPepper:  []byte(opts.Config.Public.VisitorPepper),
 			})
@@ -407,6 +409,7 @@ type routeDeps struct {
 	Pets           core.PetUseCase
 	Tags           core.TagUseCase
 	PublicTags     core.PublicTagUseCase
+	Notifications  core.NotificationUseCase
 	PublicBaseURL  string
 	VisitorPepper  []byte
 }
@@ -439,6 +442,7 @@ func registerRoutes(r *gin.Engine, deps routeDeps) {
 	controller.NewRoleController(deps.Authz, deps.Roles, r, deps.Translate).RunController()
 	controller.NewPetController(deps.Authz, deps.Pets, r, deps.Translate).RunController()
 	controller.NewTagController(deps.Authz, deps.Tags, deps.PublicTags, deps.PublicBaseURL, r).RunController()
+	controller.NewNotificationController(deps.Authz, deps.Notifications, r).RunController()
 	controller.NewTagAdminController(deps.Authz, deps.Tags, deps.PublicBaseURL, r).RunController()
 	controller.NewPublicTagController(deps.PublicTags, deps.PublicLimiter, deps.OriginResolver, deps.VisitorPepper, r).RunController()
 }

@@ -55,6 +55,31 @@
     and `TAG_VISITOR_PEPPER` (keys visitor, scan-token and rate-limit hashes).
     Production requires an `https://` base URL and a pepper of at least 32
     characters other than the development default.
+- Owner notifications ("Ficha pública", part 2). Migrations up to `000021`.
+  - API for the authenticated owner: `GET /v1/notifications` (keyset
+    paginated, newest first; each item carries `kind`, `petId`, `tagId`,
+    `scanId`, a camelCase `payload`, `readAt` and `createdAt`),
+    `GET /v1/notifications/unread-count` (`{data:{count}}`),
+    `POST /v1/notifications/{id}/read` (204; foreign or unknown is 404) and
+    `POST /v1/notifications/read-all` (`{data:{updated}}`). `userId` is never
+    returned.
+  - Email notifications to the tag owner (`users.email`) for `tag_scanned`,
+    `location_shared`, `finder_message` and `phone_revealed`. The first email
+    waits 60 s so events of the same scan are grouped in one email. Delivery
+    retries at 1 min, 5 min, 30 min, 2 h and 6 h and is `failed` after the
+    sixth attempt. Delivery is at least once.
+  - Location sharing route: `POST /v1/public/scans/{scanId}/location` (once
+    per scan, 409 if it already exists; 10 per hour per IP).
+  - Retention purge: coordinates are set to `NULL` after 30 days (in
+    `tag_scans` and in notification payloads); scans, messages and
+    notifications are deleted after 180 days.
+  - New configuration: `NOTIFICATIONS_ENABLED` (default `true`; when `false`
+    in-app notices are still created but no emails are queued and the
+    dispatcher does not start), `SMTP_HOST`, `SMTP_PORT` (default 587),
+    `SMTP_USER`, `SMTP_PASSWORD` (secret) and `SMTP_FROM`. Without `SMTP_HOST`
+    emails are only logged. In production with notifications enabled,
+    `SMTP_HOST` and `SMTP_FROM` are required. SMTP supports STARTTLS on
+    ports 587/25 only; implicit TLS on port 465 is not supported.
 
 ### Breaking
 
